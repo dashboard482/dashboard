@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Liquidaciones estimadas — en directo</title>
+<style>
+  :root{
+    --bg:#131722; --bg2:#0d1117; --border:#2a2e39;
+    --up:#26a69a; --down:#ef5350; --muted:#8a93a6;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg2); color:#fff;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    display:flex; flex-direction:column; height:100%; overflow:hidden;
+  }
+  .cab{ padding:6px 10px; }
+  h1{font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:.03em; text-transform:uppercase; margin:0 0 5px;}
+
+  .filaSup{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .tabs{ display:flex; gap:6px; flex-wrap:wrap; }
+  .tab{
+    background:var(--bg); border:1px solid var(--border); color:var(--muted);
+    font-size:13px; font-weight:700; padding:6px 12px; border-radius:8px; cursor:pointer;
+  }
+  .tab.activa{ background:#1d2740; border-color:#3b82f6; color:#fff; }
+  .tabVista{ font-size:12px; padding:5px 10px; }
+
+  .info{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .info .precio{ font-size:26px; font-weight:800; }
+  .info .cambio{ font-size:15px; font-weight:700; }
+  .cambio.pos{ color:var(--up); } .cambio.neg{ color:var(--down); }
+  .estado{ font-size:10px; color:var(--muted); display:flex; align-items:center; gap:4px; }
+  .punto{width:6px; height:6px; border-radius:50%; background:var(--muted);}
+  .punto.on{background:var(--up);}
+  .punto.cargando{background:#f0b90b;}
+
+  .filaInf{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:4px; }
+  .resumen{ font-size:11px; display:flex; gap:14px; flex-wrap:wrap; }
+  .resumen .cortos{ color:#ff9999; } .resumen .largos{ color:#88eeaa; }
+
+  .lienzo-wrap{ flex:1; min-height:0; position:relative; overflow:hidden; }
+  canvas{ width:100%; height:100%; display:block; }
+
+  .leyenda{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; padding:5px 12px; font-size:10.5px; color:#ccc; }
+  .leyenda span{ display:flex; align-items:center; gap:5px; }
+  .caja{width:10px; height:10px; border-radius:3px;}
+
+  footer{font-size:9.5px; color:var(--muted); text-align:center; padding:0 14px 6px; line-height:1.4;}
+  footer b{color:#ccc;}
+</style>
+</head>
+<body>
+
+  <div class="cab">
+    <h1>Liquidaciones estimadas — en directo (Binance Futures)</h1>
+    <div class="filaSup">
+      <div class="tabs" id="tabsSimbolo"></div>
+      <div class="info">
+        <span class="precio" id="precio">…</span>
+        <span class="cambio" id="cambio"></span>
+        <span class="estado"><span class="punto" id="punto"></span><span id="estadoTxt">conectando…</span></span>
+        <span style="display:none;"><span id="puntoWs"></span><span id="wsTxt"></span></span>
+      </div>
+    </div>
+    <div class="filaInf">
+      <div class="tabs" id="tabsVista"></div>
+      <div class="resumen" id="resumen"></div>
+    </div>
+  </div>
+
+  <div class="lienzo-wrap"><canvas id="lienzo"></canvas></div>
+  <div style="text-align:center; font-size:10px; color:var(--muted); padding:3px 0;">
+    Pellizca (precio ↕ / tiempo ↔) para hacer zoom · un dedo para mover · doble toque para volver al automático
+  </div>
+
+  <div class="leyenda">
+    <span><span class="caja" style="background:#1f6f7a;"></span>baja</span>
+    <span><span class="caja" style="background:#2f9a2f;"></span>media</span>
+    <span><span class="caja" style="background:#a9a92a;"></span>alta</span>
+    <span><span class="caja" style="background:#c62828;"></span>máxima</span>
+    <span><span class="caja" style="background:#555c6b;"></span>previa a la ventana</span>
+  </div>
+  <footer>
+    Modelo propio con interés abierto de <b>Binance Futures</b> (esta versión web no incluye Bybit, a
+    diferencia del bot). "Corto plazo" reutiliza velas de 15 min, no de 5 min. No son liquidaciones
+    reales. Se recalcula solo cada 5 minutos. Solo informativo, no asesoramiento financiero.
+  </footer>
+
+<script>
+// ═══ Configuración ═══
+const SIMBOLOS = [
+  {id:"BTC", sym:"BTCUSDT"}, {id:"ETH", sym:"ETHUSDT"},
+  {id:"SOL", sym:"SOLUSDT"}, {id:"HYPE", sym:"HYPEUSDT"},
+];
+const VISTAS = [
+  {id:"corto", nombre:"Corto plazo (8h)"},
+  {id:"zoom",  nombre:"Zoom 24h"},
+];
+const LIQ_TIERS = {5:.10, 10:.25, 25:.30, 50:.20, 100:.15};
+const LIQ_TIERS_HYPE = {5:.10, 10:.25, 25:.30, 50:.25, 75:.10}; // Binance limita HYPE a 75x
+const MMR = 0.005;
+const NBINS = 320;
+const SEED_SIGMA = 0.05, SEED_RANGO = 0.15;
+const DIAS = 30;
+const PASO_MS = 15*60*1000;
+const CALENTAMIENTO_VELAS = Math.round(48*60/15); // 48h de calentamiento, no fiables
+const REFRESCO_MS = 5*60*1000; // recalcula el modelo cada 5 minutos
+
+let estadoActual = { simbolo:"BTC", vista:"zoom" };
+let cacheModelo = {}; // { BTC: {velas, snapshots...} }
+
+function decimales(p){ return p>=1000?0 : p>=100?1 : p>=1?2 : 4; }
+function fp(x){ return "$"+x.toLocaleString("en-US",{minimumFractionDigits:decimales(x),maximumFractionDigits:decimales(x)}); }
+function fusd(v){ return v>=1e9 ? `$${(v/1e9).toFixed(2)}B` : v>=1e6 ? `$${(v/1e6).toFixed(0)}M` : `$${(v/1e3).toFixed(0)}K`; }
+
+// ═══ Pestañas ═══
+const tabsSimbolo = document.getElementById("tabsSimbolo");
+const tabsVista = document.getElementById("tabsVista");
+SIMBOLOS.forEach(s=>{
+  const b = document.createElement("button");
+  b.className = "tab" + (s.id===estadoActual.simbolo ? " activa":"");
+  b.textContent = s.id;
+  b.onclick = ()=> cambiarSimbolo(s.id);
+  b.id = "tab-sym-"+s.id;
+  tabsSimbolo.appendChild(b);
+});
+VISTAS.forEach(v=>{
+  const b = document.createElement("button");
+  b.className = "tab tabVista" + (v.id===estadoActual.vista ? " activa":"");
+  b.textContent = v.nombre;
+  b.onclick = ()=> cambiarVista(v.id);
+  b.id = "tab-vista-"+v.id;
+  tabsVista.appendChild(b);
+});
+
+function marcarActiva(prefijo, valor, lista){
+  lista.forEach(x=>{
+    document.getElementById(prefijo+x.id).classList.toggle("activa", x.id===valor);
+  });
+}
+
+function cambiarSimbolo(id){
+  estadoActual.simbolo = id;
+  marcarActiva("tab-sym-", id, SIMBOLOS);
+  actualizarWsTxt();
+  dibujar();
+  if(!cacheModelo[id]) cargarSimbolo(id);
+}
+function cambiarVista(id){
+  estadoActual.vista = id;
+  marcarActiva("tab-vista-", id, VISTAS);
+  dibujar();
+}
+
+// ═══ Descarga de datos (Binance Futures, público, sin clave) ═══
+async function fetchKlinesCompleto(symbol){
+  const fin = Date.now();
+  let t = fin - DIAS*86400000;
+  let out = [];
+  while(t < fin){
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=15m&startTime=${t}&limit=1500`;
+    const r = await fetch(url);
+    const kl = await r.json();
+    if(!Array.isArray(kl) || !kl.length) break;
+    out = out.concat(kl);
+    t = kl[kl.length-1][0] + PASO_MS;
+    if(kl.length < 1500) break;
+  }
+  return out;
+}
+
+async function fetchHistPaginado(symbol, path){
+  const fin = Date.now();
+  const ini = fin - DIAS*86400000 + 12*3600000;
+  const out = {};
+  let t = ini;
+  while(t < fin){
+    const t2 = Math.min(t + 499*PASO_MS, fin);
+    const url = `https://fapi.binance.com${path}?symbol=${symbol}&period=15m&limit=500&startTime=${t}&endTime=${t2}`;
+    const r = await fetch(url);
+    const datos = await r.json();
+    if(Array.isArray(datos)) for(const d of datos) out[Math.floor(d.timestamp/PASO_MS)] = d;
+    t = t2 + 1;
+  }
+  return out;
+}
+
+async function cargarSimbolo(id){
+  const meta = SIMBOLOS.find(s=>s.id===id);
+  document.getElementById("estadoTxt").textContent = "calculando modelo… (10-20s)";
+  document.getElementById("punto").className = "punto cargando";
+  try{
+    const [kl, oiRaw, lsRaw] = await Promise.all([
+      fetchKlinesCompleto(meta.sym),
+      fetchHistPaginado(meta.sym, "/futures/data/openInterestHist"),
+      fetchHistPaginado(meta.sym, "/futures/data/globalLongShortAccountRatio"),
+    ]);
+    if(!kl.length) throw new Error("sin velas");
+    const claves = kl.map(k=>Math.floor(k[0]/PASO_MS));
+    const o = kl.map(k=>+k[1]), h = kl.map(k=>+k[2]), l = kl.map(k=>+k[3]), c = kl.map(k=>+k[4]);
+    const t = claves.map(cl=>cl*PASO_MS);
+    let oi = [], lastOi=null;
+    for(const cl of claves){ if(oiRaw[cl]) lastOi = +oiRaw[cl].sumOpenInterestValue; oi.push(lastOi); }
+    let ls = [], lastLs=0.5;
+    for(const cl of claves){ if(lsRaw[cl]) lastLs = +lsRaw[cl].longAccount; ls.push(lastLs); }
+    const ok = oi.findIndex(v=>v!==null);
+    if(ok<0) throw new Error("sin interés abierto");
+    const d = { t:t.slice(ok), o:o.slice(ok), h:h.slice(ok), l:l.slice(ok), c:c.slice(ok),
+                oi:oi.slice(ok), ls:ls.slice(ok) };
+    const modelo = ejecutarModelo(d, id==="HYPE" ? LIQ_TIERS_HYPE : LIQ_TIERS);
+    cacheModelo[id] = { d, modelo, calculadoEn: Date.now() };
+    if(estadoActual.simbolo === id){
+      document.getElementById("punto").className = "punto on";
+      document.getElementById("estadoTxt").textContent = "en directo (Binance) · próxima actualización en 5 min";
+      dibujar();
+    }
+  }catch(e){
+    console.warn("cargarSimbolo", id, e);
+    if(estadoActual.simbolo === id) document.getElementById("estadoTxt").textContent = "sin datos ahora mismo, reintentando…";
+    setTimeout(()=>cargarSimbolo(id), 15000);
+  }
+}
+
+// ═══ El modelo (misma idea que el bot: reparte el interés abierto nuevo entre
+// niveles de apalancamiento, y da por liquidado lo que el precio toca después) ═══
+function semilla(p){
+  const offs = []; for(let x=-SEED_RANGO; x<=SEED_RANGO+1e-9; x+=0.001) offs.push(x);
+  const pesos = offs.map(x=> Math.exp(-0.5*(x/SEED_SIGMA)**2));
+  const suma = pesos.reduce((a,b)=>a+b,0);
+  return { precios: offs.map(x=> p*(1+x)), pesos: pesos.map(w=>w/suma) };
+}
+
+function ejecutarModelo(d, tiers){
+  const n = d.oi.length;
+  const precioFinal = d.c[n-1];
+  const bins = []; for(let i=0;i<=NBINS;i++) bins.push(precioFinal*0.72 + (precioFinal*1.32-precioFinal*0.72)*i/NBINS);
+  const anchoBin = bins[1]-bins[0];
+  const binDe = (p)=> Math.min(NBINS-1, Math.max(0, Math.floor((p-bins[0])/anchoBin)));
+
+  let liq=[], amt=[], largo=[], previo=[];
+  // Snapshots que necesitaremos para las 3 vistas (se guardan al vuelo, sin
+  // almacenar el historial completo de 30 días en memoria)
+  const NC_CORTO = Math.round(8*60/15), NC_ZOOM = Math.round(24*60/15);
+  const NC_RETENCION = Math.round(NC_ZOOM*1.5); // guardamos algo más de lo que se ve por defecto (24h), para poder alejar el zoom horizontal sin quedarte sin datos
+  const snapsFinos = []; // una por vela, solo las últimas NC_RETENCION
+  const snaps30d = [];   // una cada 16 velas (~4h), todo el histórico
+  const typ = d.h.map((hv,i)=> (hv+d.l[i]+d.c[i])/3);
+
+  function histograma(filtro){
+    const out = new Float32Array(NBINS);
+    for(let k=0;k<liq.length;k++){
+      if(amt[k]<=1 || !filtro(k)) continue;
+      out[binDe(liq[k])] += amt[k];
+    }
+    return out;
+  }
+
+  for(let i=0;i<n;i++){
+    let liqL=0, liqS=0;
+    if(i===0){
+      var delta = d.oi[0]||0;
+    }else{
+      const nuevaLiq=[], nuevaAmt=[], nuevaLargo=[], nuevaPrevio=[];
+      for(let k=0;k<liq.length;k++){
+        if(amt[k]<=0){ continue; }
+        const tocaLargo = largo[k] && liq[k] >= d.l[i];
+        const tocaCorto = !largo[k] && liq[k] <= d.h[i];
+        if(tocaLargo){ liqL += amt[k]; continue; }
+        if(tocaCorto){ liqS += amt[k]; continue; }
+        nuevaLiq.push(liq[k]); nuevaAmt.push(amt[k]); nuevaLargo.push(largo[k]); nuevaPrevio.push(previo[k]);
+      }
+      liq=nuevaLiq; amt=nuevaAmt; largo=nuevaLargo; previo=nuevaPrevio;
+      var delta = (d.oi[i]||0) - (d.oi[i-1]||0);
+    }
+    if(delta > 0){
+      const p = typ[i], sh = d.ls[i];
+      const entradas = i>0 ? [{precio:p, peso:1}] : (()=>{ const s=semilla(p); return s.precios.map((pr,idx)=>({precio:pr, peso:s.pesos[idx]})); })();
+      let nl=[], na=[], nlg=[];
+      for(const {precio:ep, peso:we} of entradas){
+        for(const lev in tiers){
+          const w = tiers[lev];
+          nl.push(ep*(1-1/lev+MMR), ep*(1+1/lev-MMR));
+          na.push(delta*sh*w*we, delta*(1-sh)*w*we);
+          nlg.push(true, false);
+        }
+      }
+      if(i===0){
+        const vivas=[]; for(let k=0;k<nl.length;k++) vivas.push(nlg[k] ? nl[k]<p : nl[k]>p);
+        let sumaViva=0; for(let k=0;k<nl.length;k++) if(vivas[k]) sumaViva += na[k];
+        const factor = sumaViva>0 ? delta/sumaViva : 0;
+        for(let k=nl.length-1;k>=0;k--){ if(!vivas[k]){ nl.splice(k,1); na.splice(k,1); nlg.splice(k,1); } else na[k]*=factor; }
+      }
+      for(let k=0;k<nl.length;k++){ liq.push(nl[k]); amt.push(na[k]); largo.push(nlg[k]); previo.push(i===0); }
+    }else if(delta < 0){
+      let sumaAmt=0; for(const a of amt) sumaAmt+=a;
+      if(sumaAmt>0){
+        const cierre = Math.max(0, -delta-(liqL+liqS));
+        const factor = Math.max(0, 1-cierre/sumaAmt);
+        for(let k=0;k<amt.length;k++) amt[k]*=factor;
+      }
+    }
+    const esFinoRelevante = i >= n-NC_RETENCION;
+    if(esFinoRelevante){
+      snapsFinos.push({ t:d.t[i], L:histograma(k=>largo[k]), S:histograma(k=>!largo[k]),
+                         PL:histograma(k=>largo[k]&&previo[k]), PS:histograma(k=>!largo[k]&&previo[k]) });
+    }
+    if(i % 16 === 0){
+      snaps30d.push({ t:d.t[i], L:histograma(k=>largo[k]), S:histograma(k=>!largo[k]),
+                       PL:histograma(k=>largo[k]&&previo[k]), PS:histograma(k=>!largo[k]&&previo[k]) });
+    }
+  }
+  return { bins, centros: bins.slice(0,-1).map((b,i)=>(b+bins[i+1])/2), precioFinal,
+           snapsFinos, snaps30d, NC_CORTO, NC_ZOOM };
+}
+
+// ═══ Dibujo ═══
+const lienzo = document.getElementById("lienzo");
+const ctx = lienzo.getContext("2d");
+lienzo.style.touchAction = "none"; // para que el gesto lo gestionemos nosotros, no el navegador (scroll)
+function redimensionar(){
+  const r = lienzo.getBoundingClientRect();
+  lienzo.width = Math.max(1, r.width*devicePixelRatio);
+  lienzo.height = Math.max(1, r.height*devicePixelRatio);
+  dibujar();
+}
+new ResizeObserver(redimensionar).observe(lienzo);
+
+// ═══ Zoom y desplazamiento con el dedo (pellizcar = zoom, un dedo = mover) ═══
+const zoomManual = {};   // {"BTC_zoom": {ylo, yhi}, ...} — vertical (precio), si existe se usa en vez del automático
+const zoomX = {};        // {"BTC_zoom": {n, offset}, ...} — horizontal (tiempo): n = nº de velas visibles, offset = cuántas velas atrás desde el borde derecho
+const ultimoRango = {};  // {"BTC": {ylo, yhi, padTcss, areaHcss, areaWcss, ventanaN, offsetN, nc2Full, claveZoom}}
+let gesto = null;        // datos del gesto en curso
+
+function precioEnY(clientY, info){
+  const r = lienzo.getBoundingClientRect();
+  const yCss = clientY - r.top;
+  const frac = (yCss - info.padTcss) / info.areaHcss;
+  return info.yhi - (info.yhi-info.ylo)*frac;
+}
+
+lienzo.addEventListener("touchstart", (ev)=>{
+  const info = ultimoRango[estadoActual.simbolo];
+  if(!info) return;
+  ev.preventDefault();
+  const toques = Array.from(ev.touches);
+  gesto = {
+    claveZoom: info.claveZoom,
+    inicioYlo: info.ylo, inicioYhi: info.yhi,
+    inicioN: info.ventanaN, inicioOffset: info.offsetN, nc2Full: info.nc2Full,
+    unDedo: toques.length===1 ? {x:toques[0].clientX, y:toques[0].clientY} : null,
+    dosDedos: toques.length===2 ? {
+      x1:toques[0].clientX, y1:toques[0].clientY, x2:toques[1].clientX, y2:toques[1].clientY,
+      precioCentro: precioEnY((toques[0].clientY+toques[1].clientY)/2, info),
+    } : null,
+    fuePellizco: toques.length===2,   // en cuanto hay 2 dedos, ya no cuenta como "toque"
+    movidoPx: 0,
+  };
+}, {passive:false});
+
+lienzo.addEventListener("touchmove", (ev)=>{
+  if(!gesto) return;
+  ev.preventDefault();
+  const toques = Array.from(ev.touches);
+  const info = ultimoRango[estadoActual.simbolo];
+  const rango = gesto.inicioYhi - gesto.inicioYlo;
+
+  if(toques.length===2){
+    gesto.fuePellizco = true;
+    if(gesto.dosDedos){
+      // vertical (precio): la separación en Y de los dos dedos controla el zoom de precio
+      const distYIni = Math.abs(gesto.dosDedos.y1 - gesto.dosDedos.y2) || 1;
+      const distYAhora = Math.abs(toques[0].clientY - toques[1].clientY) || 1;
+      const factorY = distYIni/distYAhora;
+      const nuevoRango = Math.max(rango*0.05, rango*factorY);
+      const c = gesto.dosDedos.precioCentro;
+      const fraccion = 1 - (c - gesto.inicioYlo)/rango;
+      zoomManual[gesto.claveZoom] = { ylo: c - (1-fraccion)*nuevoRango, yhi: c + fraccion*nuevoRango };
+
+      // horizontal (tiempo): la separación en X de los dos dedos controla cuántas velas se ven
+      const distXIni = Math.abs(gesto.dosDedos.x1 - gesto.dosDedos.x2) || 1;
+      const distXAhora = Math.abs(toques[0].clientX - toques[1].clientX) || 1;
+      const factorX = distXIni/distXAhora; // separar dedos => factorX<1 => menos velas (acerca)
+      const nuevoN = Math.max(6, Math.min(gesto.nc2Full, Math.round(gesto.inicioN*factorX)));
+      zoomX[gesto.claveZoom] = { n: nuevoN, offset: gesto.inicioOffset };
+
+      dibujar();
+    }
+  }else if(toques.length===1 && gesto.unDedo){
+    const deltaYcss = toques[0].clientY - gesto.unDedo.y;
+    const deltaXcss = toques[0].clientX - gesto.unDedo.x;
+    gesto.movidoPx = Math.max(gesto.movidoPx, Math.hypot(deltaXcss, deltaYcss));
+
+    const deltaPrecio = (deltaYcss/info.areaHcss)*rango;
+    zoomManual[gesto.claveZoom] = { ylo: gesto.inicioYlo + deltaPrecio, yhi: gesto.inicioYhi + deltaPrecio };
+
+    const pxPorVela = info.areaWcss / gesto.inicioN;
+    const deltaVelas = deltaXcss / pxPorVela;
+    // arrastrar el dedo a la derecha revela velas más antiguas (retrocede en el tiempo)
+    const nuevoOffset = Math.max(0, Math.min(gesto.nc2Full-gesto.inicioN, Math.round(gesto.inicioOffset + deltaVelas)));
+    zoomX[gesto.claveZoom] = { n: gesto.inicioN, offset: nuevoOffset };
+
+    dibujar();
+  }
+}, {passive:false});
+
+// doble toque (dos toques reales y cortos, sin pellizco ni arrastre de por medio) = volver al zoom automático
+let ultimoToque = 0;
+lienzo.addEventListener("touchend", (ev)=>{
+  const fueTogueReal = gesto && !gesto.fuePellizco && gesto.movidoPx < 8;
+  if(ev.touches.length===0) gesto = null;
+  if(!fueTogueReal) return;
+
+  const ahora = Date.now();
+  if(ahora - ultimoToque < 350){
+    const info = ultimoRango[estadoActual.simbolo];
+    if(info){ delete zoomManual[info.claveZoom]; delete zoomX[info.claveZoom]; }
+    dibujar();
+    ultimoToque = 0; // evita que un tercer toque rápido se cuente como otro "doble toque"
+  }else{
+    ultimoToque = ahora;
+  }
+});
+
+function picos(vec, centros, precioRef, esArriba, n=3, sep=0.012){
+  const idxOrden = centros.map((_,i)=>i).filter(i=> esArriba ? centros[i]>precioRef : centros[i]<precioRef)
+                    .sort((a,b)=>vec[b]-vec[a]);
+  const elegidos=[];
+  for(const i of idxOrden){
+    if(vec[i]<=0 || elegidos.length>=n) break;
+    if(elegidos.every(j=> Math.abs(centros[i]/centros[j]-1) > sep)) elegidos.push(i);
+  }
+  return elegidos.map(i=>{
+    let total=0; for(let k=0;k<centros.length;k++) if(Math.abs(centros[k]/centros[i]-1)<=0.006) total+=vec[k];
+    return {precio:centros[i], total};
+  });
+}
+
+function dibujar(){
+  const modeloInfo = cacheModelo[estadoActual.simbolo];
+  const w = lienzo.width, h = lienzo.height;
+  ctx.fillStyle = "#131722"; ctx.fillRect(0,0,w,h);
+  if(!modeloInfo){ return; }
+  const { d, modelo } = modeloInfo;
+  const vista = estadoActual.vista;
+
+  let snaps, nc, tf, pcts, periodo, defectoN;
+  if(vista==="corto"){ snaps = modelo.snapsFinos; tf="15m"; pcts=[86,94,98.2,99.7]; periodo="8h"; defectoN = modelo.NC_CORTO; }
+  else { snaps = modelo.snapsFinos; tf="15m"; pcts=[86,94,98.2,99.7]; periodo="24h"; defectoN = modelo.NC_ZOOM; }
+  if(!snaps || snaps.length<2) return;
+
+  // velas correspondientes a cada snapshot (por índice de tiempo)
+  const tSnap = new Set(snaps.map(s=>s.t));
+  const idxVelas = d.t.map((t,i)=>i).filter(i=> tSnap.has(d.t[i]));
+  const nc2Full = idxVelas.length;
+  const oFull = idxVelas.map(i=>d.o[i]), hiFull = idxVelas.map(i=>d.h[i]), loFull = idxVelas.map(i=>d.l[i]), clFull = idxVelas.map(i=>d.c[i]);
+  const precio = clFull[clFull.length-1]; // precio real actual, no cambia aunque te muevas por el tiempo
+
+  const claveZoom = estadoActual.simbolo+"_"+vista;
+  const zx = zoomX[claveZoom];
+  const ventanaN = zx ? Math.max(6, Math.min(nc2Full, Math.round(zx.n))) : Math.min(nc2Full, defectoN);
+  const offsetN = zx ? Math.max(0, Math.min(nc2Full-ventanaN, Math.round(zx.offset))) : 0;
+  const finIdx = nc2Full - offsetN, iniIdx = finIdx - ventanaN;
+  const o = oFull.slice(iniIdx,finIdx), hi = hiFull.slice(iniIdx,finIdx), lo = loFull.slice(iniIdx,finIdx), cl = clFull.slice(iniIdx,finIdx);
+  const nc2 = cl.length;
+
+  const pad = 96*devicePixelRatio, padR = 106*devicePixelRatio, padB = 40*devicePixelRatio, padT = 16*devicePixelRatio;
+  const areaW = w-pad-padR, areaH = h-padT-padB;
+  let ylo, yhi;
+  if(zoomManual[claveZoom]){
+    ylo = zoomManual[claveZoom].ylo; yhi = zoomManual[claveZoom].yhi;
+  }else{
+    const MARGEN_PCT = 0.12; // ±12% alrededor del precio actual, para ver más niveles a la vez
+    const margen = precio*MARGEN_PCT;
+    ylo = Math.min(precio-margen, Math.min(...lo)*0.998);
+    yhi = Math.max(precio+margen, Math.max(...hi)*1.002);
+  }
+  const yPix = (p)=> padT + areaH*(1-(p-ylo)/(yhi-ylo));
+  const xPix = (i)=> pad + areaW*(i+0.5)/nc2;
+  const dec = decimales(precio);
+  // guardamos el rango realmente usado (en píxeles CSS) para poder traducir los gestos táctiles a precios
+  ultimoRango[estadoActual.simbolo] = {
+    ylo, yhi, padTcss: padT/devicePixelRatio, areaHcss: areaH/devicePixelRatio,
+    areaWcss: areaW/devicePixelRatio, ventanaN, offsetN, nc2Full, claveZoom,
+  };
+
+  // niveles agregados (última muestra menos la primera, "nacido en la ventana")
+  const N = modelo.centros.length;
+  const nacL = new Float32Array(N), nacS = new Float32Array(N), prevInt = new Float32Array(N);
+  const ult = snaps[snaps.length-1], prim = snaps[0];
+  for(let b=0;b<N;b++){
+    nacL[b] = Math.max(0, ult.L[b]-prim.PL[b]);
+    nacS[b] = Math.max(0, ult.S[b]-prim.PS[b]);
+    prevInt[b] = Math.max(ult.PL[b], ult.PS[b]);
+  }
+  const todos = [...nacL,...nacS].filter(v=>v>0).sort((a,b)=>a-b);
+  const umbral = pcts.map(p=> todos.length ? todos[Math.min(todos.length-1, Math.floor(todos.length*p/100))] : Infinity);
+  const COL = ["#1f6f7a","#2f9a2f","#a9a92a","#c62828"];
+  function nivelColor(v){ for(let k=umbral.length-1;k>=0;k--) if(v>=umbral[k]) return COL[k]; return null; }
+
+  // bandas de precio visibles
+  const bIni = modelo.centros.findIndex(c=>c>=ylo), bFin = modelo.centros.findIndex(c=>c>=yhi);
+  const rangoBins = bIni<0 ? [] : Array.from({length:(bFin<0?N:bFin)-bIni}, (_,k)=>bIni+k);
+
+  // pintar niveles como franjas horizontales a lo largo de TODO el ancho visible (estilo "nivel que sigue sin tocar")
+  for(const b of rangoBins){
+    const y1 = yPix(modelo.bins[b]), y2 = yPix(modelo.bins[b+1]);
+    const grisFuerte = prevInt[b] >= umbral[1];
+    const colN = nivelColor(nacL[b]+nacS[b]===0?0:Math.max(nacL[b],nacS[b]));
+    let col = null, alpha = 0.5;
+    if(colN){ col = colN; }
+    else if(grisFuerte){ col = "#555c6b"; alpha=0.45; }
+    if(col){
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = col;
+      ctx.fillRect(pad, Math.min(y1,y2), areaW, Math.max(1,Math.abs(y2-y1)));
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // grid + velas
+  ctx.strokeStyle = "#1f2330"; ctx.lineWidth = 1*devicePixelRatio;
+  for(let gy=0; gy<=5; gy++){
+    const y = padT + areaH*gy/5;
+    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-padR,y); ctx.stroke();
+    const precioY = yhi - (yhi-ylo)*gy/5;
+    const texto = precioY.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec});
+    ctx.font = `bold ${14*devicePixelRatio}px sans-serif`; ctx.textAlign="right";
+    const anchoTexto = ctx.measureText(texto).width;
+    ctx.fillStyle = "#131722";
+    ctx.fillRect(pad-14*devicePixelRatio-anchoTexto, y-11*devicePixelRatio, anchoTexto+8*devicePixelRatio, 22*devicePixelRatio);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(texto, pad-10*devicePixelRatio, y+5*devicePixelRatio);
+  }
+  ctx.textAlign="left";
+  const anchoVela = Math.max(1.5*devicePixelRatio, areaW/nc2*0.62);
+  for(let i=0;i<nc2;i++){
+    const x = xPix(i);
+    const col = cl[i]>=o[i] ? "#26a69a" : "#ef5350";
+    ctx.strokeStyle = col; ctx.lineWidth = Math.max(1,1*devicePixelRatio);
+    ctx.beginPath(); ctx.moveTo(x, yPix(hi[i])); ctx.lineTo(x, yPix(lo[i])); ctx.stroke();
+    ctx.fillStyle = col;
+    const yA = yPix(Math.max(o[i],cl[i])), yB = yPix(Math.min(o[i],cl[i]));
+    ctx.fillRect(x-anchoVela/2, yA, anchoVela, Math.max(2.5*devicePixelRatio, yB-yA));
+  }
+
+  // etiquetas de los picos principales
+  const pkS = picos(nacS, modelo.centros, precio, true);
+  const pkL = picos(nacL, modelo.centros, precio, false);
+  ctx.font = (13*devicePixelRatio)+"px sans-serif"; ctx.textAlign="left";
+  for(const p of pkS){ ctx.fillStyle="#ff8888"; ctx.fillText(`${fp(p.precio)} · ${fusd(p.total)}`, w-padR+6*devicePixelRatio, yPix(p.precio)); }
+  for(const p of pkL){ ctx.fillStyle="#77dd99"; ctx.fillText(`${fp(p.precio)} · ${fusd(p.total)}`, w-padR+6*devicePixelRatio, yPix(p.precio)); }
+
+  // línea de precio actual
+  ctx.strokeStyle = "#26a69a"; ctx.setLineDash([4*devicePixelRatio,3*devicePixelRatio]);
+  ctx.beginPath(); ctx.moveTo(pad, yPix(precio)); ctx.lineTo(w-padR, yPix(precio)); ctx.stroke();
+  ctx.setLineDash([]);
+  const txtAhora = "AHORA "+fp(precio);
+  ctx.font = `bold ${14*devicePixelRatio}px sans-serif`; ctx.textAlign="left";
+  const anchoAhora = ctx.measureText(txtAhora).width;
+  const yAhora = yPix(precio)-8*devicePixelRatio;
+  ctx.fillStyle = "#0d1117";
+  ctx.fillRect(pad+2*devicePixelRatio, yAhora-16*devicePixelRatio, anchoAhora+12*devicePixelRatio, 22*devicePixelRatio);
+  ctx.strokeStyle = "#26a69a"; ctx.lineWidth = 1.5*devicePixelRatio;
+  ctx.strokeRect(pad+2*devicePixelRatio, yAhora-16*devicePixelRatio, anchoAhora+12*devicePixelRatio, 22*devicePixelRatio);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(txtAhora, pad+8*devicePixelRatio, yAhora);
+
+  // cabecera info
+  document.getElementById("precio").textContent = fp(precio);
+  const cambio = (cl[cl.length-1]/o[0]-1)*100;
+  const elC = document.getElementById("cambio");
+  elC.textContent = (cambio>=0?"▲ ":"▼ ")+Math.abs(cambio).toFixed(2)+"% ("+periodo+")";
+  elC.className = "cambio "+(cambio>=0?"pos":"neg");
+
+  const sumaRango = (vec, a, b)=>{ let s=0; for(let k=0;k<modelo.centros.length;k++) if(modelo.centros[k]>=a&&modelo.centros[k]<=b) s+=vec[k]; return s; };
+  const cortos5 = sumaRango(nacS, precio, precio*1.05), largos5 = sumaRango(nacL, precio*0.95, precio);
+  document.getElementById("resumen").innerHTML =
+    `<span class="cortos">Cortos hasta +5%: ${fusd(cortos5)}</span><span class="largos">Largos hasta −5%: ${fusd(largos5)}</span>`;
+}
+
+// ═══ Vela en directo (aparte del modelo, que es pesado y solo se recalcula
+// cada 5 min) ═══ Esto solo mueve la última vela ya cargada con cada operación
+// real, para que el gráfico no se quede congelado entre recálculos.
+let ultimaVelaRecibida = {}; // {BTC: "12:34:56", ...} — para depurar si algo falla
+function actualizarWsTxt(){
+  const t = ultimaVelaRecibida[estadoActual.simbolo];
+  document.getElementById("wsTxt").textContent = t
+    ? `vela en directo: última actualización ${t} (${estadoActual.simbolo})`
+    : `vela en directo: sin datos aún de ${estadoActual.simbolo}`;
+}
+
+// La conexión en directo a futuros (WebSocket) se queda muda tras confirmar la
+// suscripción en algunos móviles/redes, aunque el REST de futuros sí funciona
+// bien (es lo que usa la carga del modelo). Así que, en vez de esa conexión
+// permanente, preguntamos el precio cada pocos segundos, con el mismo tipo de
+// petición REST que ya sabemos que funciona.
+const INTERVALO_PRECIO_MS = 5000;
+
+function conectarVelaSpotEnDirecto(){
+  const streams = SIMBOLOS.map(s=>s.sym.toLowerCase()+"@kline_15m").join("/");
+  const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+  ws.onopen = ()=>{ document.getElementById("puntoWs").className = "punto on"; };
+  ws.onclose = ()=>{
+    document.getElementById("puntoWs").className = "punto cargando";
+    document.getElementById("wsTxt").textContent = "vela en directo: desconectada, reintentando…";
+    setTimeout(conectarVelaSpotEnDirecto, 3000);
+  };
+  ws.onmessage = (ev)=>{
+    try{
+      const msg = JSON.parse(ev.data).data;
+      const k = msg.k;
+      const meta = SIMBOLOS.find(s=> s.sym === msg.s);
+      if(!meta) return;
+      ultimaVelaRecibida[meta.id] = new Date().toLocaleTimeString("es-ES");
+      if(estadoActual.simbolo === meta.id) actualizarWsTxt();
+      const info = cacheModelo[meta.id];
+      if(!info) return;
+      const d = info.d;
+      const ultimo = d.t.length-1;
+      if(d.t[ultimo] === k.t){
+        // la vela de futuros que carga el modelo y la de spot que llega en directo
+        // comparten el mismo instante de apertura, así que se enganchan sin problema
+        d.o[ultimo]=+k.o; d.h[ultimo]=+k.h; d.l[ultimo]=+k.l; d.c[ultimo]=+k.c;
+        if(estadoActual.simbolo === meta.id) dibujar();
+      }
+    }catch(e){}
+  };
+}
+
+// ═══ Arranque ═══
+cargarSimbolo(estadoActual.simbolo);
+conectarVelaSpotEnDirecto();
+setInterval(()=>{ for(const s of SIMBOLOS) cargarSimbolo(s.id); }, REFRESCO_MS);
+</script>
+</body>
+</html>
