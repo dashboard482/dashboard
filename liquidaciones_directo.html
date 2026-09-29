@@ -3,640 +3,745 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Liquidaciones estimadas — en directo</title>
+<title>Liquidaciones en directo</title>
 <style>
-  :root{
-    --bg:#131722; --bg2:#0d1117; --border:#2a2e39;
-    --up:#26a69a; --down:#ef5350; --muted:#8a93a6;
-    box-sizing:border-box;
-    padding-top:env(safe-area-inset-top,0px);
-    padding-bottom:env(safe-area-inset-bottom,0px);
+  :root {
+    --bg: #131722;
+    --panel: #0d1117;
+    --ink: #eef1f0;
+    --dim: rgba(238,241,240,0.55);
+    --dim2: rgba(238,241,240,0.34);
+    --amber: #FFB84D;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  *{box-sizing:border-box;}
-  html,body{height:100%;}
-  body{
-    margin:0; background:var(--bg2); color:#fff;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    display:flex; flex-direction:column; height:100%; overflow:hidden;
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0; background: var(--bg);
+    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+    color: var(--ink); overflow: hidden;
   }
-  .cab{ padding:6px 10px; }
-  h1{font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:.03em; text-transform:uppercase; margin:0 0 5px;}
+  #stage { position: fixed; inset: 0; height: 100dvh; display: flex; flex-direction: column; }
 
-  .filaSup{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .tabs{ display:flex; gap:6px; flex-wrap:wrap; }
-  .tab{
-    background:var(--bg); border:1px solid var(--border); color:var(--muted);
-    font-size:13px; font-weight:700; padding:6px 12px; border-radius:8px; cursor:pointer;
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 14px 4px; padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    flex-wrap: wrap; flex: 0 0 auto;
   }
-  .tab.activa{ background:#1d2740; border-color:#3b82f6; color:#fff; }
-  .tabVista{ font-size:12px; padding:5px 10px; }
+  .brand { font-size: 12px; color: var(--dim); display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #666; display: inline-block; }
+  .status-dot.live { background: #26a69a; }
+  .status-dot.err { background: #ef5350; }
+  .status-dot.busy { background: #FFB84D; }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  select, button.ctl {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+    color: var(--ink); font-family: inherit; font-size: 12.5px;
+    padding: 6px 10px; border-radius: 6px; cursor: pointer;
+  }
+  button.ctl:active { background: rgba(255,255,255,0.16); }
+  .countdown { font-size: 11px; color: var(--dim2); min-width: 68px; text-align: right; }
 
-  .info{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-  .info .precio{ font-size:26px; font-weight:800; }
-  .info .cambio{ font-size:15px; font-weight:700; }
-  .cambio.pos{ color:var(--up); } .cambio.neg{ color:var(--down); }
-  .estado{ font-size:10px; color:var(--muted); display:flex; align-items:center; gap:4px; }
-  .punto{width:6px; height:6px; border-radius:50%; background:var(--muted);}
-  .punto.on{background:var(--up);}
-  .punto.cargando{background:#f0b90b;}
+  .titles { text-align: center; padding: 2px 12px 0; flex: 0 0 auto; }
+  .t1 { font-size: clamp(14px, 3.6vw, 19px); font-weight: 700; letter-spacing: 0.01em; }
+  .t2 { font-size: 11px; color: var(--amber); margin-top: 3px; }
+  .t3 { font-size: 10.5px; color: var(--dim); margin-top: 2px; }
+  .t4 { font-size: 9.5px; color: var(--dim2); margin-top: 1px; }
 
-  .filaInf{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:4px; }
-  .resumen{ font-size:11px; display:flex; gap:14px; flex-wrap:wrap; }
-  .resumen .cortos{ color:#ff9999; } .resumen .largos{ color:#88eeaa; }
+  .ohlc {
+    text-align: center; font-size: 11px; color: var(--dim); margin-top: 6px; flex: 0 0 auto;
+  }
+  .ohlc b { color: var(--ink); }
 
-  .lienzo-wrap{ flex:1; min-height:0; position:relative; overflow:hidden; }
-  canvas{ width:100%; height:100%; display:block; }
+  .summary {
+    display: flex; justify-content: center; gap: 22px; margin-top: 4px;
+    font-size: 12px; font-weight: 700; flex-wrap: wrap; flex: 0 0 auto;
+  }
+  .summary .cortos { color: #ff9999; }
+  .summary .largos { color: #88eeaa; }
 
-  .leyenda{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; padding:5px 12px; font-size:10.5px; color:#ccc; }
-  .leyenda span{ display:flex; align-items:center; gap:5px; }
-  .caja{width:10px; height:10px; border-radius:3px;}
+  #chartWrap {
+    flex: 1 1 auto; min-height: 100px; margin: 8px 10px 0;
+    border-radius: 10px; border: 1px solid rgba(255,255,255,0.14);
+    background: var(--bg); overflow: hidden; position: relative;
+  }
+  canvas#chart { width: 100%; height: 100%; display: block; }
 
-  footer{font-size:9.5px; color:var(--muted); text-align:center; padding:0 14px 6px; line-height:1.4;}
-  footer b{color:#ccc;}
+  #loading {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(19,23,34,0.82); font-size: 13px; color: var(--amber); text-align: center; padding: 20px;
+  }
+  #loading.hidden { display: none; }
+
+  .legend {
+    display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+    padding: 8px 12px 2px; font-size: 10.5px; color: #CCCCCC; flex: 0 0 auto;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  footer {
+    padding: 4px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+    text-align: center; font-size: 9.5px; color: var(--dim2); flex: 0 0 auto; line-height: 1.4;
+  }
 </style>
 </head>
 <body>
-
-  <div class="cab">
-    <h1>Liquidaciones estimadas — en directo (Binance Futures)</h1>
-    <div class="filaSup">
-      <div class="tabs" id="tabsSimbolo"></div>
-      <div class="info">
-        <span class="precio" id="precio">…</span>
-        <span class="cambio" id="cambio"></span>
-        <span class="estado"><span class="punto" id="punto"></span><span id="estadoTxt">conectando…</span></span>
-        <span style="display:none;"><span id="puntoWs"></span><span id="wsTxt"></span></span>
-      </div>
+<div id="stage">
+  <header>
+    <div class="brand"><span id="statusDot" class="status-dot"></span><span id="statusText">cargando…</span></div>
+    <div class="controls">
+      <select id="symbolSelect">
+        <option value="BTC">BTC</option>
+        <option value="ETH">ETH</option>
+        <option value="SOL">SOL</option>
+        <option value="HYPE">HYPE</option>
+        <option value="XRP">XRP</option>
+      </select>
+      <button class="ctl" id="refreshBtn">Actualizar ahora</button>
+      <span class="countdown" id="countdown">–</span>
     </div>
-    <div class="filaInf">
-      <div class="tabs" id="tabsVista"></div>
-      <div class="resumen" id="resumen"></div>
-    </div>
+  </header>
+
+  <div class="titles">
+    <div class="t1" id="titleLine">— — LIQUIDACIONES ESTIMADAS · CORTO PLAZO (8 H, velas de 5 min)</div>
+    <div class="t2" id="subLine">cargando…</div>
+    <div class="t3" id="aclLine">Nuestro modelo de cálculo. Cada bloque es un nivel sin tocar; se prolonga a la derecha hasta que lo toque.</div>
+    <div class="t4">El color es la intensidad relativa dentro de esta ventana, no dólares absolutos.</div>
   </div>
 
-  <div class="lienzo-wrap"><canvas id="lienzo"></canvas></div>
-  <div style="text-align:center; font-size:10px; color:var(--muted); padding:3px 0;">
-    Pellizca (precio ↕ / tiempo ↔) para hacer zoom · un dedo para mover · doble toque para volver al automático
+  <div class="ohlc" id="ohlcLine">&nbsp;</div>
+  <div class="summary">
+    <div class="cortos" id="cortosLine">&nbsp;</div>
+    <div class="largos" id="largosLine">&nbsp;</div>
   </div>
 
-  <div class="leyenda">
-    <span><span class="caja" style="background:#1f6f7a;"></span>baja</span>
-    <span><span class="caja" style="background:#2f9a2f;"></span>media</span>
-    <span><span class="caja" style="background:#a9a92a;"></span>alta</span>
-    <span><span class="caja" style="background:#c62828;"></span>máxima</span>
-    <span><span class="caja" style="background:#555c6b;"></span>previa a la ventana</span>
+  <div id="chartWrap">
+    <canvas id="chart"></canvas>
+    <div id="loading">Calculando el mapa de liquidaciones…<br>(interés abierto de Binance + Bybit, puede tardar unos segundos)</div>
   </div>
-  <footer>
-    Modelo propio con interés abierto de <b>Binance Futures</b> (esta versión web no incluye Bybit, a
-    diferencia del bot). "Corto plazo" reutiliza velas de 15 min, no de 5 min. No son liquidaciones
-    reales. Se recalcula solo cada 5 minutos. Solo informativo, no asesoramiento financiero.
+
+  <div class="legend">
+    <span><i class="sw" style="background:#1f6f7a"></i>baja</span>
+    <span><i class="sw" style="background:#2f9a2f"></i>media</span>
+    <span><i class="sw" style="background:#a9a92a"></i>alta</span>
+    <span><i class="sw" style="background:#c62828"></i>máxima</span>
+    <span><i class="sw" style="background:#555c6b"></i>previa a la ventana (incierta)</span>
+  </div>
+
+  <footer id="footerNote">
+    Basado en nuestro modelo de cálculo. DYOR.
   </footer>
+</div>
 
 <script>
-// ═══ Configuración ═══
-const SIMBOLOS = [
-  {id:"BTC", sym:"BTCUSDT"}, {id:"ETH", sym:"ETHUSDT"},
-  {id:"SOL", sym:"SOLUSDT"}, {id:"HYPE", sym:"HYPEUSDT"},
-];
-const VISTAS = [
-  {id:"corto", nombre:"Corto plazo (8h)"},
-  {id:"zoom",  nombre:"Zoom 24h"},
-];
-const LIQ_TIERS = {5:.10, 10:.25, 25:.30, 50:.20, 100:.15};
-const LIQ_TIERS_HYPE = {5:.10, 10:.25, 25:.30, 50:.25, 75:.10}; // Binance limita HYPE a 75x
-const MMR = 0.005;
-const NBINS = 320;
-const SEED_SIGMA = 0.05, SEED_RANGO = 0.15;
-const DIAS = 30;
-const PASO_MS = 15*60*1000;
-const CALENTAMIENTO_VELAS = Math.round(48*60/15); // 48h de calentamiento, no fiables
-const REFRESCO_MS = 5*60*1000; // recalcula el modelo cada 5 minutos
+(function () {
+  'use strict';
 
-let estadoActual = { simbolo:"BTC", vista:"zoom" };
-let cacheModelo = {}; // { BTC: {velas, snapshots...} }
+  // ═══ Config (igual que el bot) ═══
+  const SYMBOLS = { BTC: 'BTCUSDT', ETH: 'ETHUSDT', SOL: 'SOLUSDT', HYPE: 'HYPEUSDT', XRP: 'XRPUSDT' };
+  const TIERS_DEFAULT = { 5: 0.10, 10: 0.25, 25: 0.30, 50: 0.20, 100: 0.15 };
+  const TIERS_HYPE = { 5: 0.10, 10: 0.25, 25: 0.30, 50: 0.25, 75: 0.10 };
+  const MMR = 0.005;
+  const NBINS = 600;
+  const HORAS_ZOOM = 8;
+  const PASO_MIN = 5;
+  const EXT = 10;
+  const PAD_PCT = 0.010;
+  const PCTS = [86, 94, 98.2, 99.7];
+  const COL = { 1: '#1f6f7a', 2: '#2f9a2f', 3: '#a9a92a', 4: '#c62828' };
+  const GRIS = '#555c6b';
+  const REFRESH_MS = 5 * 60 * 1000;
 
-function decimales(p){ return p>=1000?0 : p>=100?1 : p>=1?2 : 4; }
-function fp(x){ return "$"+x.toLocaleString("en-US",{minimumFractionDigits:decimales(x),maximumFractionDigits:decimales(x)}); }
-function fusd(v){ return v>=1e9 ? `$${(v/1e9).toFixed(2)}B` : v>=1e6 ? `$${(v/1e6).toFixed(0)}M` : `$${(v/1e3).toFixed(0)}K`; }
+  // ═══ DOM ═══
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const symbolSelect = document.getElementById('symbolSelect');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const countdownEl = document.getElementById('countdown');
+  const titleLine = document.getElementById('titleLine');
+  const subLine = document.getElementById('subLine');
+  const aclLine = document.getElementById('aclLine');
+  const ohlcLine = document.getElementById('ohlcLine');
+  const cortosLine = document.getElementById('cortosLine');
+  const largosLine = document.getElementById('largosLine');
+  const chartWrap = document.getElementById('chartWrap');
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const loadingEl = document.getElementById('loading');
 
-// ═══ Pestañas ═══
-const tabsSimbolo = document.getElementById("tabsSimbolo");
-const tabsVista = document.getElementById("tabsVista");
-SIMBOLOS.forEach(s=>{
-  const b = document.createElement("button");
-  b.className = "tab" + (s.id===estadoActual.simbolo ? " activa":"");
-  b.textContent = s.id;
-  b.onclick = ()=> cambiarSimbolo(s.id);
-  b.id = "tab-sym-"+s.id;
-  tabsSimbolo.appendChild(b);
-});
-VISTAS.forEach(v=>{
-  const b = document.createElement("button");
-  b.className = "tab tabVista" + (v.id===estadoActual.vista ? " activa":"");
-  b.textContent = v.nombre;
-  b.onclick = ()=> cambiarVista(v.id);
-  b.id = "tab-vista-"+v.id;
-  tabsVista.appendChild(b);
-});
+  let refreshTimer = null, countdownTimer = null, nextRefreshAt = 0;
+  let lastResult = null; // para redibujar en resize sin recalcular
+  let liveWs = null, liveReconnectTimer = null, liveBackoff = 1500, liveSymbol = null;
 
-function marcarActiva(prefijo, valor, lista){
-  lista.forEach(x=>{
-    document.getElementById(prefijo+x.id).classList.toggle("activa", x.id===valor);
-  });
-}
-
-function cambiarSimbolo(id){
-  estadoActual.simbolo = id;
-  marcarActiva("tab-sym-", id, SIMBOLOS);
-  actualizarWsTxt();
-  dibujar();
-  if(!cacheModelo[id]) cargarSimbolo(id);
-}
-function cambiarVista(id){
-  estadoActual.vista = id;
-  marcarActiva("tab-vista-", id, VISTAS);
-  dibujar();
-}
-
-// ═══ Descarga de datos (Binance Futures, público, sin clave) ═══
-async function fetchKlinesCompleto(symbol){
-  const fin = Date.now();
-  let t = fin - DIAS*86400000;
-  let out = [];
-  while(t < fin){
-    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=15m&startTime=${t}&limit=1500`;
-    const r = await fetch(url);
-    const kl = await r.json();
-    if(!Array.isArray(kl) || !kl.length) break;
-    out = out.concat(kl);
-    t = kl[kl.length-1][0] + PASO_MS;
-    if(kl.length < 1500) break;
+  // ═══ utilidades ═══
+  function decPrecio(p) { return p >= 1000 ? 0 : p >= 100 ? 1 : p >= 1 ? 2 : 4; }
+  function fmtPrice(p) { return '$' + p.toLocaleString('es-ES', { minimumFractionDigits: decPrecio(p), maximumFractionDigits: decPrecio(p) }); }
+  function fmtAxisNum(p) { return p.toLocaleString('es-ES', { minimumFractionDigits: decPrecio(p), maximumFractionDigits: decPrecio(p) }); }
+  function fmtUsd(v) {
+    if (v >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+    if (v >= 1e6) return '$' + (v / 1e6).toFixed(0) + 'M';
+    if (v >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'k';
+    return '$' + v.toFixed(0);
   }
-  return out;
-}
-
-async function fetchHistPaginado(symbol, path){
-  const fin = Date.now();
-  const ini = fin - DIAS*86400000 + 12*3600000;
-  const out = {};
-  let t = ini;
-  while(t < fin){
-    const t2 = Math.min(t + 499*PASO_MS, fin);
-    const url = `https://fapi.binance.com${path}?symbol=${symbol}&period=15m&limit=500&startTime=${t}&endTime=${t2}`;
-    const r = await fetch(url);
-    const datos = await r.json();
-    if(Array.isArray(datos)) for(const d of datos) out[Math.floor(d.timestamp/PASO_MS)] = d;
-    t = t2 + 1;
+  function madridHora(ts) {
+    return new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(ts));
   }
-  return out;
-}
-
-async function cargarSimbolo(id){
-  const meta = SIMBOLOS.find(s=>s.id===id);
-  document.getElementById("estadoTxt").textContent = "calculando modelo… (10-20s)";
-  document.getElementById("punto").className = "punto cargando";
-  try{
-    const [kl, oiRaw, lsRaw] = await Promise.all([
-      fetchKlinesCompleto(meta.sym),
-      fetchHistPaginado(meta.sym, "/futures/data/openInterestHist"),
-      fetchHistPaginado(meta.sym, "/futures/data/globalLongShortAccountRatio"),
-    ]);
-    if(!kl.length) throw new Error("sin velas");
-    const claves = kl.map(k=>Math.floor(k[0]/PASO_MS));
-    const o = kl.map(k=>+k[1]), h = kl.map(k=>+k[2]), l = kl.map(k=>+k[3]), c = kl.map(k=>+k[4]);
-    const t = claves.map(cl=>cl*PASO_MS);
-    let oi = [], lastOi=null;
-    for(const cl of claves){ if(oiRaw[cl]) lastOi = +oiRaw[cl].sumOpenInterestValue; oi.push(lastOi); }
-    let ls = [], lastLs=0.5;
-    for(const cl of claves){ if(lsRaw[cl]) lastLs = +lsRaw[cl].longAccount; ls.push(lastLs); }
-    const ok = oi.findIndex(v=>v!==null);
-    if(ok<0) throw new Error("sin interés abierto");
-    const d = { t:t.slice(ok), o:o.slice(ok), h:h.slice(ok), l:l.slice(ok), c:c.slice(ok),
-                oi:oi.slice(ok), ls:ls.slice(ok) };
-    const modelo = ejecutarModelo(d, id==="HYPE" ? LIQ_TIERS_HYPE : LIQ_TIERS);
-    cacheModelo[id] = { d, modelo, calculadoEn: Date.now() };
-    if(estadoActual.simbolo === id){
-      document.getElementById("punto").className = "punto on";
-      document.getElementById("estadoTxt").textContent = "en directo (Binance) · próxima actualización en 5 min";
-      dibujar();
+  function madridHM(ts) {
+    return new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' }).format(new Date(ts));
+  }
+  function percentile(sortedAsc, p) {
+    if (!sortedAsc.length) return Infinity;
+    const idx = (p / 100) * (sortedAsc.length - 1);
+    const lo = Math.floor(idx), hi = Math.ceil(idx);
+    if (lo === hi) return sortedAsc[lo];
+    const frac = idx - lo;
+    return sortedAsc[lo] * (1 - frac) + sortedAsc[hi] * frac;
+  }
+  function digitize(x, umbrales) { let idx = 0; for (const t of umbrales) { if (x >= t) idx++; else break; } return idx; }
+  function smooth1D(vec) {
+    const k = [1, 2, 3, 2, 1], ksum = 9, half = 2, n = vec.length;
+    const out = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      let s = 0;
+      for (let j = -half; j <= half; j++) {
+        const idx = i + j;
+        s += (idx >= 0 && idx < n ? vec[idx] : 0) * k[j + half];
+      }
+      out[i] = s / ksum;
     }
-  }catch(e){
-    console.warn("cargarSimbolo", id, e);
-    if(estadoActual.simbolo === id) document.getElementById("estadoTxt").textContent = "sin datos ahora mismo, reintentando…";
-    setTimeout(()=>cargarSimbolo(id), 15000);
+    return out;
   }
-}
+  function picos(vec, centros, n, sep) {
+    const order = [...vec.keys()].sort((a, b) => vec[b] - vec[a]);
+    const elegidos = [];
+    for (const i of order) {
+      if (vec[i] <= 0 || elegidos.length >= n) break;
+      if (elegidos.every(j => Math.abs(centros[i] / centros[j] - 1) > sep)) elegidos.push(i);
+    }
+    return elegidos.map(i => {
+      let total = 0;
+      for (let k = 0; k < centros.length; k++) if (Math.abs(centros[k] / centros[i] - 1) <= 0.006) total += vec[k];
+      return { precio: centros[i], total, val: vec[i] };
+    });
+  }
+  function niceStep(range, targetSteps) {
+    const raw = range / targetSteps;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const norm = raw / mag;
+    const step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+    return step * mag;
+  }
 
-// ═══ El modelo (misma idea que el bot: reparte el interés abierto nuevo entre
-// niveles de apalancamiento, y da por liquidado lo que el precio toca después) ═══
-function semilla(p){
-  const offs = []; for(let x=-SEED_RANGO; x<=SEED_RANGO+1e-9; x+=0.001) offs.push(x);
-  const pesos = offs.map(x=> Math.exp(-0.5*(x/SEED_SIGMA)**2));
-  const suma = pesos.reduce((a,b)=>a+b,0);
-  return { precios: offs.map(x=> p*(1+x)), pesos: pesos.map(w=>w/suma) };
-}
+  // ═══ fetch: Binance Futures (público, sin clave) ═══
+  async function fetchKlines(symbol) {
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=5m&limit=900`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('klines HTTP ' + r.status);
+    const arr = await r.json();
+    return arr.map(k => ({ t: k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4] }));
+  }
 
-function ejecutarModelo(d, tiers){
-  const n = d.oi.length;
-  const precioFinal = d.c[n-1];
-  const bins = []; for(let i=0;i<=NBINS;i++) bins.push(precioFinal*0.72 + (precioFinal*1.32-precioFinal*0.72)*i/NBINS);
-  const anchoBin = bins[1]-bins[0];
-  const binDe = (p)=> Math.min(NBINS-1, Math.max(0, Math.floor((p-bins[0])/anchoBin)));
-
-  let liq=[], amt=[], largo=[], previo=[];
-  // Snapshots que necesitaremos para las 3 vistas (se guardan al vuelo, sin
-  // almacenar el historial completo de 30 días en memoria)
-  const NC_CORTO = Math.round(8*60/15), NC_ZOOM = Math.round(24*60/15);
-  const NC_RETENCION = Math.round(NC_ZOOM*1.5); // guardamos algo más de lo que se ve por defecto (24h), para poder alejar el zoom horizontal sin quedarte sin datos
-  const snapsFinos = []; // una por vela, solo las últimas NC_RETENCION
-  const snaps30d = [];   // una cada 16 velas (~4h), todo el histórico
-  const typ = d.h.map((hv,i)=> (hv+d.l[i]+d.c[i])/3);
-
-  function histograma(filtro){
-    const out = new Float32Array(NBINS);
-    for(let k=0;k<liq.length;k++){
-      if(amt[k]<=1 || !filtro(k)) continue;
-      out[binDe(liq[k])] += amt[k];
+  async function fetchBinanceHistPaged(path, symbol, period, valueField, pages) {
+    const out = new Map();
+    let endTime;
+    for (let p = 0; p < pages; p++) {
+      const params = new URLSearchParams({ symbol, period, limit: '500' });
+      if (endTime !== undefined) params.set('endTime', String(endTime));
+      const url = `https://fapi.binance.com${path}?${params.toString()}`;
+      let r;
+      try { r = await fetch(url); } catch (e) { break; }
+      if (!r.ok) break;
+      const arr = await r.json();
+      if (!Array.isArray(arr) || !arr.length) break;
+      let minTs = Infinity;
+      for (const d of arr) {
+        const ts = Number(d.timestamp);
+        out.set(ts, parseFloat(d[valueField]));
+        if (ts < minTs) minTs = ts;
+      }
+      if (endTime !== undefined && minTs >= endTime) break;
+      endTime = minTs - 1;
+      if (arr.length < 500) break;
     }
     return out;
   }
 
-  for(let i=0;i<n;i++){
-    let liqL=0, liqS=0;
-    if(i===0){
-      var delta = d.oi[0]||0;
-    }else{
-      const nuevaLiq=[], nuevaAmt=[], nuevaLargo=[], nuevaPrevio=[];
-      for(let k=0;k<liq.length;k++){
-        if(amt[k]<=0){ continue; }
-        const tocaLargo = largo[k] && liq[k] >= d.l[i];
-        const tocaCorto = !largo[k] && liq[k] <= d.h[i];
-        if(tocaLargo){ liqL += amt[k]; continue; }
-        if(tocaCorto){ liqS += amt[k]; continue; }
-        nuevaLiq.push(liq[k]); nuevaAmt.push(amt[k]); nuevaLargo.push(largo[k]); nuevaPrevio.push(previo[k]);
-      }
-      liq=nuevaLiq; amt=nuevaAmt; largo=nuevaLargo; previo=nuevaPrevio;
-      var delta = (d.oi[i]||0) - (d.oi[i-1]||0);
+  async function fetchBybitOi(symbol) {
+    try {
+      const url = `https://api.bybit.com/v5/market/open-interest?category=linear&symbol=${symbol}&intervalTime=5min&limit=200`;
+      const r = await fetch(url);
+      if (!r.ok) return null;
+      const j = await r.json();
+      if (j.retCode !== 0) return null;
+      const map = new Map();
+      for (const d of (j.result && j.result.list) || []) map.set(Number(d.timestamp), parseFloat(d.openInterest));
+      return map;
+    } catch (e) { return null; }
+  }
+  async function fetchBybitLs(symbol) {
+    try {
+      const url = `https://api.bybit.com/v5/market/account-ratio?category=linear&symbol=${symbol}&period=5min&limit=200`;
+      const r = await fetch(url);
+      if (!r.ok) return null;
+      const j = await r.json();
+      if (j.retCode !== 0) return null;
+      const map = new Map();
+      for (const d of (j.result && j.result.list) || []) map.set(Number(d.timestamp), parseFloat(d.buyRatio));
+      return map;
+    } catch (e) { return null; }
+  }
+
+  // ═══ velas en directo (spot, mismo par): mueve la última vela y la línea AHORA
+  // entre recálculos del modelo, sin tocar los bloques de liquidación ═══
+  function stopLive() {
+    if (liveReconnectTimer) { clearTimeout(liveReconnectTimer); liveReconnectTimer = null; }
+    if (liveWs) { try { liveWs.onclose = null; liveWs.close(); } catch (e) {} liveWs = null; }
+  }
+
+  function connectLive(moneda) {
+    stopLive();
+    liveSymbol = moneda;
+    liveBackoff = 1500;
+    const spotSymbol = SYMBOLS[moneda].toLowerCase();
+    openLiveSocket(spotSymbol, moneda);
+  }
+
+  function openLiveSocket(spotSymbol, moneda) {
+    if (liveSymbol !== moneda) return; // el símbolo cambió mientras tanto
+    let socket;
+    try {
+      socket = new WebSocket('wss://stream.binance.com:9443/ws/' + spotSymbol + '@kline_5m');
+    } catch (e) {
+      liveReconnectTimer = setTimeout(() => openLiveSocket(spotSymbol, moneda), liveBackoff);
+      return;
     }
-    if(delta > 0){
-      const p = typ[i], sh = d.ls[i];
-      const entradas = i>0 ? [{precio:p, peso:1}] : (()=>{ const s=semilla(p); return s.precios.map((pr,idx)=>({precio:pr, peso:s.pesos[idx]})); })();
-      let nl=[], na=[], nlg=[];
-      for(const {precio:ep, peso:we} of entradas){
-        for(const lev in tiers){
-          const w = tiers[lev];
-          nl.push(ep*(1-1/lev+MMR), ep*(1+1/lev-MMR));
-          na.push(delta*sh*w*we, delta*(1-sh)*w*we);
-          nlg.push(true, false);
+    liveWs = socket;
+    socket.onopen = () => { liveBackoff = 1500; };
+    socket.onmessage = (ev) => {
+      if (socket !== liveWs || !lastResult || lastResult.moneda !== moneda) return;
+      try {
+        const msg = JSON.parse(ev.data);
+        const k = msg.k;
+        if (!k) return;
+        const d = lastResult.d;
+        const lastIdx = d.t.length - 1;
+        if (k.t === d.t[lastIdx]) {
+          // misma vela que ya tenemos del modelo: solo actualizamos máx/mín/cierre visuales
+          d.h[lastIdx] = Math.max(d.h[lastIdx], parseFloat(k.h));
+          d.l[lastIdx] = Math.min(d.l[lastIdx], parseFloat(k.l));
+          d.c[lastIdx] = parseFloat(k.c);
+          lastResult.precio = d.c[lastIdx];
+          draw(lastResult);
+        } else if (k.t > d.t[lastIdx]) {
+          // ha empezado una vela nueva que el modelo aún no ha visto: solo movemos
+          // el precio "AHORA" hasta el próximo recálculo (cada 5 min los alcanza)
+          lastResult.precio = parseFloat(k.c);
+        }
+      } catch (e) {}
+    };
+    socket.onclose = () => {
+      if (socket !== liveWs) return;
+      liveBackoff = Math.min(liveBackoff * 1.6, 15000);
+      liveReconnectTimer = setTimeout(() => openLiveSocket(spotSymbol, moneda), liveBackoff);
+    };
+    socket.onerror = () => { try { socket.close(); } catch (e) {} };
+  }
+
+  function ffAt(sortedKeys, sortedVals, targetMs, defaultVal) {
+    let lo = 0, hi = sortedKeys.length - 1, ans = -1;
+    while (lo <= hi) { const mid = (lo + hi) >> 1; if (sortedKeys[mid] <= targetMs) { ans = mid; lo = mid + 1; } else hi = mid - 1; }
+    return ans >= 0 ? sortedVals[ans] : defaultVal;
+  }
+
+  async function buildLiqData(moneda) {
+    const symbol = SYMBOLS[moneda];
+    const [klines, oiMap, lsMap] = await Promise.all([
+      fetchKlines(symbol),
+      fetchBinanceHistPaged('/futures/data/openInterestHist', symbol, '5m', 'sumOpenInterestValue', 2),
+      fetchBinanceHistPaged('/futures/data/globalLongShortAccountRatio', symbol, '5m', 'longAccount', 2),
+    ]);
+    if (!klines.length) throw new Error('sin velas de Binance Futures');
+    const oiKeys = [...oiMap.keys()].sort((a, b) => a - b);
+    const oiVals = oiKeys.map(k => oiMap.get(k));
+    const lsKeys = [...lsMap.keys()].sort((a, b) => a - b);
+    const lsVals = lsKeys.map(k => lsMap.get(k));
+
+    const oiArr = [], lsArr = [];
+    let lastOi = null, lastLs = 0.5;
+    for (const k of klines) {
+      const v = ffAt(oiKeys, oiVals, k.t, null);
+      if (v !== null) lastOi = v;
+      oiArr.push(lastOi);
+      const lv = ffAt(lsKeys, lsVals, k.t, null);
+      if (lv !== null) lastLs = lv;
+      lsArr.push(lastLs);
+    }
+    const startIdx = oiArr.findIndex(v => v !== null);
+    if (startIdx === -1) throw new Error('sin datos de interés abierto de Binance');
+    const sl = klines.slice(startIdx);
+    if (sl.length < 60) throw new Error('histórico insuficiente todavía, reintenta en un momento');
+
+    const d = {
+      t: sl.map(k => k.t), o: sl.map(k => k.o), h: sl.map(k => k.h), l: sl.map(k => k.l), c: sl.map(k => k.c),
+      oi: oiArr.slice(startIdx), longShare: lsArr.slice(startIdx),
+      tiers: moneda === 'HYPE' ? TIERS_HYPE : TIERS_DEFAULT,
+      fuentes: ['Binance'],
+    };
+
+    try {
+      const [byOi, byLs] = await Promise.all([fetchBybitOi(symbol), fetchBybitLs(symbol)]);
+      if (byOi && byOi.size > 0) {
+        const byOiKeys = [...byOi.keys()].sort((a, b) => a - b);
+        const byOiVals = byOiKeys.map(k => byOi.get(k));
+        const byLsKeys = byLs ? [...byLs.keys()].sort((a, b) => a - b) : [];
+        const byLsVals = byLsKeys.map(k => byLs.get(k));
+        let cobertura = 0;
+        const oiUsd = [], lsBy = [];
+        for (let i = 0; i < d.t.length; i++) {
+          const coinOi = ffAt(byOiKeys, byOiVals, d.t[i], null);
+          if (coinOi !== null) cobertura++;
+          oiUsd.push((coinOi || 0) * d.c[i]);
+          lsBy.push(byLs ? ffAt(byLsKeys, byLsVals, d.t[i], 0.5) : 0.5);
+        }
+        if (cobertura / d.t.length >= 0.3) {
+          for (let i = 0; i < d.t.length; i++) {
+            const total = d.oi[i] + oiUsd[i];
+            if (total > 0) d.longShare[i] = (d.oi[i] * d.longShare[i] + oiUsd[i] * lsBy[i]) / total;
+            d.oi[i] = total;
+          }
+          d.fuentes.push('Bybit');
         }
       }
-      if(i===0){
-        const vivas=[]; for(let k=0;k<nl.length;k++) vivas.push(nlg[k] ? nl[k]<p : nl[k]>p);
-        let sumaViva=0; for(let k=0;k<nl.length;k++) if(vivas[k]) sumaViva += na[k];
-        const factor = sumaViva>0 ? delta/sumaViva : 0;
-        for(let k=nl.length-1;k>=0;k--){ if(!vivas[k]){ nl.splice(k,1); na.splice(k,1); nlg.splice(k,1); } else na[k]*=factor; }
+    } catch (e) { /* best-effort: seguimos solo con Binance */ }
+
+    return d;
+  }
+
+  // ═══ el modelo de liquidaciones (igual que modelo_liquidaciones del bot) ═══
+  function modeloLiquidaciones(d, binMin, binMax, nb) {
+    const n = d.oi.length;
+    const binWidth = (binMax - binMin) / nb;
+    const typ = new Float64Array(n);
+    for (let i = 0; i < n; i++) typ[i] = (d.h[i] + d.l[i] + d.c[i]) / 3;
+
+    let liq = [], amt = [], largo = [], previo = [];
+    const Lm = new Array(n), Sm = new Array(n), Pm = new Array(n);
+    const plFin = new Float64Array(nb), psFin = new Float64Array(nb);
+    const tierEntries = Object.entries(d.tiers).map(([lev, w]) => [parseFloat(lev), w]);
+
+    for (let i = 0; i < n; i++) {
+      let liqL = 0, liqS = 0, delta;
+      if (i === 0) {
+        delta = d.oi[0];
+      } else {
+        let sumL = 0, sumS = 0;
+        for (let j = 0; j < liq.length; j++) {
+          if (amt[j] > 0) {
+            if (largo[j] && liq[j] >= d.l[i]) { sumL += amt[j]; amt[j] = 0; }
+            else if (!largo[j] && liq[j] <= d.h[i]) { sumS += amt[j]; amt[j] = 0; }
+          }
+        }
+        liqL = sumL; liqS = sumS;
+        delta = d.oi[i] - d.oi[i - 1];
       }
-      for(let k=0;k<nl.length;k++){ liq.push(nl[k]); amt.push(na[k]); largo.push(nlg[k]); previo.push(i===0); }
-    }else if(delta < 0){
-      let sumaAmt=0; for(const a of amt) sumaAmt+=a;
-      if(sumaAmt>0){
-        const cierre = Math.max(0, -delta-(liqL+liqS));
-        const factor = Math.max(0, 1-cierre/sumaAmt);
-        for(let k=0;k<amt.length;k++) amt[k]*=factor;
+      if (delta > 0) {
+        const p = typ[i], sh = d.longShare[i];
+        let entradas, pesos;
+        if (i > 0) { entradas = [p]; pesos = [1.0]; }
+        else {
+          entradas = []; pesos = [];
+          const sigma = 0.05, rango = 0.15, step = 0.001;
+          const offs = [], ws = [];
+          for (let o = -rango; o <= rango + 1e-9; o += step) { offs.push(o); ws.push(Math.exp(-0.5 * (o / sigma) * (o / sigma))); }
+          const wsum = ws.reduce((a, b) => a + b, 0);
+          for (let k = 0; k < offs.length; k++) { entradas.push(p * (1 + offs[k])); pesos.push(ws[k] / wsum); }
+        }
+        let nl = [], na = [], nlg = [];
+        for (let e = 0; e < entradas.length; e++) {
+          const ep = entradas[e], we = pesos[e];
+          for (const [lev, w] of tierEntries) {
+            nl.push(ep * (1 - 1 / lev + MMR), ep * (1 + 1 / lev - MMR));
+            na.push(delta * sh * w * we, delta * (1 - sh) * w * we);
+            nlg.push(true, false);
+          }
+        }
+        if (i === 0) {
+          const vivas = []; let sumViv = 0;
+          for (let k = 0; k < nl.length; k++) {
+            const viva = nlg[k] ? nl[k] < p : nl[k] > p;
+            vivas.push(viva);
+            if (viva) sumViv += na[k];
+          }
+          if (sumViv > 0) {
+            const factor = delta / sumViv;
+            const nl2 = [], na2 = [], nlg2 = [];
+            for (let k = 0; k < nl.length; k++) if (vivas[k]) { nl2.push(nl[k]); na2.push(na[k] * factor); nlg2.push(nlg[k]); }
+            nl = nl2; na = na2; nlg = nlg2;
+          }
+        }
+        for (let k = 0; k < nl.length; k++) { liq.push(nl[k]); amt.push(na[k]); largo.push(nlg[k]); previo.push(i === 0); }
+      } else if (delta < 0) {
+        let total = 0; for (const a of amt) total += a;
+        if (total > 0) {
+          const cierre = Math.max(0, -delta - (liqL + liqS));
+          const factor = Math.max(0, 1 - cierre / total);
+          for (let j = 0; j < amt.length; j++) amt[j] *= factor;
+        }
+      }
+      if (liq.length) {
+        const nliq = [], namt = [], nlargo = [], nprevio = [];
+        for (let j = 0; j < liq.length; j++) if (amt[j] > 1.0) { nliq.push(liq[j]); namt.push(amt[j]); nlargo.push(largo[j]); nprevio.push(previo[j]); }
+        liq = nliq; amt = namt; largo = nlargo; previo = nprevio;
+      }
+      const Lrow = new Float64Array(nb), Srow = new Float64Array(nb), Prow = new Float64Array(nb);
+      for (let j = 0; j < liq.length; j++) {
+        let b = Math.floor((liq[j] - binMin) / binWidth);
+        if (b < 0) b = 0; else if (b >= nb) b = nb - 1;
+        if (largo[j]) Lrow[b] += amt[j]; else Srow[b] += amt[j];
+        if (previo[j]) Prow[b] += amt[j];
+      }
+      if (i === n - 1) {
+        for (let j = 0; j < liq.length; j++) {
+          if (previo[j]) {
+            let b = Math.floor((liq[j] - binMin) / binWidth);
+            if (b < 0) b = 0; else if (b >= nb) b = nb - 1;
+            if (largo[j]) plFin[b] += amt[j]; else psFin[b] += amt[j];
+          }
+        }
+      }
+      Lm[i] = Lrow; Sm[i] = Srow; Pm[i] = Prow;
+    }
+    return { Lm, Sm, Pm, plFin, psFin, binWidth };
+  }
+
+  // ═══ orquestación de cálculo ═══
+  async function calcular(moneda) {
+    const d = await buildLiqData(moneda);
+    const precio = d.c[d.c.length - 1];
+    const binMin = precio * 0.85, binMax = precio * 1.15;
+    const model = modeloLiquidaciones(d, binMin, binMax, NBINS);
+    const centros = new Float64Array(NBINS);
+    for (let i = 0; i < NBINS; i++) centros[i] = binMin + (i + 0.5) * model.binWidth;
+
+    const n = d.oi.length;
+    const Lfin = smooth1D(model.Lm[n - 1]), Sfin = smooth1D(model.Sm[n - 1]);
+    const PLfin = smooth1D(model.plFin), PSfin = smooth1D(model.psFin);
+    const Ln = new Float64Array(NBINS), Sn = new Float64Array(NBINS);
+    for (let i = 0; i < NBINS; i++) { Ln[i] = Math.max(Lfin[i] - PLfin[i], 0); Sn[i] = Math.max(Sfin[i] - PSfin[i], 0); }
+
+    function suma(vec, a, b) { let s = 0; for (let i = 0; i < NBINS; i++) if (centros[i] >= a && centros[i] <= b) s += vec[i]; return s; }
+    const cortos5 = suma(Sfin, precio, precio * 1.05);
+    const largos5 = suma(Lfin, precio * 0.95, precio);
+
+    const cortosMask = new Float64Array(NBINS), largosMask = new Float64Array(NBINS);
+    for (let i = 0; i < NBINS; i++) { cortosMask[i] = centros[i] > precio ? Sn[i] : 0; largosMask[i] = centros[i] < precio ? Ln[i] : 0; }
+    const picosCortos = picos(cortosMask, centros, 3, 0.012);
+    const picosLargos = picos(largosMask, centros, 3, 0.012);
+
+    return { d, model, centros, precio, cortos5, largos5, picosCortos, picosLargos, moneda };
+  }
+
+  // ═══ dibujo (mismo estilo que _grafico_bloques del bot) ═══
+  function draw(res) {
+    const { d, model, centros, precio, moneda } = res;
+    const n = d.oi.length;
+    const paso = PASO_MIN;
+    const nc = Math.min(n, Math.floor(HORAS_ZOOM * 60 / paso));
+    const off = n - nc;
+
+    const o = d.o.slice(off), h = d.h.slice(off), l = d.l.slice(off), c = d.c.slice(off), t = d.t.slice(off);
+    const p = precio;
+    const pad = PAD_PCT * p;
+    let ylo = Math.min(...l) - pad, yhi = Math.max(...h) + pad;
+
+    const bi = [];
+    for (let i = 0; i < centros.length; i++) if (centros[i] >= ylo && centros[i] <= yhi) bi.push(i);
+    const cenV = bi.map(i => centros[i]);
+
+    // M/PM para las velas mostradas
+    const M = [], PM = [];
+    for (let j = 0; j < nc; j++) {
+      const idxFull = off + j;
+      const Lrow = model.Lm[idxFull], Srow = model.Sm[idxFull], Prow = model.Pm[idxFull];
+      const row = new Float64Array(bi.length), prow = new Float64Array(bi.length);
+      for (let k = 0; k < bi.length; k++) { row[k] = Lrow[bi[k]] + Srow[bi[k]]; prow[k] = Prow[bi[k]]; }
+      M.push(row); PM.push(prow);
+    }
+    const N = M.map((row, j) => { const out = new Float64Array(row.length); for (let k = 0; k < row.length; k++) out[k] = Math.max(row[k] - PM[j][k], 0); return out; });
+
+    const pos = [];
+    for (const row of N) for (const v of row) if (v > 0) pos.push(v);
+    pos.sort((a, b) => a - b);
+    const umbrales = PCTS.map(pct => percentile(pos, pct));
+
+    const idxGrid = N.map(row => row.map(v => digitize(v, umbrales)));
+    const grisGrid = N.map((row, j) => row.map((v, k) => PM[j][k] >= umbrales[1] && idxGrid[j][k] === 0));
+
+    // ── canvas setup ──
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    const hpx = canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    ctx.clearRect(0, 0, w, hpx);
+
+    const isSmall = w < 380 * dpr;
+    const padLeft = (isSmall ? 44 : 60) * dpr;
+    const padRight = (isSmall ? 74 : 96) * dpr;
+    const padTop = 8 * dpr, padBottom = 22 * dpr;
+    const plotW = w - padLeft - padRight, plotH = hpx - padTop - padBottom;
+    const totalCols = nc + EXT;
+    const colW = plotW / totalCols;
+
+    function y(price) { return padTop + (1 - (price - ylo) / (yhi - ylo)) * plotH; }
+    function x(j) { return padLeft + j * colW; }
+
+    // gridlines de precio
+    const step = niceStep(yhi - ylo, 5);
+    const first = Math.ceil(ylo / step) * step;
+    ctx.font = (isSmall ? 9 : 10.5) * dpr + 'px ui-monospace, monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let pr = first; pr <= yhi; pr += step) {
+      const gy = y(pr);
+      ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1 * dpr;
+      ctx.beginPath(); ctx.moveTo(padLeft, gy); ctx.lineTo(w - padRight, gy); ctx.stroke();
+      ctx.fillText(fmtAxisNum(pr), padLeft - 6 * dpr, gy);
+    }
+
+    const hbPx = Math.max(1.4 * dpr, (model.binWidth * 0.72) * (plotH / (yhi - ylo)));
+    const blockW = colW * 0.76, blockX0 = colW * 0.12;
+
+    // bloques históricos
+    for (let j = 0; j < nc; j++) {
+      for (let k = 0; k < cenV.length; k++) {
+        const isGris = grisGrid[j][k], iv = idxGrid[j][k];
+        if (!isGris && !iv) continue;
+        ctx.fillStyle = isGris ? GRIS : COL[iv];
+        const bx = x(j) + blockX0, by = y(cenV[k]) - hbPx / 2;
+        ctx.fillRect(bx, by, blockW, hbPx);
       }
     }
-    const esFinoRelevante = i >= n-NC_RETENCION;
-    if(esFinoRelevante){
-      snapsFinos.push({ t:d.t[i], L:histograma(k=>largo[k]), S:histograma(k=>!largo[k]),
-                         PL:histograma(k=>largo[k]&&previo[k]), PS:histograma(k=>!largo[k]&&previo[k]) });
-    }
-    if(i % 16 === 0){
-      snaps30d.push({ t:d.t[i], L:histograma(k=>largo[k]), S:histograma(k=>!largo[k]),
-                       PL:histograma(k=>largo[k]&&previo[k]), PS:histograma(k=>!largo[k]&&previo[k]) });
-    }
-  }
-  return { bins, centros: bins.slice(0,-1).map((b,i)=>(b+bins[i+1])/2), precioFinal,
-           snapsFinos, snaps30d, NC_CORTO, NC_ZOOM };
-}
-
-// ═══ Dibujo ═══
-const lienzo = document.getElementById("lienzo");
-const ctx = lienzo.getContext("2d");
-lienzo.style.touchAction = "none"; // para que el gesto lo gestionemos nosotros, no el navegador (scroll)
-function redimensionar(){
-  const r = lienzo.getBoundingClientRect();
-  lienzo.width = Math.max(1, r.width*devicePixelRatio);
-  lienzo.height = Math.max(1, r.height*devicePixelRatio);
-  dibujar();
-}
-new ResizeObserver(redimensionar).observe(lienzo);
-
-// ═══ Zoom y desplazamiento con el dedo (pellizcar = zoom, un dedo = mover) ═══
-const zoomManual = {};   // {"BTC_zoom": {ylo, yhi}, ...} — vertical (precio), si existe se usa en vez del automático
-const zoomX = {};        // {"BTC_zoom": {n, offset}, ...} — horizontal (tiempo): n = nº de velas visibles, offset = cuántas velas atrás desde el borde derecho
-const ultimoRango = {};  // {"BTC": {ylo, yhi, padTcss, areaHcss, areaWcss, ventanaN, offsetN, nc2Full, claveZoom}}
-let gesto = null;        // datos del gesto en curso
-
-function precioEnY(clientY, info){
-  const r = lienzo.getBoundingClientRect();
-  const yCss = clientY - r.top;
-  const frac = (yCss - info.padTcss) / info.areaHcss;
-  return info.yhi - (info.yhi-info.ylo)*frac;
-}
-
-lienzo.addEventListener("touchstart", (ev)=>{
-  const info = ultimoRango[estadoActual.simbolo];
-  if(!info) return;
-  ev.preventDefault();
-  const toques = Array.from(ev.touches);
-  gesto = {
-    claveZoom: info.claveZoom,
-    inicioYlo: info.ylo, inicioYhi: info.yhi,
-    inicioN: info.ventanaN, inicioOffset: info.offsetN, nc2Full: info.nc2Full,
-    unDedo: toques.length===1 ? {x:toques[0].clientX, y:toques[0].clientY} : null,
-    dosDedos: toques.length===2 ? {
-      x1:toques[0].clientX, y1:toques[0].clientY, x2:toques[1].clientX, y2:toques[1].clientY,
-      precioCentro: precioEnY((toques[0].clientY+toques[1].clientY)/2, info),
-    } : null,
-    fuePellizco: toques.length===2,   // en cuanto hay 2 dedos, ya no cuenta como "toque"
-    movidoPx: 0,
-  };
-}, {passive:false});
-
-lienzo.addEventListener("touchmove", (ev)=>{
-  if(!gesto) return;
-  ev.preventDefault();
-  const toques = Array.from(ev.touches);
-  const info = ultimoRango[estadoActual.simbolo];
-  const rango = gesto.inicioYhi - gesto.inicioYlo;
-
-  if(toques.length===2){
-    gesto.fuePellizco = true;
-    if(gesto.dosDedos){
-      // vertical (precio): la separación en Y de los dos dedos controla el zoom de precio
-      const distYIni = Math.abs(gesto.dosDedos.y1 - gesto.dosDedos.y2) || 1;
-      const distYAhora = Math.abs(toques[0].clientY - toques[1].clientY) || 1;
-      const factorY = distYIni/distYAhora;
-      const nuevoRango = Math.max(rango*0.05, rango*factorY);
-      const c = gesto.dosDedos.precioCentro;
-      const fraccion = 1 - (c - gesto.inicioYlo)/rango;
-      zoomManual[gesto.claveZoom] = { ylo: c - (1-fraccion)*nuevoRango, yhi: c + fraccion*nuevoRango };
-
-      // horizontal (tiempo): la separación en X de los dos dedos controla cuántas velas se ven
-      const distXIni = Math.abs(gesto.dosDedos.x1 - gesto.dosDedos.x2) || 1;
-      const distXAhora = Math.abs(toques[0].clientX - toques[1].clientX) || 1;
-      const factorX = distXIni/distXAhora; // separar dedos => factorX<1 => menos velas (acerca)
-      const nuevoN = Math.max(6, Math.min(gesto.nc2Full, Math.round(gesto.inicioN*factorX)));
-      zoomX[gesto.claveZoom] = { n: nuevoN, offset: gesto.inicioOffset };
-
-      dibujar();
-    }
-  }else if(toques.length===1 && gesto.unDedo){
-    const deltaYcss = toques[0].clientY - gesto.unDedo.y;
-    const deltaXcss = toques[0].clientX - gesto.unDedo.x;
-    gesto.movidoPx = Math.max(gesto.movidoPx, Math.hypot(deltaXcss, deltaYcss));
-
-    const deltaPrecio = (deltaYcss/info.areaHcss)*rango;
-    zoomManual[gesto.claveZoom] = { ylo: gesto.inicioYlo + deltaPrecio, yhi: gesto.inicioYhi + deltaPrecio };
-
-    const pxPorVela = info.areaWcss / gesto.inicioN;
-    const deltaVelas = deltaXcss / pxPorVela;
-    // arrastrar el dedo a la derecha revela velas más antiguas (retrocede en el tiempo)
-    const nuevoOffset = Math.max(0, Math.min(gesto.nc2Full-gesto.inicioN, Math.round(gesto.inicioOffset + deltaVelas)));
-    zoomX[gesto.claveZoom] = { n: gesto.inicioN, offset: nuevoOffset };
-
-    dibujar();
-  }
-}, {passive:false});
-
-// doble toque (dos toques reales y cortos, sin pellizco ni arrastre de por medio) = volver al zoom automático
-let ultimoToque = 0;
-lienzo.addEventListener("touchend", (ev)=>{
-  const fueTogueReal = gesto && !gesto.fuePellizco && gesto.movidoPx < 8;
-  if(ev.touches.length===0) gesto = null;
-  if(!fueTogueReal) return;
-
-  const ahora = Date.now();
-  if(ahora - ultimoToque < 350){
-    const info = ultimoRango[estadoActual.simbolo];
-    if(info){ delete zoomManual[info.claveZoom]; delete zoomX[info.claveZoom]; }
-    dibujar();
-    ultimoToque = 0; // evita que un tercer toque rápido se cuente como otro "doble toque"
-  }else{
-    ultimoToque = ahora;
-  }
-});
-
-function picos(vec, centros, precioRef, esArriba, n=3, sep=0.012){
-  const idxOrden = centros.map((_,i)=>i).filter(i=> esArriba ? centros[i]>precioRef : centros[i]<precioRef)
-                    .sort((a,b)=>vec[b]-vec[a]);
-  const elegidos=[];
-  for(const i of idxOrden){
-    if(vec[i]<=0 || elegidos.length>=n) break;
-    if(elegidos.every(j=> Math.abs(centros[i]/centros[j]-1) > sep)) elegidos.push(i);
-  }
-  return elegidos.map(i=>{
-    let total=0; for(let k=0;k<centros.length;k++) if(Math.abs(centros[k]/centros[i]-1)<=0.006) total+=vec[k];
-    return {precio:centros[i], total};
-  });
-}
-
-function dibujar(){
-  const modeloInfo = cacheModelo[estadoActual.simbolo];
-  const w = lienzo.width, h = lienzo.height;
-  ctx.fillStyle = "#131722"; ctx.fillRect(0,0,w,h);
-  if(!modeloInfo){ return; }
-  const { d, modelo } = modeloInfo;
-  const vista = estadoActual.vista;
-
-  let snaps, nc, tf, pcts, periodo, defectoN;
-  if(vista==="corto"){ snaps = modelo.snapsFinos; tf="15m"; pcts=[86,94,98.2,99.7]; periodo="8h"; defectoN = modelo.NC_CORTO; }
-  else { snaps = modelo.snapsFinos; tf="15m"; pcts=[86,94,98.2,99.7]; periodo="24h"; defectoN = modelo.NC_ZOOM; }
-  if(!snaps || snaps.length<2) return;
-
-  // velas correspondientes a cada snapshot (por índice de tiempo)
-  const tSnap = new Set(snaps.map(s=>s.t));
-  const idxVelas = d.t.map((t,i)=>i).filter(i=> tSnap.has(d.t[i]));
-  const nc2Full = idxVelas.length;
-  const oFull = idxVelas.map(i=>d.o[i]), hiFull = idxVelas.map(i=>d.h[i]), loFull = idxVelas.map(i=>d.l[i]), clFull = idxVelas.map(i=>d.c[i]);
-  const precio = clFull[clFull.length-1]; // precio real actual, no cambia aunque te muevas por el tiempo
-
-  const claveZoom = estadoActual.simbolo+"_"+vista;
-  const zx = zoomX[claveZoom];
-  const ventanaN = zx ? Math.max(6, Math.min(nc2Full, Math.round(zx.n))) : Math.min(nc2Full, defectoN);
-  const offsetN = zx ? Math.max(0, Math.min(nc2Full-ventanaN, Math.round(zx.offset))) : 0;
-  const finIdx = nc2Full - offsetN, iniIdx = finIdx - ventanaN;
-  const o = oFull.slice(iniIdx,finIdx), hi = hiFull.slice(iniIdx,finIdx), lo = loFull.slice(iniIdx,finIdx), cl = clFull.slice(iniIdx,finIdx);
-  const nc2 = cl.length;
-
-  const pad = 96*devicePixelRatio, padR = 106*devicePixelRatio, padB = 40*devicePixelRatio, padT = 16*devicePixelRatio;
-  const areaW = w-pad-padR, areaH = h-padT-padB;
-  let ylo, yhi;
-  if(zoomManual[claveZoom]){
-    ylo = zoomManual[claveZoom].ylo; yhi = zoomManual[claveZoom].yhi;
-  }else{
-    const MARGEN_PCT = 0.12; // ±12% alrededor del precio actual, para ver más niveles a la vez
-    const margen = precio*MARGEN_PCT;
-    ylo = Math.min(precio-margen, Math.min(...lo)*0.998);
-    yhi = Math.max(precio+margen, Math.max(...hi)*1.002);
-  }
-  const yPix = (p)=> padT + areaH*(1-(p-ylo)/(yhi-ylo));
-  const xPix = (i)=> pad + areaW*(i+0.5)/nc2;
-  const dec = decimales(precio);
-  // guardamos el rango realmente usado (en píxeles CSS) para poder traducir los gestos táctiles a precios
-  ultimoRango[estadoActual.simbolo] = {
-    ylo, yhi, padTcss: padT/devicePixelRatio, areaHcss: areaH/devicePixelRatio,
-    areaWcss: areaW/devicePixelRatio, ventanaN, offsetN, nc2Full, claveZoom,
-  };
-
-  // niveles agregados (última muestra menos la primera, "nacido en la ventana")
-  const N = modelo.centros.length;
-  const nacL = new Float32Array(N), nacS = new Float32Array(N), prevInt = new Float32Array(N);
-  const ult = snaps[snaps.length-1], prim = snaps[0];
-  for(let b=0;b<N;b++){
-    nacL[b] = Math.max(0, ult.L[b]-prim.PL[b]);
-    nacS[b] = Math.max(0, ult.S[b]-prim.PS[b]);
-    prevInt[b] = Math.max(ult.PL[b], ult.PS[b]);
-  }
-  const todos = [...nacL,...nacS].filter(v=>v>0).sort((a,b)=>a-b);
-  const umbral = pcts.map(p=> todos.length ? todos[Math.min(todos.length-1, Math.floor(todos.length*p/100))] : Infinity);
-  const COL = ["#1f6f7a","#2f9a2f","#a9a92a","#c62828"];
-  function nivelColor(v){ for(let k=umbral.length-1;k>=0;k--) if(v>=umbral[k]) return COL[k]; return null; }
-
-  // bandas de precio visibles
-  const bIni = modelo.centros.findIndex(c=>c>=ylo), bFin = modelo.centros.findIndex(c=>c>=yhi);
-  const rangoBins = bIni<0 ? [] : Array.from({length:(bFin<0?N:bFin)-bIni}, (_,k)=>bIni+k);
-
-  // pintar niveles como franjas horizontales a lo largo de TODO el ancho visible (estilo "nivel que sigue sin tocar")
-  for(const b of rangoBins){
-    const y1 = yPix(modelo.bins[b]), y2 = yPix(modelo.bins[b+1]);
-    const grisFuerte = prevInt[b] >= umbral[1];
-    const colN = nivelColor(nacL[b]+nacS[b]===0?0:Math.max(nacL[b],nacS[b]));
-    let col = null, alpha = 0.5;
-    if(colN){ col = colN; }
-    else if(grisFuerte){ col = "#555c6b"; alpha=0.45; }
-    if(col){
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = col;
-      ctx.fillRect(pad, Math.min(y1,y2), areaW, Math.max(1,Math.abs(y2-y1)));
+    // proyección a la derecha (niveles aún vivos, apagados)
+    const lastJ = nc - 1;
+    for (let k = 0; k < cenV.length; k++) {
+      const iv = idxGrid[lastJ][k], isGris = grisGrid[lastJ][k];
+      if (!iv && !isGris) continue;
+      const color = iv ? COL[iv] : GRIS;
+      ctx.globalAlpha = 0.48;
+      ctx.fillStyle = color;
+      const by = y(cenV[k]) - hbPx / 2;
+      for (let jj = nc; jj < nc + EXT; jj++) ctx.fillRect(x(jj) + blockX0, by, blockW, hbPx);
       ctx.globalAlpha = 1;
     }
+
+    // velas
+    const ancho = colW * (nc <= 120 ? 0.64 : 0.72);
+    for (let j = 0; j < nc; j++) {
+      const up = c[j] >= o[j];
+      const col = up ? '#26a69a' : '#ef5350';
+      const cx = x(j) + colW / 2;
+      ctx.strokeStyle = col; ctx.lineWidth = Math.max(1, (nc <= 120 ? 1 : 0.8) * dpr);
+      ctx.beginPath(); ctx.moveTo(cx, y(h[j])); ctx.lineTo(cx, y(l[j])); ctx.stroke();
+      const yO = y(o[j]), yC = y(c[j]);
+      const top = Math.min(yO, yC), bh = Math.max(1.2 * dpr, Math.abs(yC - yO));
+      ctx.fillStyle = col;
+      ctx.fillRect(cx - ancho / 2, top, ancho, bh);
+    }
+
+    // línea de precio actual
+    const py = y(p);
+    ctx.setLineDash([4 * dpr, 4 * dpr]);
+    ctx.strokeStyle = '#26a69a'; ctx.lineWidth = 1 * dpr;
+    ctx.beginPath(); ctx.moveTo(padLeft, py); ctx.lineTo(w - padRight, py); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.textAlign = 'right'; ctx.fillStyle = '#26a69a'; ctx.font = 'bold ' + (isSmall ? 9.5 : 10.5) * dpr + 'px ui-monospace, monospace';
+    ctx.fillText('AHORA ' + fmtAxisNum(p), x(nc + EXT) - 4 * dpr, py - 8 * dpr);
+
+    // etiquetas de picos
+    ctx.textAlign = 'left'; ctx.font = (isSmall ? 9 : 10) * dpr + 'px ui-monospace, monospace'; ctx.textBaseline = 'middle';
+    const labelX = x(nc + EXT) + 6 * dpr;
+    for (const pk of res.picosCortos) {
+      if (pk.precio < ylo || pk.precio > yhi) continue;
+      ctx.fillStyle = '#FF8888';
+      ctx.fillText(fmtAxisNum(pk.precio) + ' · ' + fmtUsd(pk.total), labelX, y(pk.precio));
+    }
+    for (const pk of res.picosLargos) {
+      if (pk.precio < ylo || pk.precio > yhi) continue;
+      ctx.fillStyle = '#77DD99';
+      ctx.fillText(fmtAxisNum(pk.precio) + ' · ' + fmtUsd(pk.total), labelX, y(pk.precio));
+    }
+
+    // eje de horas
+    const cadaVelas = Math.max(1, Math.floor(30 / paso));
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.font = (isSmall ? 8.5 : 9.5) * dpr + 'px ui-monospace, monospace';
+    for (let j = 0; j < nc; j += cadaVelas) {
+      ctx.fillText(madridHM(t[j]), x(j) + colW / 2, hpx - padBottom + 4 * dpr);
+    }
+
+    // cabecera OHLC
+    const chg = c[nc - 1] - (c[nc - 2] != null ? c[nc - 2] : c[nc - 1]);
+    const pct = c[nc - 2] ? (chg / c[nc - 2]) * 100 : 0;
+    ohlcLine.innerHTML = `${moneda}/USDT · ${paso}m &nbsp; O <b>${fmtAxisNum(o[nc - 1])}</b> &nbsp; H <b>${fmtAxisNum(h[nc - 1])}</b> &nbsp; L <b>${fmtAxisNum(l[nc - 1])}</b> &nbsp; C <b>${fmtAxisNum(c[nc - 1])}</b> &nbsp; <span style="color:${chg >= 0 ? '#7cf5b6' : '#ff8fa3'}">${chg >= 0 ? '+' : ''}${pct.toFixed(2)}%</span>`;
   }
 
-  // grid + velas
-  ctx.strokeStyle = "#1f2330"; ctx.lineWidth = 1*devicePixelRatio;
-  for(let gy=0; gy<=5; gy++){
-    const y = padT + areaH*gy/5;
-    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-padR,y); ctx.stroke();
-    const precioY = yhi - (yhi-ylo)*gy/5;
-    const texto = precioY.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec});
-    ctx.font = `bold ${14*devicePixelRatio}px sans-serif`; ctx.textAlign="right";
-    const anchoTexto = ctx.measureText(texto).width;
-    ctx.fillStyle = "#131722";
-    ctx.fillRect(pad-14*devicePixelRatio-anchoTexto, y-11*devicePixelRatio, anchoTexto+8*devicePixelRatio, 22*devicePixelRatio);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(texto, pad-10*devicePixelRatio, y+5*devicePixelRatio);
-  }
-  ctx.textAlign="left";
-  const anchoVela = Math.max(1.5*devicePixelRatio, areaW/nc2*0.62);
-  for(let i=0;i<nc2;i++){
-    const x = xPix(i);
-    const col = cl[i]>=o[i] ? "#26a69a" : "#ef5350";
-    ctx.strokeStyle = col; ctx.lineWidth = Math.max(1,1*devicePixelRatio);
-    ctx.beginPath(); ctx.moveTo(x, yPix(hi[i])); ctx.lineTo(x, yPix(lo[i])); ctx.stroke();
-    ctx.fillStyle = col;
-    const yA = yPix(Math.max(o[i],cl[i])), yB = yPix(Math.min(o[i],cl[i]));
-    ctx.fillRect(x-anchoVela/2, yA, anchoVela, Math.max(2.5*devicePixelRatio, yB-yA));
+  function updateSummaryText(res) {
+    cortosLine.textContent = `Cortos por encima (hasta +5%): ${fmtUsd(res.cortos5)}`;
+    largosLine.textContent = `Largos por debajo (hasta −5%): ${fmtUsd(res.largos5)}`;
+    const moneda = res.moneda;
+    titleLine.textContent = `${moneda} — LIQUIDACIONES ESTIMADAS · CORTO PLAZO (${HORAS_ZOOM} H, velas de ${PASO_MIN} min)`;
+    subLine.textContent = `${madridHora(Date.now())} (Madrid)  ·  nuestro modelo de cálculo, fuentes: ${res.d.fuentes.join(' + ')}`;
   }
 
-  // etiquetas de los picos principales
-  const pkS = picos(nacS, modelo.centros, precio, true);
-  const pkL = picos(nacL, modelo.centros, precio, false);
-  ctx.font = (13*devicePixelRatio)+"px sans-serif"; ctx.textAlign="left";
-  for(const p of pkS){ ctx.fillStyle="#ff8888"; ctx.fillText(`${fp(p.precio)} · ${fusd(p.total)}`, w-padR+6*devicePixelRatio, yPix(p.precio)); }
-  for(const p of pkL){ ctx.fillStyle="#77dd99"; ctx.fillText(`${fp(p.precio)} · ${fusd(p.total)}`, w-padR+6*devicePixelRatio, yPix(p.precio)); }
+  // ═══ ciclo de carga ═══
+  let busy = false;
+  async function loadAndRender(showLoading) {
+    if (busy) return;
+    busy = true;
+    statusDot.className = 'status-dot busy';
+    statusText.textContent = 'calculando…';
+    if (showLoading) loadingEl.classList.remove('hidden');
+    try {
+      const moneda = symbolSelect.value;
+      const res = await calcular(moneda);
+      lastResult = res;
+      updateSummaryText(res);
+      draw(res);
+      connectLive(moneda);
+      statusDot.className = 'status-dot live';
+      statusText.textContent = 'actualizado ' + madridHora(Date.now());
+      loadingEl.classList.add('hidden');
+    } catch (e) {
+      statusDot.className = 'status-dot err';
+      statusText.textContent = 'error: ' + (e && e.message ? e.message : 'fallo desconocido');
+      loadingEl.innerHTML = 'No se ha podido calcular ahora mismo.<br>' + (e && e.message ? e.message : '') + '<br>Reintentando en el próximo ciclo, o pulsa "Actualizar ahora".';
+      loadingEl.classList.remove('hidden');
+    } finally {
+      busy = false;
+      scheduleNext();
+    }
+  }
 
-  // línea de precio actual
-  ctx.strokeStyle = "#26a69a"; ctx.setLineDash([4*devicePixelRatio,3*devicePixelRatio]);
-  ctx.beginPath(); ctx.moveTo(pad, yPix(precio)); ctx.lineTo(w-padR, yPix(precio)); ctx.stroke();
-  ctx.setLineDash([]);
-  const txtAhora = "AHORA "+fp(precio);
-  ctx.font = `bold ${14*devicePixelRatio}px sans-serif`; ctx.textAlign="left";
-  const anchoAhora = ctx.measureText(txtAhora).width;
-  const yAhora = yPix(precio)-8*devicePixelRatio;
-  ctx.fillStyle = "#0d1117";
-  ctx.fillRect(pad+2*devicePixelRatio, yAhora-16*devicePixelRatio, anchoAhora+12*devicePixelRatio, 22*devicePixelRatio);
-  ctx.strokeStyle = "#26a69a"; ctx.lineWidth = 1.5*devicePixelRatio;
-  ctx.strokeRect(pad+2*devicePixelRatio, yAhora-16*devicePixelRatio, anchoAhora+12*devicePixelRatio, 22*devicePixelRatio);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(txtAhora, pad+8*devicePixelRatio, yAhora);
+  function scheduleNext() {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+    nextRefreshAt = Date.now() + REFRESH_MS;
+    refreshTimer = setTimeout(() => loadAndRender(false), REFRESH_MS);
+    countdownTimer = setInterval(() => {
+      const rem = Math.max(0, nextRefreshAt - Date.now());
+      const mm = Math.floor(rem / 60000), ss = Math.floor((rem % 60000) / 1000);
+      countdownEl.textContent = mm + ':' + String(ss).padStart(2, '0');
+    }, 1000);
+  }
 
-  // cabecera info
-  document.getElementById("precio").textContent = fp(precio);
-  const cambio = (cl[cl.length-1]/o[0]-1)*100;
-  const elC = document.getElementById("cambio");
-  elC.textContent = (cambio>=0?"▲ ":"▼ ")+Math.abs(cambio).toFixed(2)+"% ("+periodo+")";
-  elC.className = "cambio "+(cambio>=0?"pos":"neg");
+  symbolSelect.addEventListener('change', () => loadAndRender(true));
+  refreshBtn.addEventListener('click', () => loadAndRender(true));
+  window.addEventListener('resize', () => { if (lastResult) draw(lastResult); });
 
-  const sumaRango = (vec, a, b)=>{ let s=0; for(let k=0;k<modelo.centros.length;k++) if(modelo.centros[k]>=a&&modelo.centros[k]<=b) s+=vec[k]; return s; };
-  const cortos5 = sumaRango(nacS, precio, precio*1.05), largos5 = sumaRango(nacL, precio*0.95, precio);
-  document.getElementById("resumen").innerHTML =
-    `<span class="cortos">Cortos hasta +5%: ${fusd(cortos5)}</span><span class="largos">Largos hasta −5%: ${fusd(largos5)}</span>`;
-}
-
-// ═══ Vela en directo (aparte del modelo, que es pesado y solo se recalcula
-// cada 5 min) ═══ Esto solo mueve la última vela ya cargada con cada operación
-// real, para que el gráfico no se quede congelado entre recálculos.
-let ultimaVelaRecibida = {}; // {BTC: "12:34:56", ...} — para depurar si algo falla
-function actualizarWsTxt(){
-  const t = ultimaVelaRecibida[estadoActual.simbolo];
-  document.getElementById("wsTxt").textContent = t
-    ? `vela en directo: última actualización ${t} (${estadoActual.simbolo})`
-    : `vela en directo: sin datos aún de ${estadoActual.simbolo}`;
-}
-
-// La conexión en directo a futuros (WebSocket) se queda muda tras confirmar la
-// suscripción en algunos móviles/redes, aunque el REST de futuros sí funciona
-// bien (es lo que usa la carga del modelo). Así que, en vez de esa conexión
-// permanente, preguntamos el precio cada pocos segundos, con el mismo tipo de
-// petición REST que ya sabemos que funciona.
-const INTERVALO_PRECIO_MS = 5000;
-
-function conectarVelaSpotEnDirecto(){
-  const streams = SIMBOLOS.map(s=>s.sym.toLowerCase()+"@kline_15m").join("/");
-  const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
-  ws.onopen = ()=>{ document.getElementById("puntoWs").className = "punto on"; };
-  ws.onclose = ()=>{
-    document.getElementById("puntoWs").className = "punto cargando";
-    document.getElementById("wsTxt").textContent = "vela en directo: desconectada, reintentando…";
-    setTimeout(conectarVelaSpotEnDirecto, 3000);
-  };
-  ws.onmessage = (ev)=>{
-    try{
-      const msg = JSON.parse(ev.data).data;
-      const k = msg.k;
-      const meta = SIMBOLOS.find(s=> s.sym === msg.s);
-      if(!meta) return;
-      ultimaVelaRecibida[meta.id] = new Date().toLocaleTimeString("es-ES");
-      if(estadoActual.simbolo === meta.id) actualizarWsTxt();
-      const info = cacheModelo[meta.id];
-      if(!info) return;
-      const d = info.d;
-      const ultimo = d.t.length-1;
-      if(d.t[ultimo] === k.t){
-        // la vela de futuros que carga el modelo y la de spot que llega en directo
-        // comparten el mismo instante de apertura, así que se enganchan sin problema
-        d.o[ultimo]=+k.o; d.h[ultimo]=+k.h; d.l[ultimo]=+k.l; d.c[ultimo]=+k.c;
-        if(estadoActual.simbolo === meta.id) dibujar();
-      }
-    }catch(e){}
-  };
-}
-
-// ═══ Arranque ═══
-cargarSimbolo(estadoActual.simbolo);
-conectarVelaSpotEnDirecto();
-setInterval(()=>{ for(const s of SIMBOLOS) cargarSimbolo(s.id); }, REFRESCO_MS);
+  loadAndRender(true);
+})();
 </script>
 </body>
 </html>
