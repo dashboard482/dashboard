@@ -673,8 +673,11 @@
       ctx.fillText(fmtAxisNum(pk.precio) + ' · ' + fmtUsd(pk.total), labelX, y(pk.precio));
     }
 
-    // eje de horas
-    const cadaVelas = Math.max(1, Math.floor(30 / paso));
+    // eje de horas — separación calculada según el ancho real disponible, no un
+    // número de velas fijo, para que las etiquetas nunca se amontonen en móvil
+    const anchoEtiqueta = (isSmall ? 54 : 64) * dpr;
+    const maxEtiquetas = Math.max(2, Math.floor(plotW / anchoEtiqueta));
+    const cadaVelas = Math.max(1, Math.ceil(nc / maxEtiquetas));
     ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.font = (isSmall ? 8.5 : 9.5) * dpr + 'px ui-monospace, monospace';
     for (let j = 0; j < nc; j += cadaVelas) {
