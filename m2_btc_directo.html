@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>M2 vs BTC — 90 días</title>
+<style>
+  :root {
+    --bg: #131722; --ink: #eef1f0; --dim: rgba(238,241,240,0.55); --dim2: rgba(238,241,240,0.34);
+    --amber: #FFB84D; --m2: #f0c930;
+    box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--bg); font-family: 'JetBrains Mono','SF Mono',ui-monospace,Menlo,Consolas,monospace; color: var(--ink); overflow: hidden; }
+  #stage { position: fixed; inset: 0; height: 100dvh; display: flex; flex-direction: column; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px 4px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); flex-wrap: wrap; flex: 0 0 auto; }
+  .brand { font-size: 12px; color: var(--dim); display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #666; display: inline-block; }
+  .status-dot.live { background: #26a69a; } .status-dot.err { background: #ef5350; } .status-dot.busy { background: #FFB84D; }
+  button.ctl { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: var(--ink); font-family: inherit; font-size: 12.5px; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+  button.ctl:active { background: rgba(255,255,255,0.16); }
+
+  .titles { text-align: center; padding: 2px 12px 0; flex: 0 0 auto; }
+  .t1 { font-size: clamp(14px, 3.6vw, 19px); font-weight: 700; }
+  .t2 { font-size: 11px; color: var(--amber); margin-top: 3px; }
+  .t3 { font-size: 10.5px; color: var(--dim); margin-top: 2px; }
+
+  .legend2 { display: flex; justify-content: center; gap: 18px; margin-top: 6px; font-size: 11px; flex-wrap: wrap; flex: 0 0 auto; }
+  .legend2 span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 14px; height: 3px; display: inline-block; border-radius: 2px; }
+
+  #chartWrap { flex: 1 1 auto; min-height: 100px; margin: 8px 10px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.14); overflow: hidden; position: relative; }
+  canvas#chart { width: 100%; height: 100%; display: block; }
+  #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(19,23,34,0.85); font-size: 13px; color: var(--amber); text-align: center; padding: 20px; }
+  #loading.hidden { display: none; }
+
+  footer { padding: 5px 16px calc(8px + env(safe-area-inset-bottom, 0px)); text-align: center; font-size: 9.5px; color: var(--dim2); flex: 0 0 auto; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div class="brand"><span id="statusDot" class="status-dot"></span><span id="statusText">cargando…</span></div>
+    <button class="ctl" id="refreshBtn">Actualizar</button>
+  </header>
+
+  <div class="titles">
+    <div class="t1">BTC — LIQUIDEZ GLOBAL (FED NETA + BCE + BOJ) DESPLAZADA 90 DÍAS</div>
+    <div class="t2" id="subLine">cargando…</div>
+    <div class="t3">Liquidez neta Fed (WALCL−TGA−RRP) + balance bruto BCE + balance bruto Banco de Japón, todo en USD, media de 7 días, adelantado 90 días. China no incluida (sin fuente fiable gratuita).</div>
+  </div>
+
+  <div class="legend2">
+    <span><i class="sw" style="background:#eef1f0"></i>BTC/USDT diaria</span>
+    <span><i class="sw" style="background:var(--m2)"></i>Liquidez global Fed+BCE+BoJ (+90 días)</span>
+  </div>
+
+  <div id="chartWrap">
+    <canvas id="chart"></canvas>
+    <div id="loading">Cargando BTC y M2 de la Fed…</div>
+  </div>
+
+  <footer>Nuestro modelo de cálculo: Fed neta (WALCL−TGA−RRP, TGA diaria en directo si está disponible) + BCE bruto + BoJ bruto, convertidos a USD. BCE/BoJ no llevan resta de TGA/RRP propia (no hay fuente gratuita equivalente). BoJ y tipos de cambio son mensuales. China no incluida. No es una señal de compra. DYOR.</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const SYMBOL = 'BTCUSDT';
+  const SHIFT_DAYS = 90;
+  const SHIFT_MS = SHIFT_DAYS * 86400000;
+  const REFRESH_MS = 60 * 60 * 1000; // los datos de M2/velas semanales no hace falta refrescarlos más a menudo
+
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const subLine = document.getElementById('subLine');
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const loadingEl = document.getElementById('loading');
+
+  let lastResult = null;
+  let liveWs = null, liveReconnectTimer = null, liveBackoff = 1500;
+  let refreshTimer = null;
+
+  function fmtPrice(p) { return '$' + p.toLocaleString('es-ES', { maximumFractionDigits: p >= 1000 ? 0 : 2 }); }
+  function fmtT(v) { return '$' + (v / 1e12).toFixed(2) + 'T'; }
+  function madridHora(ts) { return new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(ts)); }
+
+  function niceStep(range, targetSteps) {
+    const raw = range / targetSteps;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const norm = raw / mag;
+    const step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+    return step * mag;
+  }
+
+  async function fetchBtcWeekly() {
+    const url = 'https://api.binance.com/api/v3/klines?symbol=' + SYMBOL + '&interval=1d&limit=140';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('velas BTC: HTTP ' + r.status);
+    const arr = await r.json();
+    return arr.map(k => ({ t: k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4] }));
+  }
+
+  // Liquidez neta EEUU = WALCL - TGA (WTREGEN) - RRP (RRPONTSYD), SEMANAL.
+  // WALCL y WTREGEN: dato real de fred.stlouisfed.org/data/WALCL y /WTREGEN el 30/09/2026.
+  // RRP: dato real hasta 2025-03-19; de ahí en adelante, aproximado semana a semana
+  // (ya casi en cero, cayó de ~150.000 M en marzo 2025 a ~800 M en 2026 — impacto mínimo
+  // frente a los billones del WALCL), anclado a cifras reales publicadas (Ago-25 ~28.000 M,
+  // Mar-26 822 M, Jul-26 ~100 M, Sep-26 851 M).
+  // [fecha, WALCL millones, WTREGEN millones, RRP miles de millones]
+  const NETLIQ_RAW = [
+    ["2024-06-05",7255687,710309,371.841],["2024-06-12",7258974,673573,447.574],
+    ["2024-06-19",7252542,723410,388.841],["2024-06-26",7231163,765417,490.156],
+    ["2024-07-03",7221520,761373,425.898],["2024-07-10",7224079,736402,422.147],
+    ["2024-07-17",7208247,751593,399.401],["2024-07-24",7205455,774315,399.121],
+    ["2024-07-31",7178391,786486,413.200],["2024-08-07",7175256,770931,286.660],
+    ["2024-08-14",7177688,794120,328.472],["2024-08-21",7139952,736494,321.329],
+    ["2024-08-28",7123238,745851,388.890],["2024-09-04",7112567,733959,337.312],
+    ["2024-09-11",7115001,755958,279.215],["2024-09-18",7109137,771194,305.831],
+    ["2024-09-25",7080059,806771,416.193],["2024-10-02",7046925,798277,383.398],
+    ["2024-10-09",7046840,802115,343.448],["2024-10-16",7039284,791792,272.028],
+    ["2024-10-23",7029408,829991,270.839],["2024-10-30",7013490,835237,228.946],
+    ["2024-11-06",6994299,842051,177.871],["2024-11-13",6967108,832186,238.106],
+    ["2024-11-20",6923731,751873,217.793],["2024-11-27",6905140,775250,169.815],
+    ["2024-12-04",6895827,789516,162.866],["2024-12-11",6897485,775067,180.120],
+    ["2024-12-18",6889332,767932,131.651],["2024-12-25",6885963,764770,180.989],
+    ["2025-01-01",6852491,719873,239.858],["2025-01-08",6853554,652636,185.144],
+    ["2025-01-15",6834070,641225,119.977],["2025-01-22",6831760,677282,123.981],
+    ["2025-01-29",6818186,784206,121.842],["2025-02-05",6810935,805593,78.788],
+    ["2025-02-12",6813513,828102,67.670],["2025-02-19",6782332,790062,73.196],
+    ["2025-02-26",6766101,681161,126.058],["2025-03-05",6756764,548331,139.493],
+    ["2025-03-12",6759571,512581,131.055],["2025-03-19",6755982,435936,149.503],
+    ["2025-03-26",6740253,360177,130.0],["2025-04-02",6723452,313326,115.0],
+    ["2025-04-09",6727416,306049,100.0],["2025-04-16",6727113,422983,90.0],
+    ["2025-04-23",6726930,606632,80.0],["2025-04-30",6709277,595741,75.0],
+    ["2025-05-07",6710889,583727,68.0],["2025-05-14",6713270,575846,62.0],
+    ["2025-05-21",6688726,503055,58.0],["2025-05-28",6673244,467204,55.0],
+    ["2025-06-04",6672885,378947,50.0],["2025-06-11",6677155,332907,46.0],
+    ["2025-06-18",6681056,337762,43.0],["2025-06-25",6662200,364375,40.0],
+    ["2025-07-02",6659598,359516,37.0],["2025-07-09",6661912,319889,35.0],
+    ["2025-07-16",6659273,296247,33.0],["2025-07-23",6657715,323176,31.0],
+    ["2025-07-30",6642578,370507,29.0],["2025-08-06",6640843,421043,27.0],
+    ["2025-08-13",6643615,504304,26.5],["2025-08-20",6618415,519534,26.0],
+    ["2025-08-27",6603384,589998,27.0],["2025-09-03",6602071,597513,22.0],
+    ["2025-09-10",6605962,672274,18.0],["2025-09-17",6608597,756376,15.0],
+    ["2025-09-24",6608395,804856,12.0],["2025-10-01",6587119,805139,10.0],
+    ["2025-10-08",6590815,807428,8.5],["2025-10-15",6596454,809593,7.0],
+    ["2025-10-22",6589533,908001,6.0],["2025-10-29",6587034,957990,5.0],
+    ["2025-11-05",6572732,940979,4.2],["2025-11-12",6580462,953816,3.6],
+    ["2025-11-19",6555283,941926,3.1],["2025-11-26",6552419,903394,2.7],
+    ["2025-12-03",6535781,937167,2.3],["2025-12-10",6539303,858946,2.0],
+    ["2025-12-17",6556861,833093,1.8],["2025-12-24",6581231,837120,1.6],
+    ["2025-12-31",6640618,837306,1.5],["2026-01-07",6573602,796148,1.4],
+    ["2026-01-14",6581700,779175,1.3],["2026-01-21",6584580,869261,1.2],
+    ["2026-01-28",6587568,923042,1.15],["2026-02-04",6605909,908773,1.1],
+    ["2026-02-11",6622382,915306,1.05],["2026-02-18",6613395,912727,1.0],
+    ["2026-02-25",6613797,887612,0.95],["2026-03-04",6628894,832053,0.9],
+    ["2026-03-11",6646344,838186,0.87],["2026-03-18",6655939,853052,0.84],
+    ["2026-03-25",6657161,874077,0.822],["2026-04-01",6675344,847718,0.81],
+    ["2026-04-08",6693871,748376,0.79],["2026-04-15",6705696,751354,0.77],
+    ["2026-04-22",6707419,1005968,0.75],["2026-04-29",6699950,981929,0.73],
+    ["2026-05-06",6709505,877761,0.71],["2026-05-13",6728502,838584,0.69],
+    ["2026-05-20",6713643,781293,0.67],["2026-05-27",6704383,830296,0.65],
+    ["2026-06-03",6711495,875713,0.63],["2026-06-10",6725397,828122,0.6],
+    ["2026-06-17",6736424,880713,0.55],["2026-06-24",6735645,918696,0.5],
+    ["2026-07-01",6724564,880237,0.3],["2026-07-08",6735609,774062,0.2],
+    ["2026-07-15",6743028,756218,0.15],["2026-07-22",6747378,829623,0.12],
+    ["2026-07-29",6738190,910776,0.1],["2026-08-05",6748567,907324,0.2],
+    ["2026-08-12",6759955,963950,0.3],["2026-08-19",6745699,953612,0.4],
+    ["2026-08-26",6730912,950736,0.5],["2026-09-02",6737204,967935,0.55],
+    ["2026-09-09",6740619,883335,0.6],["2026-09-16",6746548,877028,0.7],
+    ["2026-09-23",6747704,977084,0.851],
+  ];
+
+  // Balance del BCE (BCE Eurosistema, millones de euros, semanal), dato real de
+  // fred.stlouisfed.org/data/ECBASSETSW el 03/10/2026. Mismas 121 fechas que arriba
+  // (semana a semana, viernes en vez de miércoles, diferencia irrelevante).
+  const ECB_RAW_EUR_M = [
+    6541633,6534521,6536817,6522003,6497699,6494463,6478323,6475497,
+    6468687,6462215,6449231,6459136,6473096,6456600,6442517,6428492,
+    6398397,6438772,6441605,6429110,6414443,6404234,6392990,6382997,
+    6385076,6372760,6351987,6353201,6344802,6357247,6412636,6407186,
+    6403368,6408074,6393680,6371003,6368862,6349598,6319531,6287780,
+    6274495,6274268,6246998,6338174,6329821,6329339,6329947,6313602,
+    6301244,6291674,6293998,6274536,6243216,6237173,6241546,6232169,
+    6141314,6137098,6118884,6121778,6108888,6100485,6078927,6084159,
+    6089393,6082009,6083487,6070545,6070838,6209218,6199268,6192365,
+    6195379,6170944,6156666,6157668,6152427,6143717,6131382,6129214,
+    6134804,6163751,6321626,6291161,6280697,6278438,6289997,6255953,
+    6242900,6234456,6226783,6176464,6168261,6155306,6162122,6253432,
+    6246927,6218303,6215651,6196001,6185235,6179184,6186508,6162017,
+    6136317,6135633,6119940,6117260,5983015,5970516,5949077,5944015,
+    5941248,5923023,5927307,5913041,5915343,5912178,5911237,5898477,
+    5897262,
+  ];
+
+  // Banco de Japón (activos totales, 100 millones de yenes, MENSUAL — así lo publica
+  // el BoJ, no hay versión semanal) y los dos tipos de cambio, también mensuales
+  // (el cambio semana a semana es pequeño, no merece la pena ir a diario).
+  // Fuente: fred.stlouisfed.org/data/JPNASSETS, /data/exuseu, /data/exjpus el 03/10/2026.
+  // [mes, BoJ 100M JPY, USD por EUR, JPY por USD]
+  const MONTHLY_INTL = [
+    ["2024-06",7536709,1.0763,157.8600],["2024-07",7617141,1.0847,157.5182],
+    ["2024-08",7648115,1.1020,146.2641],["2024-09",7532992,1.1104,142.9540],
+    ["2024-10",7568635,1.0895,149.8909],["2024-11",7599596,1.0621,153.7126],
+    ["2024-12",7479920,1.0472,153.8143],["2025-01",7443455,1.0356,156.4819],
+    ["2025-02",7470520,1.0413,151.5716],["2025-03",7297669,1.0813,149.0576],
+    ["2025-04",7312029,1.1232,144.1286],["2025-05",7336035,1.1274,144.8762],
+    ["2025-06",7174942,1.1534,144.4835],["2025-07",7214098,1.1671,147.2014],
+    ["2025-08",7240302,1.1647,147.4786],["2025-09",6957819,1.1739,147.8629],
+    ["2025-10",6963487,1.1641,151.3545],["2025-11",6979490,1.1558,155.1411],
+    ["2025-12",6777762,1.1710,155.9150],["2026-01",6828680,1.1744,156.6505],
+    ["2026-02",6837705,1.1824,155.1016],["2026-03",6630250,1.1557,158.6827],
+    ["2026-04",6632533,1.1697,159.1173],["2026-05",6643630,1.1681,158.1530],
+    ["2026-06",6395509,1.1516,160.7700],["2026-07",6442957,1.1423,162.3295],
+    ["2026-08",6446620,1.1594,158.8476],["2026-09",6446620,1.1505,158.8476],
+  ];
+
+  function getWeeklyNetLiqParts() {
+    return NETLIQ_RAW.map(([d, walcl, tga, rrp], i) => ({
+      t: Date.parse(d + 'T00:00:00Z'), walcl, tga, rrp,
+      ecb: ECB_RAW_EUR_M[Math.min(i, ECB_RAW_EUR_M.length - 1)],
+    })).sort((a, b) => a.t - b.t);
+  }
+
+  function getMonthlyIntl(t) {
+    const ym = new Date(t).toISOString().slice(0, 7);
+    let row = MONTHLY_INTL.find(r => r[0] === ym);
+    if (!row) row = ym < MONTHLY_INTL[0][0] ? MONTHLY_INTL[0] : MONTHLY_INTL[MONTHLY_INTL.length - 1];
+    return { jpnAssets100M: row[1], eurUsd: row[2], jpyUsd: row[3] };
+  }
+
+  // TGA diaria en directo — API pública del Tesoro de EEUU (Fiscal Data), sin clave.
+  // account_type "Treasury General Account (TGA) Closing Balance" es el saldo de
+  // cierre del día: el mismo concepto que WTREGEN de FRED, pero a diario en vez de
+  // semanal. (El nombre "Federal Reserve Account" es el de los PDF clásicos de la
+  // DTS; la API usa esta otra etiqueta.)
+  async function fetchTgaDaily() {
+    const start = '2024-05-25';
+    // Solo filtramos por fecha en el servidor; el account_type se comprueba en JS.
+    // Pedimos open_today_bal además de close_today_bal porque, para la fila de
+    // "Closing Balance", close_today_bal viene vacío ("null") en el esquema actual
+    // de la API — el saldo real hay que sacarlo de open_today_bal en su lugar.
+    const filtro = 'record_date:gte:' + start;
+    const url = 'https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance'
+      + '?fields=' + encodeURIComponent('record_date,account_type,open_today_bal,close_today_bal')
+      + '&filter=' + encodeURIComponent(filtro)
+      + '&sort=' + encodeURIComponent('record_date')
+      + '&page[size]=10000';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('Tesoro EEUU: HTTP ' + r.status);
+    const j = await r.json();
+    const rows = j.data || [];
+    if (!rows.length) throw new Error('Tesoro EEUU: la API devolvió 0 filas en total (sin filtrar)');
+    const map = new Map();
+    let coincideTipo = 0, fallaParseo = 0, muestra = null;
+    for (const row of rows) {
+      const tipo = (row.account_type || '').trim();
+      if (!/closing/i.test(tipo)) continue;
+      coincideTipo++;
+      if (!muestra) muestra = JSON.stringify(row);
+      const t = Date.parse(row.record_date + 'T00:00:00Z');
+      let vStr = row.close_today_bal;
+      if (vStr === null || vStr === 'null' || vStr === undefined) vStr = row.open_today_bal;
+      const v = parseFloat(vStr);
+      if (isNaN(t) || isNaN(v)) { fallaParseo++; continue; }
+      map.set(t, v);
+    }
+    if (map.size < 30) {
+      throw new Error('Tesoro EEUU: ' + rows.length + ' filas totales, ' + coincideTipo
+        + ' con "closing", ' + fallaParseo + ' sin parsear bien, ' + map.size
+        + ' válidas. Muestra: ' + (muestra || 'ninguna fila con "closing"'));
+    }
+    return map;
+  }
+
+  function buildDailyNetLiq(tgaDailyMap) {
+    const parts = getWeeklyNetLiqParts();
+    const DAY = 86400000;
+    const startDay = parts[0].t;
+    const endDay = Date.now();
+    const out = [];
+    let wi = 0;
+    for (let t = startDay; t <= endDay; t += DAY) {
+      while (wi + 1 < parts.length && parts[wi + 1].t <= t) wi++;
+      const walcl = parts[wi].walcl; // solo se publica semanalmente: se mantiene entre semanas
+      const rrp = parts[wi].rrp;     // ídem — su peso ya es mínimo, ver nota más abajo
+      let tga = null;
+      if (tgaDailyMap) {
+        for (let back = 0; back <= 4 && tga === null; back++) {
+          const v = tgaDailyMap.get(t - back * DAY);
+          if (v !== undefined) tga = v;
+        }
+      }
+      if (tga === null) tga = parts[wi].tga; // sin dato diario: se usa el semanal de FRED
+      const netLiqUS = (walcl - tga - rrp * 1000) * 1e6; // USD reales
+
+      const ecbEurM = parts[wi].ecb;
+      const { jpnAssets100M, eurUsd, jpyUsd } = getMonthlyIntl(t);
+      const ecbUSD = ecbEurM * 1e6 * eurUsd;           // millones EUR -> EUR -> USD
+      const bojUSD = (jpnAssets100M * 1e8) / jpyUsd;   // 100M JPY -> JPY -> USD
+
+      out.push({ t, v: netLiqUS + ecbUSD + bojUSD });
+    }
+    return out;
+  }
+
+  function getM2Weekly(dailyRaw) {
+    // suavizado de 7 días: sin esto, los pagos/subastas del Tesoro tapan la tendencia
+    // de fondo con ruido día a día — con la TGA ya a diario, hace falta más que antes.
+    const WIN = 7;
+    return dailyRaw.map((p, i) => {
+      const lo = Math.max(0, i - WIN + 1);
+      const slice = dailyRaw.slice(lo, i + 1);
+      const avg = slice.reduce((s, x) => s + x.v, 0) / slice.length;
+      return { t: p.t, v: avg };
+    });
+  }
+
+  async function calcular() {
+    let tgaMap = null, tgaFuente = 'semanal (FRED, sin dato diario)';
+    try {
+      tgaMap = await fetchTgaDaily();
+      tgaFuente = 'diaria (Tesoro EEUU, en directo)';
+    } catch (e) {
+      tgaFuente = 'semanal (FRED) — Tesoro EEUU falló: ' + (e && e.message ? e.message : 'error');
+    }
+    const btc = await fetchBtcWeekly();
+    const dailyRaw = buildDailyNetLiq(tgaMap);
+    const m2 = getM2Weekly(dailyRaw);
+    const m2Shift = m2.map(p => ({ t: p.t + SHIFT_MS, v: p.v }));
+    return { btc, m2Shift, m2Ultimo: m2[m2.length - 1], tgaFuente };
+  }
+
+  function draw(res) {
+    const { btc, m2Shift } = res;
+    if (!btc.length) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    const h = canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#131722'; ctx.fillRect(0, 0, w, h);
+
+    const tMin = btc[0].t;
+    let tMax = Math.max(btc[btc.length - 1].t, m2Shift[m2Shift.length - 1].t);
+    tMax += 14 * 86400000; // margen extra al final para poder leer hacia dónde apunta la liquidez
+
+    const isSmall = w < 380 * dpr;
+    const padLeft = (isSmall ? 46 : 62) * dpr, padRight = 10 * dpr, padTop = 10 * dpr, padBottom = 22 * dpr;
+    const plotW = w - padLeft - padRight, plotH = h - padTop - padBottom;
+
+    function x(t) { return padLeft + ((t - tMin) / (tMax - tMin)) * plotW; }
+
+    let pLo = Infinity, pHi = -Infinity;
+    for (const c of btc) { if (c.l < pLo) pLo = c.l; if (c.h > pHi) pHi = c.h; }
+    const pad = (pHi - pLo) * 0.06;
+    pLo -= pad; pHi += pad;
+    function yP(price) { return padTop + (1 - (price - pLo) / (pHi - pLo)) * plotH; }
+
+    // gridlines de precio (eje izquierdo)
+    const step = niceStep(pHi - pLo, 6);
+    const first = Math.ceil(pLo / step) * step;
+    ctx.font = (isSmall ? 9 : 10.5) * dpr + 'px ui-monospace, monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let pr = first; pr <= pHi; pr += step) {
+      const gy = yP(pr);
+      ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1 * dpr;
+      ctx.beginPath(); ctx.moveTo(padLeft, gy); ctx.lineTo(w - padRight, gy); ctx.stroke();
+      ctx.fillText(fmtPrice(pr), padLeft - 6 * dpr, gy);
+    }
+
+    // velas BTC
+    const slotPx = plotW / btc.length;
+    const bodyW = Math.max(1.5 * dpr, Math.min(slotPx * 0.62, 14 * dpr));
+    for (const c of btc) {
+      const cx = x(c.t);
+      const up = c.c >= c.o;
+      const col = up ? 'rgba(238,241,240,0.92)' : 'rgba(120,126,132,0.85)';
+      ctx.strokeStyle = col; ctx.lineWidth = Math.max(1, 1 * dpr);
+      ctx.beginPath(); ctx.moveTo(cx, yP(c.h)); ctx.lineTo(cx, yP(c.l)); ctx.stroke();
+      const yO = yP(c.o), yC = yP(c.c);
+      const top = Math.min(yO, yC), bh = Math.max(1.2 * dpr, Math.abs(yC - yO));
+      ctx.fillStyle = col; ctx.fillRect(cx - bodyW / 2, top, bodyW, bh);
+    }
+
+    // M2 desplazado, normalizado a la misma banda vertical (escala propia)
+    let mLo = Infinity, mHi = -Infinity;
+    const visibles = m2Shift.filter(p => p.t >= tMin && p.t <= tMax);
+    for (const p of visibles) { if (p.v < mLo) mLo = p.v; if (p.v > mHi) mHi = p.v; }
+    if (mHi > mLo) {
+      function yM(v) { return padTop + (1 - (v - mLo) / (mHi - mLo)) * plotH; }
+      ctx.beginPath();
+      ctx.strokeStyle = '#f0c930'; ctx.lineWidth = 2 * dpr; ctx.lineJoin = 'round';
+      visibles.forEach((p, i) => { const cx = x(p.t), cy = yM(p.v); if (i === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy); });
+      ctx.stroke();
+      // punto y etiqueta del último valor de M2 desplazado
+      const lastM2 = visibles[visibles.length - 1];
+      const lx = x(lastM2.t), ly = yM(lastM2.v);
+      ctx.fillStyle = '#f0c930';
+      ctx.beginPath(); ctx.arc(lx, ly, 4 * dpr, 0, Math.PI * 2); ctx.fill();
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold ' + (isSmall ? 9.5 : 10.5) * dpr + 'px ui-monospace, monospace';
+      ctx.fillText('Liq. neta ' + fmtT(lastM2.v), Math.min(lx + 8 * dpr, w - padRight - 120 * dpr), ly);
+    }
+
+    // línea vertical "HOY"
+    const now = Date.now();
+    if (now >= tMin && now <= tMax) {
+      const nx = x(now);
+      ctx.setLineDash([4 * dpr, 4 * dpr]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1 * dpr;
+      ctx.beginPath(); ctx.moveTo(nx, padTop); ctx.lineTo(nx, h - padBottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.font = (isSmall ? 9 : 10) * dpr + 'px ui-monospace, monospace';
+      ctx.fillText('HOY', nx, padTop + 12 * dpr);
+    }
+
+    // precio actual BTC
+    const lastC = btc[btc.length - 1].c;
+    const py = yP(lastC);
+    ctx.setLineDash([5 * dpr, 4 * dpr]);
+    ctx.strokeStyle = 'rgba(238,241,240,0.5)'; ctx.lineWidth = 1 * dpr;
+    ctx.beginPath(); ctx.moveTo(padLeft, py); ctx.lineTo(w - padRight, py); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#eef1f0';
+    ctx.font = 'bold ' + (isSmall ? 9.5 : 10.5) * dpr + 'px ui-monospace, monospace';
+    ctx.fillText('AHORA ' + fmtPrice(lastC), w - padRight - 2 * dpr, py - 10 * dpr);
+
+    // eje de fechas
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.font = (isSmall ? 8.5 : 9.5) * dpr + 'px ui-monospace, monospace';
+    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const nTicks = isSmall ? 4 : 7;
+    for (let i = 0; i <= nTicks; i++) {
+      const t = tMin + (tMax - tMin) * (i / nTicks);
+      const dt = new Date(t);
+      ctx.fillText(meses[dt.getUTCMonth()] + ' ' + String(dt.getUTCFullYear()).slice(2), x(t), h - padBottom + 4 * dpr);
+    }
+  }
+
+  function stopLive() { if (liveReconnectTimer) { clearTimeout(liveReconnectTimer); liveReconnectTimer = null; } if (liveWs) { try { liveWs.onclose = null; liveWs.close(); } catch (e) {} liveWs = null; } }
+
+  function connectLive() {
+    stopLive();
+    liveBackoff = 1500;
+    openLiveSocket();
+  }
+  function openLiveSocket() {
+    let socket;
+    try { socket = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_1d'); }
+    catch (e) { liveReconnectTimer = setTimeout(openLiveSocket, liveBackoff); return; }
+    liveWs = socket;
+    socket.onopen = () => { liveBackoff = 1500; };
+    socket.onmessage = (ev) => {
+      if (socket !== liveWs || !lastResult) return;
+      try {
+        const k = JSON.parse(ev.data).k;
+        if (!k) return;
+        const btc = lastResult.btc, last = btc[btc.length - 1];
+        if (k.t === last.t) { last.h = Math.max(last.h, +k.h); last.l = Math.min(last.l, +k.l); last.c = +k.c; draw(lastResult); }
+      } catch (e) {}
+    };
+    socket.onclose = () => { if (socket !== liveWs) return; liveBackoff = Math.min(liveBackoff * 1.6, 15000); liveReconnectTimer = setTimeout(openLiveSocket, liveBackoff); };
+    socket.onerror = () => { try { socket.close(); } catch (e) {} };
+  }
+
+  let busy = false;
+  async function loadAndRender(showLoading) {
+    if (busy) return;
+    busy = true;
+    statusDot.className = 'status-dot busy'; statusText.textContent = 'calculando…';
+    if (showLoading) loadingEl.classList.remove('hidden');
+    try {
+      const res = await calcular();
+      lastResult = res;
+      subLine.textContent = madridHora(Date.now()) + ' (Madrid)  ·  última liquidez global: ' + fmtT(res.m2Ultimo.v) + ' (' + new Date(res.m2Ultimo.t).toISOString().slice(0,10) + ')  ·  BTC: ' + fmtPrice(res.btc[res.btc.length-1].c) + '  ·  TGA: ' + res.tgaFuente;
+      draw(res);
+      connectLive();
+      statusDot.className = 'status-dot live'; statusText.textContent = 'actualizado ' + madridHora(Date.now());
+      loadingEl.classList.add('hidden');
+    } catch (e) {
+      statusDot.className = 'status-dot err';
+      statusText.textContent = 'error: ' + (e && e.message ? e.message : 'fallo desconocido');
+      loadingEl.innerHTML = 'No se ha podido cargar.<br>' + (e && e.message ? e.message : '') + '<br>Pulsa "Actualizar" para reintentar.';
+      loadingEl.classList.remove('hidden');
+    } finally {
+      busy = false;
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => loadAndRender(false), REFRESH_MS);
+    }
+  }
+
+  refreshBtn.addEventListener('click', () => loadAndRender(true));
+  window.addEventListener('resize', () => { if (lastResult) draw(lastResult); });
+
+  loadAndRender(true);
+})();
+</script>
+</body>
+</html>
