@@ -85,6 +85,7 @@
   .legend { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 8px 12px 4px; font-size: 10px; color: var(--dim); flex: 0 0 auto; }
   .legend span { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); }
   .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset; }
+  .sw-gradient { width: 40px; height: 8px; border-radius: 2px; display: inline-block; box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset; }
   footer { padding: 4px 16px calc(6px + env(safe-area-inset-bottom, 0px)); text-align: center; font-size: 9px; color: var(--dim2); flex: 0 0 auto; }
   @media (max-width: 640px) {
     header { padding: 6px 10px; gap: 8px; }
@@ -126,7 +127,7 @@
       <div class="t1"><span class="tag">LIQ</span><span id="titleLine">— — Liquidaciones estimadas · corto plazo</span></div>
       <div class="t2" id="subLine">cargando…</div>
     </div>
-    <div class="t3" id="aclLine">Nuestro modelo · cada bloque es un nivel sin tocar · color = intensidad relativa</div>
+    <div class="t3" id="aclLine">Intensidad por color · poca liquidez = verde claro · mucha = rojo</div>
   </div>
 
   <div class="ohlc" id="ohlcLine">&nbsp;</div>
@@ -137,15 +138,12 @@
 
   <div id="chartWrap">
     <canvas id="chart"></canvas>
-    <div id="loading"><div><b>Calculando el mapa de liquidaciones…</b>Interés abierto de Binance + Bybit · puede tardar unos segundos</div></div>
+    <div id="loading"><div><b>Calculando el mapa de liquidaciones…</b>Interés abierto de Binance · puede tardar unos segundos</div></div>
   </div>
 
   <div class="legend">
-    <span><i class="sw" style="background:#1f6f7a"></i>baja</span>
-    <span><i class="sw" style="background:#2f9a2f"></i>media</span>
-    <span><i class="sw" style="background:#a9a92a"></i>alta</span>
-    <span><i class="sw" style="background:#c62828"></i>máxima</span>
-    <span><i class="sw" style="background:#555c6b"></i>previa a la ventana (incierta)</span>
+    <span><i class="sw-gradient" style="background:linear-gradient(90deg,#1f6f7a 0%,#2f9a2f 35%,#a9a92a 70%,#c62828 100%)"></i>intensidad: poca → máxima</span>
+    <span><i class="sw" style="background:#555c6b"></i>previa a la ventana</span>
     <span><i class="sw" style="background:rgba(180,110,110,0.55)"></i>corto limpiado</span>
     <span><i class="sw" style="background:rgba(110,160,110,0.55)"></i>largo limpiado</span>
   </div>
@@ -166,17 +164,23 @@
   const PASO_MIN = 60;
   const EXT = 10;
   const PAD_PCT = 0.05;
-  const PCTS = [70, 85, 94, 98];
-  const COL = { 1: '#1f6f7a', 2: '#2f9a2f', 3: '#a9a92a', 4: '#c62828' };
+  const REFRESH_MS = 5 * 60 * 1000;
+  const UMBRAL_ETIQUETA_BARRIDO = 5e6;
+
+  // NUEVO: colores de barrido y de fantasma
   const GRIS = '#555c6b';
-  // NUEVO: colores de barrido diferenciados + más opacos
-  const GRIS_BARRIDO_CORTO = 'rgba(180,110,110,0.55)';   // cortos barridos → gris rojizo
-  const GRIS_BARRIDO_LARGO = 'rgba(110,160,110,0.55)';   // largos barridos → gris verdoso
+  const GRIS_BARRIDO_CORTO = 'rgba(180,110,110,0.55)';
+  const GRIS_BARRIDO_LARGO = 'rgba(110,160,110,0.55)';
   const LINEA_BARRIDO_CORTO = 'rgba(220,150,150,0.9)';
   const LINEA_BARRIDO_LARGO = 'rgba(150,210,150,0.9)';
-  const FLASH_COLOR = 'rgba(255,255,255,0.85)';            // destello blanco al barrido nuevo
-  const REFRESH_MS = 5 * 60 * 1000;
-  const UMBRAL_ETIQUETA_BARRIDO = 5e6;                     // $5M mínimo para etiquetar barridos
+
+  // NUEVO: cuántos picos etiquetar arriba y abajo
+  const PICOS_POR_LADO = 5;
+  const SEPARACION_PICOS = 0.008;   // 0.8% mínimo entre picos
+
+  // NUEVO: umbral mínimo de liquidez para pintar un bloque (filtra ruido)
+  // Se calcula como percentil sobre las celdas con valor. Bajo = más bloques.
+  const PCT_FILTRO_MIN = 35;
 
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
@@ -187,7 +191,6 @@
   const countdownEl = document.getElementById('countdown');
   const titleLine = document.getElementById('titleLine');
   const subLine = document.getElementById('subLine');
-  const aclLine = document.getElementById('aclLine');
   const ohlcLine = document.getElementById('ohlcLine');
   const cortosLine = document.getElementById('cortosLine');
   const largosLine = document.getElementById('largosLine');
@@ -198,7 +201,6 @@
   let refreshTimer = null, countdownTimer = null, nextRefreshAt = 0;
   let lastResult = null;
   let liveWs = null, liveReconnectTimer = null, liveBackoff = 1500, liveSymbol = null;
-  // NUEVO: barridos detectados en vivo (para flash) → {precio, idx, largo, t}
   let barridosEnVivo = [];
 
   function decPrecio(p) { return p >= 1000 ? 0 : p >= 100 ? 1 : p >= 1 ? 2 : 4; }
@@ -223,7 +225,6 @@
     const frac = idx - lo;
     return sortedAsc[lo] * (1 - frac) + sortedAsc[hi] * frac;
   }
-  function digitize(x, umbrales) { let idx = 0; for (const t of umbrales) { if (x >= t) idx++; else break; } return idx; }
   function smooth1D(vec) {
     const k = [1, 2, 3, 2, 1], ksum = 9, half = 2, n = vec.length;
     const out = new Float64Array(n);
@@ -246,7 +247,7 @@
     }
     return elegidos.map(i => {
       let total = 0;
-      for (let k = 0; k < centros.length; k++) if (Math.abs(centros[k] / centros[i] - 1) <= 0.006) total += vec[k];
+      for (let k = 0; k < centros.length; k++) if (Math.abs(centros[k] / centros[i] - 1) <= 0.004) total += vec[k];
       return { precio: centros[i], total, val: vec[i] };
     });
   }
@@ -256,6 +257,31 @@
     const norm = raw / mag;
     const step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
     return step * mag;
+  }
+
+  // ═══ NUEVO: interpolar entre 5 colores para gradiente continuo ═══
+  // Paleta: verde azulado → verde → amarillo → naranja → rojo
+  const COLOR_STOPS = [
+    { t: 0.00, c: [ 31, 111, 122] },  // #1f6f7a teal
+    { t: 0.25, c: [ 47, 154,  47] },  // #2f9a2f verde
+    { t: 0.50, c: [169, 169,  42] },  // #a9a92a amarillo
+    { t: 0.75, c: [220, 130,  40] },  // naranja intermedio
+    { t: 1.00, c: [198,  40,  40] },  // #c62828 rojo
+  ];
+  function colorPorIntensidad(t) {
+    // t en [0,1]
+    if (t <= 0) t = 0; if (t >= 1) t = 1;
+    for (let i = 0; i < COLOR_STOPS.length - 1; i++) {
+      const a = COLOR_STOPS[i], b = COLOR_STOPS[i + 1];
+      if (t >= a.t && t <= b.t) {
+        const f = (t - a.t) / (b.t - a.t);
+        const r = Math.round(a.c[0] + (b.c[0] - a.c[0]) * f);
+        const g = Math.round(a.c[1] + (b.c[1] - a.c[1]) * f);
+        const bl = Math.round(a.c[2] + (b.c[2] - a.c[2]) * f);
+        return `rgb(${r},${g},${bl})`;
+      }
+    }
+    return 'rgb(198,40,40)';
   }
 
   async function fetchKlines(symbol) {
@@ -291,31 +317,6 @@
     return out;
   }
 
-  async function fetchBybitOi(symbol) {
-    try {
-      const url = `https://api.bybit.com/v5/market/open-interest?category=linear&symbol=${symbol}&intervalTime=1h&limit=200`;
-      const r = await fetch(url);
-      if (!r.ok) return { map: null, status: 'http-' + r.status };
-      const j = await r.json();
-      if (j.retCode !== 0) return { map: null, status: 'ret-' + j.retCode };
-      const map = new Map();
-      for (const d of (j.result && j.result.list) || []) map.set(Number(d.timestamp), parseFloat(d.openInterest));
-      return { map, status: 'ok' };
-    } catch (e) { return { map: null, status: 'network' }; }
-  }
-  async function fetchBybitLs(symbol) {
-    try {
-      const url = `https://api.bybit.com/v5/market/account-ratio?category=linear&symbol=${symbol}&period=1h&limit=200`;
-      const r = await fetch(url);
-      if (!r.ok) return { map: null, status: 'http-' + r.status };
-      const j = await r.json();
-      if (j.retCode !== 0) return { map: null, status: 'ret-' + j.retCode };
-      const map = new Map();
-      for (const d of (j.result && j.result.list) || []) map.set(Number(d.timestamp), parseFloat(d.buyRatio));
-      return { map, status: 'ok' };
-    } catch (e) { return { map: null, status: 'network' }; }
-  }
-
   function stopLive() {
     if (liveReconnectTimer) { clearTimeout(liveReconnectTimer); liveReconnectTimer = null; }
     if (liveWs) { try { liveWs.onclose = null; liveWs.close(); } catch (e) {} liveWs = null; }
@@ -345,11 +346,9 @@
         const lastIdx = d.t.length - 1;
         const nuevoH = parseFloat(k.h), nuevoL = parseFloat(k.l), nuevoC = parseFloat(k.c);
 
-        // NUEVO: detectar si esta vela barrió algún nivel (buscar en barridos del modelo)
         if (k.t === d.t[lastIdx] && lastResult.model && lastResult.model.barridos) {
           for (const b of lastResult.model.barridos) {
             if (b.idx !== lastIdx) continue;
-            const precioTocado = b.largo ? nuevoL : nuevoH;
             const barrioAhora = b.largo ? (b.precio >= nuevoL) : (b.precio <= nuevoH);
             const yaRegistrado = barridosEnVivo.some(x => Math.abs(x.precio - b.precio) < b.precio * 1e-9 && x.t === d.t[lastIdx]);
             if (barrioAhora && !yaRegistrado) {
@@ -417,34 +416,6 @@
       tiers: moneda === 'HYPE' ? TIERS_HYPE : TIERS_DEFAULT,
       fuentes: ['Binance'], bybitStatus: 'unknown',
     };
-
-    try {
-      const [byOiR, byLsR] = await Promise.all([fetchBybitOi(symbol), fetchBybitLs(symbol)]);
-      d.bybitStatus = byOiR.status;
-      if (byOiR.map && byOiR.map.size > 0) {
-        const byOiKeys = [...byOiR.map.keys()].sort((a, b) => a - b);
-        const byOiVals = byOiKeys.map(k => byOiR.map.get(k));
-        const byLsKeys = byLsR.map ? [...byLsR.map.keys()].sort((a, b) => a - b) : [];
-        const byLsVals = byLsKeys.map(k => byLsR.map.get(k));
-        let cobertura = 0;
-        const oiUsd = [], lsBy = [];
-        for (let i = 0; i < d.t.length; i++) {
-          const coinOi = ffAt(byOiKeys, byOiVals, d.t[i], null);
-          if (coinOi !== null) cobertura++;
-          oiUsd.push((coinOi || 0) * d.c[i]);
-          lsBy.push(byLsR.map ? ffAt(byLsKeys, byLsVals, d.t[i], 0.5) : 0.5);
-        }
-        if (cobertura / d.t.length >= 0.3) {
-          for (let i = 0; i < d.t.length; i++) {
-            const total = d.oi[i] + oiUsd[i];
-            if (total > 0) d.longShare[i] = (d.oi[i] * d.longShare[i] + oiUsd[i] * lsBy[i]) / total;
-            d.oi[i] = total;
-          }
-          d.fuentes.push('Bybit');
-        }
-      }
-    } catch (e) { d.bybitStatus = 'exception'; }
-
     return d;
   }
 
@@ -573,8 +544,9 @@
 
     const cortosMask = new Float64Array(NBINS), largosMask = new Float64Array(NBINS);
     for (let i = 0; i < NBINS; i++) { cortosMask[i] = centros[i] > precio ? Sn[i] : 0; largosMask[i] = centros[i] < precio ? Ln[i] : 0; }
-    const picosCortos = picos(cortosMask, centros, 3, 0.012);
-    const picosLargos = picos(largosMask, centros, 3, 0.012);
+    // NUEVO: 5 picos por lado con separación 0.8%
+    const picosCortos = picos(cortosMask, centros, PICOS_POR_LADO, SEPARACION_PICOS);
+    const picosLargos = picos(largosMask, centros, PICOS_POR_LADO, SEPARACION_PICOS);
 
     return { d, model, centros, precio, cortos5, largos5, picosCortos, picosLargos, moneda };
   }
@@ -605,13 +577,26 @@
     }
     const N = M.map((row, j) => { const out = new Float64Array(row.length); for (let k = 0; k < row.length; k++) out[k] = Math.max(row[k] - PM[j][k], 0); return out; });
 
+    // ═══ NUEVO: escala de color continua sobre TODAS las celdas con valor ═══
+    // Recogemos todos los valores positivos y calculamos percentiles de referencia
     const pos = [];
     for (const row of N) for (const v of row) if (v > 0) pos.push(v);
     pos.sort((a, b) => a - b);
-    const umbrales = PCTS.map(pct => percentile(pos, pct));
+    // pMin = valor mínimo para pintar (filtro anti-ruido)
+    // pMax = valor máximo de referencia (percentil 99 para que no lo aplasten outliers)
+    const pMin = pos.length ? percentile(pos, PCT_FILTRO_MIN) : 0;
+    const pMax = pos.length ? percentile(pos, 99) : 1;
+    // Referencia logarítmica para que la escala se aprecie mejor
+    function intensidad(v) {
+      if (v <= pMin) return 0;
+      // Escala logarítmica invertida para suavizar
+      const t = Math.log(v / pMin) / Math.log(pMax / pMin);
+      return Math.max(0, Math.min(1, t));
+    }
 
-    const idxGrid = N.map(row => row.map(v => digitize(v, umbrales)));
-    const grisGrid = N.map((row, j) => row.map((v, k) => PM[j][k] >= umbrales[1] && idxGrid[j][k] === 0));
+    // Grid de colores (uno por celda) y si se pinta
+    const colorGrid = N.map(row => row.map(v => v > pMin ? colorPorIntensidad(intensidad(v)) : null));
+    const grisGrid = N.map((row, j) => row.map((v, k) => PM[j][k] >= pMin && (colorGrid[j][k] === null)));
 
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -645,7 +630,7 @@
     const hbPx = Math.max(1.4 * dpr, (model.binWidth * 0.72) * (plotH / (yhi - ylo)));
     const blockW = colW * 0.76, blockX0 = colW * 0.12;
 
-    // ═══ BARRIDOS: color diferenciado + más visibles ═══
+    // Barridos primero
     for (const b of model.barridos) {
       if (b.precio < ylo || b.precio > yhi) continue;
       if (b.idx < off) continue;
@@ -665,24 +650,24 @@
       ctx.stroke();
     }
 
-    // Bloques activos encima
+    // Bloques con gradiente continuo
     for (let j = 0; j < nc; j++) {
       for (let k = 0; k < cenV.length; k++) {
-        const isGris = grisGrid[j][k], iv = idxGrid[j][k];
-        if (!isGris && !iv) continue;
-        ctx.fillStyle = isGris ? GRIS : COL[iv];
+        const isGris = grisGrid[j][k];
+        const color = colorGrid[j][k];
+        if (!isGris && !color) continue;
+        ctx.fillStyle = isGris ? GRIS : color;
         const bx = x(j) + blockX0, by = y(cenV[k]) - hbPx / 2;
         ctx.fillRect(bx, by, blockW, hbPx);
       }
     }
-    // Proyección derecha
+    // Proyección derecha (usa el último grid de color)
     const lastJ = nc - 1;
     for (let k = 0; k < cenV.length; k++) {
-      const iv = idxGrid[lastJ][k], isGris = grisGrid[lastJ][k];
-      if (!iv && !isGris) continue;
-      const color = iv ? COL[iv] : GRIS;
+      const color = colorGrid[lastJ][k], isGris = grisGrid[lastJ][k];
+      if (!color && !isGris) continue;
       ctx.globalAlpha = 0.48;
-      ctx.fillStyle = color;
+      ctx.fillStyle = color || GRIS;
       const by = y(cenV[k]) - hbPx / 2;
       for (let jj = nc; jj < nc + EXT; jj++) ctx.fillRect(x(jj) + blockX0, by, blockW, hbPx);
       ctx.globalAlpha = 1;
@@ -712,7 +697,7 @@
     ctx.font = 'bold ' + (isSmall ? 9.5 : 10.5) * dpr + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
     ctx.fillText('AHORA ' + fmtAxisNum(p), x(nc + EXT) - 4 * dpr, py - 8 * dpr);
 
-    // ═══ ETIQUETAS DE BARRIDOS GRANDES ═══
+    // Etiquetas de barridos grandes
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     const labelX = x(nc + EXT) + 4 * dpr;
     const fPrecio = (isSmall ? 9 : 10) * dpr, fImporte = (isSmall ? 8 : 8.5) * dpr;
@@ -729,24 +714,47 @@
       ctx.fillText(fmtUsd(b.amt) + ' ✓', labelX, ly + fImporte + 2 * dpr);
     }
 
-    // Etiquetas de picos activos
+    // Etiquetas de picos activos (ahora 5 arriba + 5 abajo) — con anti-solape
+    const etiquetasY = [];  // guardamos las Y ocupadas
+    function etiquetaLibre(ly, altura) {
+      for (const ey of etiquetasY) if (Math.abs(ey - ly) < altura) return false;
+      return true;
+    }
     function dibujarPico(pk, color) {
       if (pk.precio < ylo || pk.precio > yhi) return;
       const ly = y(pk.precio);
+      const altura = (fPrecio + fImporte + 6) * dpr;
+      // Empujar verticalmente si hay solape con otra etiqueta
+      let lyAjust = ly;
+      let intentos = 0;
+      while (!etiquetaLibre(lyAjust, altura) && intentos < 20) {
+        lyAjust += (lyAjust >= ly ? 1 : -1) * altura * 0.5;
+        intentos++;
+      }
+      etiquetasY.push(lyAjust);
+      // Línea conectora si se ha movido
+      if (Math.abs(lyAjust - ly) > 2 * dpr) {
+        ctx.strokeStyle = color.replace(')', ',0.4)').replace('rgb', 'rgba');
+        ctx.lineWidth = 0.8 * dpr;
+        ctx.beginPath();
+        ctx.moveTo(labelX - 2 * dpr, ly);
+        ctx.lineTo(labelX + 4 * dpr, lyAjust);
+        ctx.stroke();
+      }
       ctx.fillStyle = color;
       ctx.font = 'bold ' + fPrecio + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
-      ctx.fillText(fmtAxisNum(pk.precio), labelX, ly - 1 * dpr);
+      ctx.fillText(fmtAxisNum(pk.precio), labelX, lyAjust - 1 * dpr);
       ctx.font = fImporte + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
-      ctx.fillText(fmtUsd(pk.total), labelX, ly + fImporte + 2 * dpr);
+      ctx.fillText(fmtUsd(pk.total), labelX, lyAjust + fImporte + 2 * dpr);
     }
     for (const pk of res.picosCortos) dibujarPico(pk, '#FF8888');
     for (const pk of res.picosLargos) dibujarPico(pk, '#77DD99');
 
-    // ═══ FLASH BLANCO EN BARRIDOS RECIENTES ═══
+    // Flash blanco en barridos recientes
     const ahora = Date.now();
     for (const b of barridosEnVivo) {
       const edad = ahora - b.t;
-      if (edad > 2000) continue;  // solo flash los últimos 2 segundos
+      if (edad > 2000) continue;
       const alpha = 1 - edad / 2000;
       if (b.precio < ylo || b.precio > yhi) continue;
       if (b.idx < off || b.idx >= off + nc) continue;
@@ -756,7 +764,6 @@
       ctx.fillStyle = 'rgba(255,255,255,' + (alpha * 0.7).toFixed(3) + ')';
       ctx.fillRect(bx - 1 * dpr, by - 1 * dpr, blockW + 2 * dpr, hbPx + 2 * dpr);
     }
-    // limpiar los viejos
     barridosEnVivo = barridosEnVivo.filter(x => ahora - x.t < 5000);
 
     // Eje de horas
@@ -785,7 +792,6 @@
     brandSym.textContent = res.moneda + '/USDT';
     titleLine.textContent = `Liquidaciones estimadas · ${HORAS_ZOOM}H · velas ${PASO_MIN}m`;
     subLine.textContent = `${madridHora(Date.now())} Madrid · fuentes: ${res.d.fuentes.join(' + ')}`;
-    // Indicador visual del estado de Bybit
     const est = res.d.bybitStatus || 'unknown';
     if (est === 'ok') { srcBadge.textContent = 'Binance + Bybit'; srcBadge.className = 'src-badge ok'; }
     else { srcBadge.textContent = 'Bybit: ' + est; srcBadge.className = 'src-badge warn'; }
