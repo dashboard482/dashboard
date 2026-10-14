@@ -6,91 +6,222 @@
 <title>Liquidaciones en directo</title>
 <style>
   :root {
-    --bg: #131722;
-    --panel: #0d1117;
-    --ink: #eef1f0;
-    --dim: rgba(238,241,240,0.55);
-    --dim2: rgba(238,241,240,0.34);
-    --amber: #FFB84D;
-    box-sizing: border-box;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg:        #0e1117;
+    --panel:     #131722;
+    --panel-2:   #1a1e29;
+    --border:    #2a2e39;
+    --border-2:  #363a45;
+    --ink:       #d1d4dc;
+    --ink-strong:#f0f3fa;
+    --dim:       #787b86;
+    --dim2:      #5d606b;
+    --accent:    #2962ff;
+    --accent-h:  #1e53e5;
+    --up:        #26a69a;
+    --down:      #ef5350;
+    --amber:     #f7a600;
   }
   * { box-sizing: border-box; }
   html, body {
     height: 100%; margin: 0; background: var(--bg);
-    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Trebuchet MS', Roboto, Ubuntu, sans-serif;
     color: var(--ink); overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  #stage { position: fixed; inset: 0; height: 100dvh; display: flex; flex-direction: column; }
+  #stage {
+    position: fixed; inset: 0; height: 100dvh;
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 
   header {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 6px 14px 2px; padding-top: calc(6px + env(safe-area-inset-top, 0px));
-    flex-wrap: wrap; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 8px 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 auto;
   }
-  .brand { font-size: 12px; color: var(--dim); display: flex; align-items: center; gap: 8px; }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #666; display: inline-block; }
-  .status-dot.live { background: #26a69a; }
-  .status-dot.err { background: #ef5350; }
-  .status-dot.busy { background: #FFB84D; }
-  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  select, button.ctl {
-    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-    color: var(--ink); font-family: inherit; font-size: 12.5px;
-    padding: 6px 10px; border-radius: 6px; cursor: pointer;
+  .brand {
+    font-size: 12px; color: var(--dim);
+    display: flex; align-items: center; gap: 8px;
+    letter-spacing: 0.2px;
   }
-  button.ctl:active { background: rgba(255,255,255,0.16); }
-  .countdown { font-size: 11px; color: var(--dim2); min-width: 68px; text-align: right; }
+  .brand .sym {
+    color: var(--ink-strong); font-weight: 600; letter-spacing: 0.3px;
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--dim2); display: inline-block;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.03);
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .status-dot.live { background: var(--up); box-shadow: 0 0 8px rgba(38,166,154,0.6); }
+  .status-dot.err  { background: var(--down); box-shadow: 0 0 8px rgba(239,83,80,0.6); }
+  .status-dot.busy { background: var(--amber); animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
 
-  .titles { text-align: center; padding: 0 12px; flex: 0 0 auto; }
-  .t1 { font-size: clamp(12px, 3vw, 16px); font-weight: 700; letter-spacing: 0.01em; line-height: 1.15; }
-  .t2 { font-size: 10px; color: var(--amber); margin-top: 1px; }
-  .t3 { font-size: 9px; color: var(--dim2); margin-top: 1px; line-height: 1.25; }
+  .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  select, button.ctl {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--ink-strong);
+    font-family: inherit; font-size: 12px;
+    padding: 6px 10px; border-radius: 4px; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    outline: none;
+    line-height: 1.2;
+  }
+  select { padding-right: 24px; appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23787b86' d='M0 0l5 6 5-6z'/></svg>");
+    background-repeat: no-repeat; background-position: right 8px center;
+  }
+  select:hover, button.ctl:hover { background: #222630; border-color: var(--border-2); }
+  button.ctl:active { background: #2a2e39; transform: translateY(1px); }
+  button.ctl.primary {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff;
+  }
+  button.ctl.primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
+  .countdown {
+    font-size: 11px; color: var(--dim);
+    min-width: 60px; text-align: right;
+    font-variant-numeric: tabular-nums;
+    padding-right: 2px;
+  }
+
+  .titles {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; padding: 10px 16px 4px;
+    flex: 0 0 auto; flex-wrap: wrap;
+  }
+  .title-left { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .t1 {
+    font-size: 14px; font-weight: 600; color: var(--ink-strong);
+    letter-spacing: 0.2px; line-height: 1.2;
+  }
+  .t1 .tag {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--amber); background: rgba(247,166,0,0.12);
+    padding: 2px 6px; border-radius: 3px;
+    margin-right: 8px; vertical-align: middle;
+  }
+  .t2 {
+    font-size: 11px; color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .t3 {
+    font-size: 10px; color: var(--dim2);
+    max-width: 60%; text-align: right;
+    line-height: 1.3;
+  }
   .t4 { display: none; }
 
   .ohlc {
-    text-align: center; font-size: 10px; color: var(--dim); margin-top: 2px; flex: 0 0 auto;
+    padding: 2px 16px;
+    font-size: 11px; color: var(--dim);
+    font-variant-numeric: tabular-nums;
+    flex: 0 0 auto;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   }
-  .ohlc b { color: var(--ink); }
+  .ohlc .sep { color: var(--dim2); }
+  .ohlc b { color: var(--ink-strong); font-weight: 500; }
 
   .summary {
-    display: flex; justify-content: center; gap: 22px; margin-top: 1px;
-    font-size: 11px; font-weight: 700; flex-wrap: wrap; flex: 0 0 auto;
+    display: flex; gap: 8px; padding: 4px 16px 8px;
+    flex-wrap: wrap; flex: 0 0 auto;
   }
-  .summary .cortos { color: #ff9999; }
-  .summary .largos { color: #88eeaa; }
+  .summary > div {
+    font-size: 11px; font-weight: 500;
+    padding: 4px 10px; border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid transparent;
+  }
+  .summary .cortos {
+    color: #ff9b9b;
+    background: rgba(239,83,80,0.10);
+    border-color: rgba(239,83,80,0.20);
+  }
+  .summary .largos {
+    color: #8fe6b4;
+    background: rgba(38,166,154,0.10);
+    border-color: rgba(38,166,154,0.20);
+  }
 
   #chartWrap {
-    flex: 1 1 auto; min-height: 100px; margin: 5px 6px 0;
-    border-radius: 10px; border: 1px solid rgba(255,255,255,0.14);
-    background: var(--bg); overflow: hidden; position: relative;
+    flex: 1 1 auto; min-height: 100px;
+    margin: 0 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    overflow: hidden; position: relative;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.01);
   }
   canvas#chart { width: 100%; height: 100%; display: block; }
 
   #loading {
-    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    background: rgba(19,23,34,0.82); font-size: 13px; color: var(--amber); text-align: center; padding: 20px;
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(14,17,23,0.88);
+    font-size: 12px; color: var(--dim);
+    text-align: center; padding: 20px;
+    backdrop-filter: blur(2px);
+    line-height: 1.5;
   }
+  #loading b { color: var(--amber); font-weight: 600; display: block; margin-bottom: 6px; font-size: 13px; }
   #loading.hidden { display: none; }
 
   .legend {
-    display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
-    padding: 4px 12px 0; font-size: 9px; color: #CCCCCC; flex: 0 0 auto;
+    display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;
+    padding: 8px 12px 4px; font-size: 10px; color: var(--dim);
+    flex: 0 0 auto;
   }
-  .legend span { display: inline-flex; align-items: center; gap: 4px; }
-  .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .legend span {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    letter-spacing: 0.2px;
+  }
+  .sw {
+    width: 8px; height: 8px; border-radius: 2px;
+    display: inline-block;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset;
+  }
 
   footer {
-    padding: 2px 16px calc(4px + env(safe-area-inset-bottom, 0px));
-    text-align: center; font-size: 8px; color: var(--dim2); flex: 0 0 auto; line-height: 1.3;
+    padding: 4px 16px calc(6px + env(safe-area-inset-bottom, 0px));
+    text-align: center; font-size: 9px; color: var(--dim2);
+    flex: 0 0 auto; line-height: 1.4; letter-spacing: 0.2px;
+  }
+
+  @media (max-width: 640px) {
+    header { padding: 6px 10px; gap: 8px; }
+    .brand { font-size: 11px; }
+    select, button.ctl { font-size: 11px; padding: 5px 8px; }
+    .titles { padding: 8px 12px 2px; }
+    .t1 { font-size: 12.5px; }
+    .t3 { display: none; }
+    .ohlc { font-size: 10px; padding: 2px 12px; }
+    .summary { padding: 4px 12px 6px; gap: 6px; }
+    .summary > div { font-size: 10px; padding: 3px 8px; }
+    .legend { font-size: 9px; gap: 4px; padding: 6px 8px 2px; }
+    #chartWrap { margin: 0 6px; }
   }
 </style>
 </head>
 <body>
 <div id="stage">
   <header>
-    <div class="brand"><span id="statusDot" class="status-dot"></span><span id="statusText">cargando…</span></div>
+    <div class="brand">
+      <span id="statusDot" class="status-dot"></span>
+      <span class="sym" id="brandSym">—</span>
+      <span id="statusText">cargando…</span>
+    </div>
     <div class="controls">
       <select id="symbolSelect">
         <option value="BTC">BTC</option>
@@ -99,14 +230,16 @@
         <option value="HYPE">HYPE</option>
         <option value="XRP">XRP</option>
       </select>
-      <button class="ctl" id="refreshBtn">Actualizar ahora</button>
+      <button class="ctl primary" id="refreshBtn">Actualizar</button>
       <span class="countdown" id="countdown">–</span>
     </div>
   </header>
 
   <div class="titles">
-    <div class="t1" id="titleLine">— — LIQUIDACIONES ESTIMADAS · CORTO PLAZO (24 H, velas de 60 min)</div>
-    <div class="t2" id="subLine">cargando…</div>
+    <div class="title-left">
+      <div class="t1"><span class="tag">LIQ</span><span id="titleLine">— — Liquidaciones estimadas · corto plazo</span></div>
+      <div class="t2" id="subLine">cargando…</div>
+    </div>
     <div class="t3" id="aclLine">Nuestro modelo · cada bloque es un nivel sin tocar · color = intensidad relativa</div>
   </div>
 
@@ -118,7 +251,7 @@
 
   <div id="chartWrap">
     <canvas id="chart"></canvas>
-    <div id="loading">Calculando el mapa de liquidaciones…<br>(interés abierto de Binance + Bybit, puede tardar unos segundos)</div>
+    <div id="loading"><div><b>Calculando el mapa de liquidaciones…</b>Interés abierto de Binance + Bybit · puede tardar unos segundos</div></div>
   </div>
 
   <div class="legend">
@@ -138,7 +271,6 @@
 (function () {
   'use strict';
 
-  // ═══ Config (igual que el bot) ═══
   const SYMBOLS = { BTC: 'BTCUSDT', ETH: 'ETHUSDT', SOL: 'SOLUSDT', HYPE: 'HYPEUSDT', XRP: 'XRPUSDT' };
   const TIERS_DEFAULT = { 5: 0.10, 10: 0.25, 25: 0.30, 50: 0.20, 100: 0.15 };
   const TIERS_HYPE = { 5: 0.10, 10: 0.25, 25: 0.30, 50: 0.25, 75: 0.10 };
@@ -153,9 +285,9 @@
   const GRIS = '#555c6b';
   const REFRESH_MS = 5 * 60 * 1000;
 
-  // ═══ DOM ═══
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
+  const brandSym = document.getElementById('brandSym');
   const symbolSelect = document.getElementById('symbolSelect');
   const refreshBtn = document.getElementById('refreshBtn');
   const countdownEl = document.getElementById('countdown');
@@ -171,10 +303,9 @@
   const loadingEl = document.getElementById('loading');
 
   let refreshTimer = null, countdownTimer = null, nextRefreshAt = 0;
-  let lastResult = null; // para redibujar en resize sin recalcular
+  let lastResult = null;
   let liveWs = null, liveReconnectTimer = null, liveBackoff = 1500, liveSymbol = null;
 
-  // ═══ utilidades ═══
   function decPrecio(p) { return p >= 1000 ? 0 : p >= 100 ? 1 : p >= 1 ? 2 : 4; }
   function fmtPrice(p) { return '$' + p.toLocaleString('es-ES', { minimumFractionDigits: decPrecio(p), maximumFractionDigits: decPrecio(p) }); }
   function fmtAxisNum(p) { return p.toLocaleString('es-ES', { minimumFractionDigits: decPrecio(p), maximumFractionDigits: decPrecio(p) }); }
@@ -233,7 +364,6 @@
     return step * mag;
   }
 
-  // ═══ fetch: Binance Futures (público, sin clave) ═══
   async function fetchKlines(symbol) {
     const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1h&limit=900`;
     const r = await fetch(url);
@@ -292,8 +422,6 @@
     } catch (e) { return null; }
   }
 
-  // ═══ velas en directo (spot, mismo par): mueve la última vela y la línea AHORA
-  // entre recálculos del modelo, sin tocar los bloques de liquidación ═══
   function stopLive() {
     if (liveReconnectTimer) { clearTimeout(liveReconnectTimer); liveReconnectTimer = null; }
     if (liveWs) { try { liveWs.onclose = null; liveWs.close(); } catch (e) {} liveWs = null; }
@@ -308,7 +436,7 @@
   }
 
   function openLiveSocket(spotSymbol, moneda) {
-    if (liveSymbol !== moneda) return; // el símbolo cambió mientras tanto
+    if (liveSymbol !== moneda) return;
     let socket;
     try {
       socket = new WebSocket('wss://stream.binance.com:9443/ws/' + spotSymbol + '@kline_1h');
@@ -327,15 +455,12 @@
         const d = lastResult.d;
         const lastIdx = d.t.length - 1;
         if (k.t === d.t[lastIdx]) {
-          // misma vela que ya tenemos del modelo: solo actualizamos máx/mín/cierre visuales
           d.h[lastIdx] = Math.max(d.h[lastIdx], parseFloat(k.h));
           d.l[lastIdx] = Math.min(d.l[lastIdx], parseFloat(k.l));
           d.c[lastIdx] = parseFloat(k.c);
           lastResult.precio = d.c[lastIdx];
           draw(lastResult);
         } else if (k.t > d.t[lastIdx]) {
-          // ha empezado una vela nueva que el modelo aún no ha visto: solo movemos
-          // el precio "AHORA" hasta el próximo recálculo (cada 5 min los alcanza)
           lastResult.precio = parseFloat(k.c);
         }
       } catch (e) {}
@@ -413,12 +538,11 @@
           d.fuentes.push('Bybit');
         }
       }
-    } catch (e) { /* best-effort: seguimos solo con Binance */ }
+    } catch (e) { }
 
     return d;
   }
 
-  // ═══ el modelo de liquidaciones (igual que modelo_liquidaciones del bot) ═══
   function modeloLiquidaciones(d, binMin, binMax, nb) {
     const n = d.oi.length;
     const binWidth = (binMax - binMin) / nb;
@@ -515,7 +639,6 @@
     return { Lm, Sm, Pm, plFin, psFin, binWidth };
   }
 
-  // ═══ orquestación de cálculo ═══
   async function calcular(moneda) {
     const d = await buildLiqData(moneda);
     const precio = d.c[d.c.length - 1];
@@ -542,7 +665,6 @@
     return { d, model, centros, precio, cortos5, largos5, picosCortos, picosLargos, moneda };
   }
 
-  // ═══ dibujo (mismo estilo que _grafico_bloques del bot) ═══
   function draw(res) {
     const { d, model, centros, precio, moneda } = res;
     const n = d.oi.length;
@@ -559,7 +681,6 @@
     for (let i = 0; i < centros.length; i++) if (centros[i] >= ylo && centros[i] <= yhi) bi.push(i);
     const cenV = bi.map(i => centros[i]);
 
-    // M/PM para las velas mostradas
     const M = [], PM = [];
     for (let j = 0; j < nc; j++) {
       const idxFull = off + j;
@@ -578,7 +699,6 @@
     const idxGrid = N.map(row => row.map(v => digitize(v, umbrales)));
     const grisGrid = N.map((row, j) => row.map((v, k) => PM[j][k] >= umbrales[1] && idxGrid[j][k] === 0));
 
-    // ── canvas setup ──
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.width = Math.max(1, Math.round(rect.width * dpr));
@@ -596,15 +716,14 @@
     function y(price) { return padTop + (1 - (price - ylo) / (yhi - ylo)) * plotH; }
     function x(j) { return padLeft + j * colW; }
 
-    // gridlines de precio
     const step = niceStep(yhi - ylo, 5);
     const first = Math.ceil(ylo / step) * step;
-    ctx.font = (isSmall ? 9 : 10.5) * dpr + 'px ui-monospace, monospace';
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = (isSmall ? 9 : 10.5) * dpr + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.fillStyle = 'rgba(209,212,220,0.4)';
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     for (let pr = first; pr <= yhi; pr += step) {
       const gy = y(pr);
-      ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1 * dpr;
+      ctx.strokeStyle = 'rgba(209,212,220,0.06)'; ctx.lineWidth = 1 * dpr;
       ctx.beginPath(); ctx.moveTo(padLeft, gy); ctx.lineTo(w - padRight, gy); ctx.stroke();
       ctx.fillText(fmtAxisNum(pr), padLeft - 6 * dpr, gy);
     }
@@ -612,7 +731,6 @@
     const hbPx = Math.max(1.4 * dpr, (model.binWidth * 0.72) * (plotH / (yhi - ylo)));
     const blockW = colW * 0.76, blockX0 = colW * 0.12;
 
-    // bloques históricos
     for (let j = 0; j < nc; j++) {
       for (let k = 0; k < cenV.length; k++) {
         const isGris = grisGrid[j][k], iv = idxGrid[j][k];
@@ -622,7 +740,6 @@
         ctx.fillRect(bx, by, blockW, hbPx);
       }
     }
-    // proyección a la derecha (niveles aún vivos, apagados)
     const lastJ = nc - 1;
     for (let k = 0; k < cenV.length; k++) {
       const iv = idxGrid[lastJ][k], isGris = grisGrid[lastJ][k];
@@ -635,7 +752,6 @@
       ctx.globalAlpha = 1;
     }
 
-    // velas
     const ancho = colW * (nc <= 120 ? 0.64 : 0.72);
     for (let j = 0; j < nc; j++) {
       const up = c[j] >= o[j];
@@ -649,16 +765,15 @@
       ctx.fillRect(cx - ancho / 2, top, ancho, bh);
     }
 
-    // línea de precio actual
     const py = y(p);
     ctx.setLineDash([4 * dpr, 4 * dpr]);
-    ctx.strokeStyle = '#26a69a'; ctx.lineWidth = 1 * dpr;
+    ctx.strokeStyle = 'rgba(38,166,154,0.75)'; ctx.lineWidth = 1 * dpr;
     ctx.beginPath(); ctx.moveTo(padLeft, py); ctx.lineTo(w - padRight, py); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.textAlign = 'right'; ctx.fillStyle = '#26a69a'; ctx.font = 'bold ' + (isSmall ? 9.5 : 10.5) * dpr + 'px ui-monospace, monospace';
+    ctx.textAlign = 'right'; ctx.fillStyle = '#26a69a';
+    ctx.font = 'bold ' + (isSmall ? 9.5 : 10.5) * dpr + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
     ctx.fillText('AHORA ' + fmtAxisNum(p), x(nc + EXT) - 4 * dpr, py - 8 * dpr);
 
-    // etiquetas de picos — precio e importe en dos líneas, más estrechas
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     const labelX = x(nc + EXT) + 4 * dpr;
     const fPrecio = (isSmall ? 9 : 10) * dpr, fImporte = (isSmall ? 8 : 8.5) * dpr;
@@ -666,40 +781,42 @@
       if (pk.precio < ylo || pk.precio > yhi) return;
       const ly = y(pk.precio);
       ctx.fillStyle = color;
-      ctx.font = 'bold ' + fPrecio + 'px ui-monospace, monospace';
+      ctx.font = 'bold ' + fPrecio + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
       ctx.fillText(fmtAxisNum(pk.precio), labelX, ly - 1 * dpr);
-      ctx.font = fImporte + 'px ui-monospace, monospace';
+      ctx.font = fImporte + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
       ctx.fillText(fmtUsd(pk.total), labelX, ly + fImporte + 2 * dpr);
     }
     for (const pk of res.picosCortos) dibujarPico(pk, '#FF8888');
     for (const pk of res.picosLargos) dibujarPico(pk, '#77DD99');
 
-    // eje de horas — separación calculada según el ancho real disponible, no un
-    // número de velas fijo, para que las etiquetas nunca se amontonen en móvil
     const anchoEtiqueta = (isSmall ? 54 : 64) * dpr;
     const maxEtiquetas = Math.max(2, Math.floor(plotW / anchoEtiqueta));
     const cadaVelas = Math.max(1, Math.ceil(nc / maxEtiquetas));
-    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.font = (isSmall ? 8.5 : 9.5) * dpr + 'px ui-monospace, monospace';
+    ctx.fillStyle = 'rgba(209,212,220,0.4)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.font = (isSmall ? 8.5 : 9.5) * dpr + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
     for (let j = 0; j < nc; j += cadaVelas) {
       ctx.fillText(madridHM(t[j]), x(j) + colW / 2, hpx - padBottom + 4 * dpr);
     }
 
-    // cabecera OHLC
     const chg = c[nc - 1] - (c[nc - 2] != null ? c[nc - 2] : c[nc - 1]);
     const pct = c[nc - 2] ? (chg / c[nc - 2]) * 100 : 0;
-    ohlcLine.innerHTML = `${moneda}/USDT · ${paso}m &nbsp; O <b>${fmtAxisNum(o[nc - 1])}</b> &nbsp; H <b>${fmtAxisNum(h[nc - 1])}</b> &nbsp; L <b>${fmtAxisNum(l[nc - 1])}</b> &nbsp; C <b>${fmtAxisNum(c[nc - 1])}</b> &nbsp; <span style="color:${chg >= 0 ? '#7cf5b6' : '#ff8fa3'}">${chg >= 0 ? '+' : ''}${pct.toFixed(2)}%</span>`;
+    ohlcLine.innerHTML = `<span style="color:#787b86">${moneda}/USDT · ${paso}m</span><span class="sep">·</span>` +
+      `O <b>${fmtAxisNum(o[nc - 1])}</b><span class="sep">·</span>` +
+      `H <b>${fmtAxisNum(h[nc - 1])}</b><span class="sep">·</span>` +
+      `L <b>${fmtAxisNum(l[nc - 1])}</b><span class="sep">·</span>` +
+      `C <b>${fmtAxisNum(c[nc - 1])}</b><span class="sep">·</span>` +
+      `<span style="color:${chg >= 0 ? '#26a69a' : '#ef5350'}">${chg >= 0 ? '+' : ''}${pct.toFixed(2)}%</span>`;
   }
 
   function updateSummaryText(res) {
-    cortosLine.textContent = `Cortos por encima (hasta +5%): ${fmtUsd(res.cortos5)}`;
-    largosLine.textContent = `Largos por debajo (hasta −5%): ${fmtUsd(res.largos5)}`;
+    cortosLine.textContent = `Cortos por encima (+5%): ${fmtUsd(res.cortos5)}`;
+    largosLine.textContent = `Largos por debajo (−5%): ${fmtUsd(res.largos5)}`;
     const moneda = res.moneda;
-    titleLine.textContent = `${moneda} — LIQUIDACIONES ESTIMADAS · CORTO PLAZO (${HORAS_ZOOM} H, velas de ${PASO_MIN} min)`;
-    subLine.textContent = `${madridHora(Date.now())} (Madrid)  ·  nuestro modelo de cálculo, fuentes: ${res.d.fuentes.join(' + ')}`;
+    brandSym.textContent = moneda + '/USDT';
+    titleLine.textContent = `Liquidaciones estimadas · ${HORAS_ZOOM}H · velas ${PASO_MIN}m`;
+    subLine.textContent = `${madridHora(Date.now())} Madrid · fuentes: ${res.d.fuentes.join(' + ')}`;
   }
 
-  // ═══ ciclo de carga ═══
   let busy = false;
   async function loadAndRender(showLoading) {
     if (busy) return;
@@ -720,7 +837,7 @@
     } catch (e) {
       statusDot.className = 'status-dot err';
       statusText.textContent = 'error: ' + (e && e.message ? e.message : 'fallo desconocido');
-      loadingEl.innerHTML = 'No se ha podido calcular ahora mismo.<br>' + (e && e.message ? e.message : '') + '<br>Reintentando en el próximo ciclo, o pulsa "Actualizar ahora".';
+      loadingEl.innerHTML = '<div><b>No se ha podido calcular ahora mismo.</b>' + (e && e.message ? e.message : '') + '<br>Reintentando en el próximo ciclo, o pulsa "Actualizar".</div>';
       loadingEl.classList.remove('hidden');
     } finally {
       busy = false;
