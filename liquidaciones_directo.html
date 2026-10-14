@@ -14,12 +14,9 @@
     --up: #26a69a; --down: #ef5350; --amber: #f7a600;
   }
   * { box-sizing: border-box; }
-  html, body {
-    height: 100%; margin: 0; background: var(--bg);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Trebuchet MS', Roboto, Ubuntu, sans-serif;
-    color: var(--ink); overflow: hidden;
-    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
-  }
+  html, body { height: 100%; margin: 0; background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--ink); overflow: hidden; -webkit-font-smoothing: antialiased; }
   #stage { position: fixed; inset: 0; height: 100dvh; display: flex; flex-direction: column;
     padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
   header { display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -31,48 +28,46 @@
   .status-dot.err  { background: var(--down); box-shadow: 0 0 8px rgba(239,83,80,0.6); }
   .status-dot.busy { background: var(--amber); animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
-  .src-badge { font-size: 9px; color: var(--dim2); padding: 1px 5px;
-    border: 1px solid var(--border); border-radius: 3px; margin-left: 4px; }
-  .src-badge.ok { color: var(--up); border-color: rgba(38,166,154,0.35); }
-  .src-badge.warn { color: var(--amber); border-color: rgba(247,166,0,0.35); }
   .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   select, button.ctl { background: var(--panel-2); border: 1px solid var(--border); color: var(--ink-strong);
     font-family: inherit; font-size: 12px; padding: 6px 10px; border-radius: 4px; cursor: pointer; outline: none; }
   select { padding-right: 24px; appearance: none; -webkit-appearance: none;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23787b86' d='M0 0l5 6 5-6z'/></svg>");
     background-repeat: no-repeat; background-position: right 8px center; }
-  select:hover, button.ctl:hover { background: #222630; border-color: var(--border-2); }
+  select:hover, button.ctl:hover { background: #222630; }
   button.ctl.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  button.ctl.primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
   .countdown { font-size: 11px; color: var(--dim); min-width: 60px; text-align: right; font-variant-numeric: tabular-nums; }
-  .titles { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 16px 4px; flex: 0 0 auto; flex-wrap: wrap; }
-  .title-left { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .titles { padding: 10px 16px 4px; flex: 0 0 auto; }
   .t1 { font-size: 14px; font-weight: 600; color: var(--ink-strong); line-height: 1.2; }
   .t1 .tag { font-size: 10px; font-weight: 600; color: var(--amber); background: rgba(247,166,0,0.12); padding: 2px 6px; border-radius: 3px; margin-right: 8px; }
-  .t2 { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
-  .t3 { font-size: 10px; color: var(--dim2); max-width: 60%; text-align: right; line-height: 1.3; }
+  .t2 { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; margin-top: 1px; }
   .ohlc { padding: 2px 16px; font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; flex: 0 0 auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .ohlc .sep { color: var(--dim2); } .ohlc b { color: var(--ink-strong); font-weight: 500; }
   .summary { display: flex; gap: 8px; padding: 4px 16px 8px; flex-wrap: wrap; flex: 0 0 auto; }
-  .summary > div { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 4px; font-variant-numeric: tabular-nums; border: 1px solid transparent; }
+  .summary > div { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 4px;
+    font-variant-numeric: tabular-nums; border: 1px solid transparent; }
   .summary .cortos { color: #ff9b9b; background: rgba(239,83,80,0.10); border-color: rgba(239,83,80,0.20); }
   .summary .largos { color: #8fe6b4; background: rgba(38,166,154,0.10); border-color: rgba(38,166,154,0.20); }
-  #chartWrap { flex: 1 1 auto; min-height: 100px; margin: 0 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); overflow: hidden; position: relative; }
+  #chartWrap { flex: 1 1 auto; min-height: 100px; margin: 0 8px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--panel); overflow: hidden; position: relative; }
   canvas#chart { width: 100%; height: 100%; display: block; }
-  #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(14,17,23,0.88); font-size: 12px; color: var(--dim); text-align: center; padding: 20px; backdrop-filter: blur(2px); line-height: 1.5; }
+  #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(14,17,23,0.88); font-size: 12px; color: var(--dim); text-align: center; padding: 20px; }
   #loading b { color: var(--amber); font-weight: 600; display: block; margin-bottom: 6px; font-size: 13px; }
   #loading.hidden { display: none; }
-  .legend { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 8px 12px 4px; font-size: 10px; color: var(--dim); flex: 0 0 auto; }
-  .legend span { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); }
+  .legend { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 8px 12px 4px;
+    font-size: 10px; color: var(--dim); flex: 0 0 auto; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
+    border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); }
   .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
-  footer { padding: 4px 16px calc(6px + env(safe-area-inset-bottom, 0px)); text-align: center; font-size: 9px; color: var(--dim2); flex: 0 0 auto; }
+  footer { padding: 4px 16px calc(6px + env(safe-area-inset-bottom, 0px)); text-align: center;
+    font-size: 9px; color: var(--dim2); flex: 0 0 auto; }
   @media (max-width: 640px) {
     header { padding: 6px 10px; gap: 8px; }
     .brand { font-size: 11px; }
     select, button.ctl { font-size: 11px; padding: 5px 8px; }
     .titles { padding: 8px 12px 2px; }
     .t1 { font-size: 12.5px; }
-    .t3 { display: none; }
     .ohlc { font-size: 10px; padding: 2px 12px; }
     .summary { padding: 4px 12px 6px; gap: 6px; }
     .summary > div { font-size: 10px; padding: 3px 8px; }
@@ -88,7 +83,6 @@
       <span id="statusDot" class="status-dot"></span>
       <span class="sym" id="brandSym">—</span>
       <span id="statusText">cargando…</span>
-      <span id="srcBadge" class="src-badge">—</span>
     </div>
     <div class="controls">
       <select id="symbolSelect">
@@ -102,11 +96,8 @@
   </header>
 
   <div class="titles">
-    <div class="title-left">
-      <div class="t1"><span class="tag">LIQ</span><span id="titleLine">— — Liquidaciones estimadas · corto plazo</span></div>
-      <div class="t2" id="subLine">cargando…</div>
-    </div>
-    <div class="t3" id="aclLine">Intensidad por color · verde = poca · rojo = máxima</div>
+    <div class="t1"><span class="tag">LIQ</span><span id="titleLine">Liquidaciones estimadas</span></div>
+    <div class="t2" id="subLine">cargando…</div>
   </div>
 
   <div class="ohlc" id="ohlcLine">&nbsp;</div>
@@ -122,17 +113,14 @@
 
   <div class="legend">
     <span><i class="sw" style="background:#1f6f7a"></i>baja</span>
-    <span><i class="sw" style="background:#2f9a2f"></i>media-baja</span>
-    <span><i class="sw" style="background:#7fb52a"></i>media</span>
-    <span><i class="sw" style="background:#a9a92a"></i>media-alta</span>
-    <span><i class="sw" style="background:#d9772a"></i>alta</span>
+    <span><i class="sw" style="background:#2f9a2f"></i>media</span>
+    <span><i class="sw" style="background:#a9a92a"></i>alta</span>
+    <span><i class="sw" style="background:#e07a25"></i>muy alta</span>
     <span><i class="sw" style="background:#c62828"></i>máxima</span>
     <span><i class="sw" style="background:#555c6b"></i>previa</span>
-    <span><i class="sw" style="background:rgba(180,110,110,0.65)"></i>corto limpiado</span>
-    <span><i class="sw" style="background:rgba(110,160,110,0.65)"></i>largo limpiado</span>
   </div>
 
-  <footer id="footerNote">Basado en nuestro modelo de cálculo. DYOR.</footer>
+  <footer>Basado en nuestro modelo de cálculo. DYOR.</footer>
 </div>
 
 <script>
@@ -149,29 +137,19 @@
   const EXT = 10;
   const PAD_PCT = 0.05;
   const REFRESH_MS = 5 * 60 * 1000;
-  const UMBRAL_ETIQUETA_BARRIDO = 5e6;
+
+  // 5 niveles de color (percentiles)
+  const PCTS = [60, 78, 90, 96, 99];
+  const COL = { 1: '#1f6f7a', 2: '#2f9a2f', 3: '#a9a92a', 4: '#e07a25', 5: '#c62828' };
+  const GRIS = '#555c6b';
+
+  // 5 picos por lado, separación 0.8%
   const PICOS_POR_LADO = 5;
   const SEPARACION_PICOS = 0.008;
-
-  // Escala discreta de 6 niveles (más robusto que gradiente continuo)
-  const NIVELES = [
-    { pct: 30, color: '#1f6f7a' },   // teal - baja
-    { pct: 55, color: '#2f9a2f' },   // verde - media-baja
-    { pct: 75, color: '#7fb52a' },   // verde-amarillo - media
-    { pct: 88, color: '#a9a92a' },   // amarillo - media-alta
-    { pct: 95, color: '#d9772a' },   // naranja - alta
-    { pct: 100, color: '#c62828' },  // rojo - máxima
-  ];
-  const GRIS = '#555c6b';
-  const GRIS_BARRIDO_CORTO = 'rgba(180,110,110,0.65)';
-  const GRIS_BARRIDO_LARGO = 'rgba(110,160,110,0.65)';
-  const LINEA_BARRIDO_CORTO = 'rgba(220,150,150,0.9)';
-  const LINEA_BARRIDO_LARGO = 'rgba(150,210,150,0.9)';
 
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
   const brandSym = document.getElementById('brandSym');
-  const srcBadge = document.getElementById('srcBadge');
   const symbolSelect = document.getElementById('symbolSelect');
   const refreshBtn = document.getElementById('refreshBtn');
   const countdownEl = document.getElementById('countdown');
@@ -187,7 +165,6 @@
   let refreshTimer = null, countdownTimer = null, nextRefreshAt = 0;
   let lastResult = null;
   let liveWs = null, liveReconnectTimer = null, liveBackoff = 1500, liveSymbol = null;
-  let barridosEnVivo = [];
 
   function decPrecio(p) { return p >= 1000 ? 0 : p >= 100 ? 1 : p >= 1 ? 2 : 4; }
   function fmtAxisNum(p) { return p.toLocaleString('es-ES', { minimumFractionDigits: decPrecio(p), maximumFractionDigits: decPrecio(p) }); }
@@ -197,12 +174,8 @@
     if (v >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'k';
     return '$' + v.toFixed(0);
   }
-  function madridHora(ts) {
-    return new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(ts));
-  }
-  function madridHM(ts) {
-    return new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' }).format(new Date(ts));
-  }
+  function madridHora(ts) { return new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(ts)); }
+  function madridHM(ts) { return new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' }).format(new Date(ts)); }
   function percentile(sortedAsc, p) {
     if (!sortedAsc.length) return 0;
     const idx = (p / 100) * (sortedAsc.length - 1);
@@ -211,6 +184,7 @@
     const frac = idx - lo;
     return sortedAsc[lo] * (1 - frac) + sortedAsc[hi] * frac;
   }
+  function digitize(x, umbrales) { let idx = 0; for (const t of umbrales) { if (x >= t) idx++; else break; } return idx; }
   function smooth1D(vec) {
     const k = [1, 2, 3, 2, 1], ksum = 9, half = 2, n = vec.length;
     const out = new Float64Array(n);
@@ -261,11 +235,7 @@
       const arr = await r.json();
       if (!Array.isArray(arr) || !arr.length) break;
       let minTs = Infinity;
-      for (const d of arr) {
-        const ts = Number(d.timestamp);
-        out.set(ts, parseFloat(d[valueField]));
-        if (ts < minTs) minTs = ts;
-      }
+      for (const d of arr) { const ts = Number(d.timestamp); out.set(ts, parseFloat(d[valueField])); if (ts < minTs) minTs = ts; }
       if (endTime !== undefined && minTs >= endTime) break;
       endTime = minTs - 1;
       if (arr.length < 500) break;
@@ -295,20 +265,11 @@
         const k = msg.k; if (!k) return;
         const d = lastResult.d;
         const lastIdx = d.t.length - 1;
-        const nuevoH = parseFloat(k.h), nuevoL = parseFloat(k.l), nuevoC = parseFloat(k.c);
-        if (k.t === d.t[lastIdx] && lastResult.model && lastResult.model.barridos) {
-          for (const b of lastResult.model.barridos) {
-            if (b.idx !== lastIdx) continue;
-            const barrioAhora = b.largo ? (b.precio >= nuevoL) : (b.precio <= nuevoH);
-            const yaReg = barridosEnVivo.some(x => Math.abs(x.precio - b.precio) < b.precio * 1e-9 && x.t === d.t[lastIdx]);
-            if (barrioAhora && !yaReg) barridosEnVivo.push({ precio: b.precio, idx: lastIdx, largo: b.largo, t: d.t[lastIdx] });
-          }
-        }
         if (k.t === d.t[lastIdx]) {
-          d.h[lastIdx] = Math.max(d.h[lastIdx], nuevoH);
-          d.l[lastIdx] = Math.min(d.l[lastIdx], nuevoL);
-          d.c[lastIdx] = nuevoC;
-          lastResult.precio = nuevoC;
+          d.h[lastIdx] = Math.max(d.h[lastIdx], parseFloat(k.h));
+          d.l[lastIdx] = Math.min(d.l[lastIdx], parseFloat(k.l));
+          d.c[lastIdx] = parseFloat(k.c);
+          lastResult.precio = d.c[lastIdx];
           draw(lastResult);
         }
       } catch (e) {}
@@ -334,7 +295,7 @@
       fetchBinanceHistPaged('/futures/data/openInterestHist', symbol, '1h', 'sumOpenInterestValue', 2),
       fetchBinanceHistPaged('/futures/data/globalLongShortAccountRatio', symbol, '1h', 'longAccount', 2),
     ]);
-    if (!klines.length) throw new Error('sin velas de Binance Futures');
+    if (!klines.length) throw new Error('sin velas');
     const oiKeys = [...oiMap.keys()].sort((a, b) => a - b);
     const oiVals = oiKeys.map(k => oiMap.get(k));
     const lsKeys = [...lsMap.keys()].sort((a, b) => a - b);
@@ -351,31 +312,16 @@
       lsArr.push(lastLs);
     }
     const startIdx = oiArr.findIndex(v => v !== null);
-    if (startIdx === -1) throw new Error('sin datos de OI de Binance');
+    if (startIdx === -1) throw new Error('sin OI');
     const sl = klines.slice(startIdx);
     if (sl.length < 60) throw new Error('histórico insuficiente');
 
-    const d = {
+    return {
       t: sl.map(k => k.t), o: sl.map(k => k.o), h: sl.map(k => k.h), l: sl.map(k => k.l), c: sl.map(k => k.c),
       oi: oiArr.slice(startIdx), longShare: lsArr.slice(startIdx),
       tiers: moneda === 'HYPE' ? TIERS_HYPE : TIERS_DEFAULT,
-      fuentes: ['Binance'], bybitStatus: 'unknown',
+      fuentes: ['Binance'],
     };
-
-    // Intento real a Bybit (aunque sabemos que suele fallar por CORS)
-    try {
-      const r = await fetch(`https://api.bybit.com/v5/market/open-interest?category=linear&symbol=${symbol}&intervalTime=1h&limit=200`, { mode: 'cors' });
-      if (r.ok) {
-        const j = await r.json();
-        d.bybitStatus = j.retCode === 0 ? 'ok' : ('ret-' + j.retCode);
-      } else {
-        d.bybitStatus = 'http-' + r.status;
-      }
-    } catch (e) {
-      d.bybitStatus = 'cors';  // Error típico de CORS en Bybit
-    }
-
-    return d;
   }
 
   function modeloLiquidaciones(d, binMin, binMax, nb) {
@@ -388,7 +334,6 @@
     const Lm = new Array(n), Sm = new Array(n), Pm = new Array(n);
     const plFin = new Float64Array(nb), psFin = new Float64Array(nb);
     const tierEntries = Object.entries(d.tiers).map(([lev, w]) => [parseFloat(lev), w]);
-    const barridos = [];
 
     for (let i = 0; i < n; i++) {
       let liqL = 0, liqS = 0, delta;
@@ -397,8 +342,8 @@
         let sumL = 0, sumS = 0;
         for (let j = 0; j < liq.length; j++) {
           if (amt[j] > 0) {
-            if (largo[j] && liq[j] >= d.l[i]) { sumL += amt[j]; barridos.push({ precio: liq[j], idx: i, largo: true, amt: amt[j] }); amt[j] = 0; }
-            else if (!largo[j] && liq[j] <= d.h[i]) { sumS += amt[j]; barridos.push({ precio: liq[j], idx: i, largo: false, amt: amt[j] }); amt[j] = 0; }
+            if (largo[j] && liq[j] >= d.l[i]) { sumL += amt[j]; amt[j] = 0; }
+            else if (!largo[j] && liq[j] <= d.h[i]) { sumS += amt[j]; amt[j] = 0; }
           }
         }
         liqL = sumL; liqS = sumS;
@@ -471,7 +416,7 @@
       }
       Lm[i] = Lrow; Sm[i] = Srow; Pm[i] = Prow;
     }
-    return { Lm, Sm, Pm, plFin, psFin, binWidth, barridos };
+    return { Lm, Sm, Pm, plFin, psFin, binWidth };
   }
 
   async function calcular(moneda) {
@@ -526,22 +471,13 @@
     }
     const N = M.map((row, j) => { const out = new Float64Array(row.length); for (let k = 0; k < row.length; k++) out[k] = Math.max(row[k] - PM[j][k], 0); return out; });
 
-    // Calcular umbrales de color sobre la distribución de valores
     const pos = [];
     for (const row of N) for (const v of row) if (v > 0) pos.push(v);
     pos.sort((a, b) => a - b);
-    const umbrales = NIVELES.map(nv => percentile(pos, nv.pct));
-    // Color por bin: index del nivel más alto que cumple
-    function colorDe(v) {
-      if (v <= 0) return null;
-      let idx = -1;
-      for (let i = 0; i < umbrales.length; i++) if (v >= umbrales[i]) idx = i;
-      return idx >= 0 ? NIVELES[idx].color : null;
-    }
+    const umbrales = PCTS.map(pct => percentile(pos, pct));
 
-    const colorGrid = N.map(row => row.map(v => colorDe(v)));
-    // Gris = valor previo (incierto) por encima del nivel 2
-    const grisGrid = N.map((row, j) => row.map((v, k) => PM[j][k] >= umbrales[1] && colorGrid[j][k] === null));
+    const idxGrid = N.map(row => row.map(v => digitize(v, umbrales)));
+    const grisGrid = N.map((row, j) => row.map((v, k) => PM[j][k] >= umbrales[1] && idxGrid[j][k] === 0));
 
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -562,7 +498,7 @@
 
     const step = niceStep(yhi - ylo, 5);
     const first = Math.ceil(ylo / step) * step;
-    ctx.font = (isSmall ? 9 : 10.5) * dpr + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.font = (isSmall ? 9 : 10.5) * dpr + 'px ui-monospace, monospace';
     ctx.fillStyle = 'rgba(209,212,220,0.4)';
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     for (let pr = first; pr <= yhi; pr += step) {
@@ -575,33 +511,12 @@
     const hbPx = Math.max(1.4 * dpr, (model.binWidth * 0.72) * (plotH / (yhi - ylo)));
     const blockW = colW * 0.76, blockX0 = colW * 0.12;
 
-    // Barridos primero
-    for (const b of model.barridos) {
-      if (b.precio < ylo || b.precio > yhi) continue;
-      if (b.idx < off) continue;
-      const jj = b.idx - off;
-      if (jj < 0 || jj >= nc) continue;
-      const colorRelleno = b.largo ? GRIS_BARRIDO_LARGO : GRIS_BARRIDO_CORTO;
-      const colorLinea = b.largo ? LINEA_BARRIDO_LARGO : LINEA_BARRIDO_CORTO;
-      ctx.fillStyle = colorRelleno;
-      const bx = x(jj) + blockX0;
-      const by = y(b.precio) - hbPx / 2;
-      ctx.fillRect(bx, by, blockW, hbPx);
-      ctx.strokeStyle = colorLinea;
-      ctx.lineWidth = 1.2 * dpr;
-      ctx.beginPath();
-      ctx.moveTo(bx, by + hbPx / 2);
-      ctx.lineTo(bx + blockW, by + hbPx / 2);
-      ctx.stroke();
-    }
-
-    // Bloques con color por nivel
+    // Bloques por nivel
     for (let j = 0; j < nc; j++) {
       for (let k = 0; k < cenV.length; k++) {
-        const isGris = grisGrid[j][k];
-        const color = colorGrid[j][k];
-        if (!isGris && !color) continue;
-        ctx.fillStyle = isGris ? GRIS : color;
+        const isGris = grisGrid[j][k], iv = idxGrid[j][k];
+        if (!isGris && !iv) continue;
+        ctx.fillStyle = isGris ? GRIS : COL[iv];
         const bx = x(j) + blockX0, by = y(cenV[k]) - hbPx / 2;
         ctx.fillRect(bx, by, blockW, hbPx);
       }
@@ -609,10 +524,10 @@
     // Proyección derecha
     const lastJ = nc - 1;
     for (let k = 0; k < cenV.length; k++) {
-      const color = colorGrid[lastJ][k], isGris = grisGrid[lastJ][k];
-      if (!color && !isGris) continue;
+      const iv = idxGrid[lastJ][k], isGris = grisGrid[lastJ][k];
+      if (!iv && !isGris) continue;
       ctx.globalAlpha = 0.48;
-      ctx.fillStyle = color || GRIS;
+      ctx.fillStyle = iv ? COL[iv] : GRIS;
       const by = y(cenV[k]) - hbPx / 2;
       for (let jj = nc; jj < nc + EXT; jj++) ctx.fillRect(x(jj) + blockX0, by, blockW, hbPx);
       ctx.globalAlpha = 1;
@@ -639,80 +554,31 @@
     ctx.beginPath(); ctx.moveTo(padLeft, py); ctx.lineTo(w - padRight, py); ctx.stroke();
     ctx.setLineDash([]);
     ctx.textAlign = 'right'; ctx.fillStyle = '#26a69a';
-    ctx.font = 'bold ' + (isSmall ? 9.5 : 10.5) * dpr + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.font = 'bold ' + (isSmall ? 9.5 : 10.5) * dpr + 'px ui-monospace, monospace';
     ctx.fillText('AHORA ' + fmtAxisNum(p), x(nc + EXT) - 4 * dpr, py - 8 * dpr);
 
-    // Etiquetas de picos con ANTI-SOLAPE LIMITADO
+    // Etiquetas de picos (simples, sin anti-solape complicado)
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     const labelX = x(nc + EXT) + 4 * dpr;
     const fPrecio = (isSmall ? 9 : 10) * dpr, fImporte = (isSmall ? 8 : 8.5) * dpr;
-    const etiquetasY = [];
-    const alturaEtiqueta = (fPrecio + fImporte + 8) * dpr;
-    const maxDesplazamiento = plotH * 0.30;  // máx 30% de la altura del plot
-
-    function etiquetaLibre(ly) {
-      for (const ey of etiquetasY) if (Math.abs(ey - ly) < alturaEtiqueta) return false;
-      return true;
-    }
     function dibujarPico(pk, color) {
       if (pk.precio < ylo || pk.precio > yhi) return;
       const ly = y(pk.precio);
-      let lyAjust = ly;
-      let dir = 1;
-      let intentos = 0;
-      while (!etiquetaLibre(lyAjust) && intentos < 30) {
-        lyAjust = ly + dir * alturaEtiqueta * Math.ceil(intentos / 2 + 1);
-        dir = -dir;
-        if (Math.abs(lyAjust - ly) > maxDesplazamiento) {
-          lyAjust = ly; break;  // rendirse y solapar antes que salir del plot
-        }
-        intentos++;
-      }
-      etiquetasY.push(lyAjust);
       ctx.fillStyle = color;
-      ctx.font = 'bold ' + fPrecio + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
-      ctx.fillText(fmtAxisNum(pk.precio), labelX, lyAjust - 1 * dpr);
-      ctx.font = fImporte + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
-      ctx.fillText(fmtUsd(pk.total), labelX, lyAjust + fImporte + 2 * dpr);
+      ctx.font = 'bold ' + fPrecio + 'px ui-monospace, monospace';
+      ctx.fillText(fmtAxisNum(pk.precio), labelX, ly - 1 * dpr);
+      ctx.font = fImporte + 'px ui-monospace, monospace';
+      ctx.fillText(fmtUsd(pk.total), labelX, ly + fImporte + 2 * dpr);
     }
     for (const pk of res.picosCortos) dibujarPico(pk, '#FF8888');
     for (const pk of res.picosLargos) dibujarPico(pk, '#77DD99');
-
-    // Etiquetas de barridos grandes
-    for (const b of model.barridos) {
-      if (b.precio < ylo || b.precio > yhi) continue;
-      if (b.idx < off || b.idx >= off + nc) continue;
-      if (b.amt < UMBRAL_ETIQUETA_BARRIDO) continue;
-      const ly = y(b.precio);
-      const color = b.largo ? '#8fe6b4' : '#ff9b9b';
-      ctx.fillStyle = color;
-      ctx.font = 'bold ' + fPrecio + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
-      ctx.fillText(fmtAxisNum(b.precio), labelX, ly - 1 * dpr);
-      ctx.font = fImporte + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
-      ctx.fillText(fmtUsd(b.amt) + ' ✓', labelX, ly + fImporte + 2 * dpr);
-    }
-
-    // Flash
-    const ahora = Date.now();
-    for (const b of barridosEnVivo) {
-      const edad = ahora - b.t;
-      if (edad > 2000) continue;
-      const alpha = 1 - edad / 2000;
-      if (b.precio < ylo || b.precio > yhi) continue;
-      if (b.idx < off || b.idx >= off + nc) continue;
-      const jj = b.idx - off;
-      const bx = x(jj) + blockX0;
-      const by = y(b.precio) - hbPx / 2;
-      ctx.fillStyle = 'rgba(255,255,255,' + (alpha * 0.7).toFixed(3) + ')';
-      ctx.fillRect(bx - 1 * dpr, by - 1 * dpr, blockW + 2 * dpr, hbPx + 2 * dpr);
-    }
-    barridosEnVivo = barridosEnVivo.filter(x => ahora - x.t < 5000);
 
     // Eje de horas
     const anchoEtiqueta = (isSmall ? 54 : 64) * dpr;
     const maxEtiquetas = Math.max(2, Math.floor(plotW / anchoEtiqueta));
     const cadaVelas = Math.max(1, Math.ceil(nc / maxEtiquetas));
     ctx.fillStyle = 'rgba(209,212,220,0.4)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.font = (isSmall ? 8.5 : 9.5) * dpr + 'px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.font = (isSmall ? 8.5 : 9.5) * dpr + 'px ui-monospace, monospace';
     for (let j = 0; j < nc; j += cadaVelas) {
       ctx.fillText(madridHM(t[j]), x(j) + colW / 2, hpx - padBottom + 4 * dpr);
     }
@@ -733,10 +599,6 @@
     brandSym.textContent = res.moneda + '/USDT';
     titleLine.textContent = `Liquidaciones estimadas · ${HORAS_ZOOM}H · velas ${PASO_MIN}m`;
     subLine.textContent = `${madridHora(Date.now())} Madrid · fuentes: ${res.d.fuentes.join(' + ')}`;
-    const est = res.d.bybitStatus || 'unknown';
-    if (est === 'ok') { srcBadge.textContent = 'Binance + Bybit'; srcBadge.className = 'src-badge ok'; }
-    else if (est === 'cors') { srcBadge.textContent = 'Bybit: CORS bloqueado'; srcBadge.className = 'src-badge warn'; }
-    else { srcBadge.textContent = 'Bybit: ' + est; srcBadge.className = 'src-badge warn'; }
   }
 
   let busy = false;
@@ -750,7 +612,6 @@
       const moneda = symbolSelect.value;
       const res = await calcular(moneda);
       lastResult = res;
-      barridosEnVivo = [];
       updateSummaryText(res);
       draw(res);
       connectLive(moneda);
@@ -759,8 +620,8 @@
       loadingEl.classList.add('hidden');
     } catch (e) {
       statusDot.className = 'status-dot err';
-      statusText.textContent = 'error: ' + (e && e.message ? e.message : 'fallo desconocido');
-      loadingEl.innerHTML = '<div><b>No se ha podido calcular ahora mismo.</b>' + (e && e.message ? e.message : '') + '<br>Reintentando en el próximo ciclo.</div>';
+      statusText.textContent = 'error: ' + (e && e.message ? e.message : 'fallo');
+      loadingEl.innerHTML = '<div><b>No se ha podido calcular.</b>' + (e && e.message ? e.message : '') + '</div>';
       loadingEl.classList.remove('hidden');
     } finally {
       busy = false;
