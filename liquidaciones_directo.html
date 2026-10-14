@@ -260,6 +260,7 @@
     <span><i class="sw" style="background:#a9a92a"></i>alta</span>
     <span><i class="sw" style="background:#c62828"></i>máxima</span>
     <span><i class="sw" style="background:#555c6b"></i>previa a la ventana (incierta)</span>
+    <span><i class="sw" style="background:rgba(160,164,175,0.35)"></i>limpiada (barrida por vela)</span>
   </div>
 
   <footer id="footerNote">
@@ -283,6 +284,7 @@
   const PCTS = [70, 85, 94, 98];
   const COL = { 1: '#1f6f7a', 2: '#2f9a2f', 3: '#a9a92a', 4: '#c62828' };
   const GRIS = '#555c6b';
+  const GRIS_BARRIDO = 'rgba(160,164,175,0.35)';
   const REFRESH_MS = 5 * 60 * 1000;
 
   const statusDot = document.getElementById('statusDot');
@@ -307,7 +309,6 @@
   let liveWs = null, liveReconnectTimer = null, liveBackoff = 1500, liveSymbol = null;
 
   function decPrecio(p) { return p >= 1000 ? 0 : p >= 100 ? 1 : p >= 1 ? 2 : 4; }
-  function fmtPrice(p) { return '$' + p.toLocaleString('es-ES', { minimumFractionDigits: decPrecio(p), maximumFractionDigits: decPrecio(p) }); }
   function fmtAxisNum(p) { return p.toLocaleString('es-ES', { minimumFractionDigits: decPrecio(p), maximumFractionDigits: decPrecio(p) }); }
   function fmtUsd(v) {
     if (v >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
@@ -554,6 +555,10 @@
     const plFin = new Float64Array(nb), psFin = new Float64Array(nb);
     const tierEntries = Object.entries(d.tiers).map(([lev, w]) => [parseFloat(lev), w]);
 
+    // NUEVO: registro de barridos (niveles limpiados por una vela)
+    // Cada entrada: { precio, idx, largo }
+    const barridos = [];
+
     for (let i = 0; i < n; i++) {
       let liqL = 0, liqS = 0, delta;
       if (i === 0) {
@@ -562,8 +567,16 @@
         let sumL = 0, sumS = 0;
         for (let j = 0; j < liq.length; j++) {
           if (amt[j] > 0) {
-            if (largo[j] && liq[j] >= d.l[i]) { sumL += amt[j]; amt[j] = 0; }
-            else if (!largo[j] && liq[j] <= d.h[i]) { sumS += amt[j]; amt[j] = 0; }
+            if (largo[j] && liq[j] >= d.l[i]) {
+              sumL += amt[j];
+              barridos.push({ precio: liq[j], idx: i, largo: true });  // NUEVO
+              amt[j] = 0;
+            }
+            else if (!largo[j] && liq[j] <= d.h[i]) {
+              sumS += amt[j];
+              barridos.push({ precio: liq[j], idx: i, largo: false }); // NUEVO
+              amt[j] = 0;
+            }
           }
         }
         liqL = sumL; liqS = sumS;
@@ -636,7 +649,7 @@
       }
       Lm[i] = Lrow; Sm[i] = Srow; Pm[i] = Prow;
     }
-    return { Lm, Sm, Pm, plFin, psFin, binWidth };
+    return { Lm, Sm, Pm, plFin, psFin, binWidth, barridos };
   }
 
   async function calcular(moneda) {
@@ -731,6 +744,31 @@
     const hbPx = Math.max(1.4 * dpr, (model.binWidth * 0.72) * (plotH / (yhi - ylo)));
     const blockW = colW * 0.76, blockX0 = colW * 0.12;
 
+    // ═══ NUEVO: pintar primero los barridos (fantasma gris tenue) ═══
+    // Solo en su columna exacta, como hace Coinglass.
+    const yloBarrido = ylo, yhiBarrido = yhi;
+    for (const b of model.barridos) {
+      if (b.precio < yloBarrido || b.precio > yhiBarrido) continue;
+      // Solo pintamos si el barrido está dentro de la ventana visible (últimas nc velas)
+      if (b.idx < off) continue;
+      const jj = b.idx - off;
+      if (jj < 0 || jj >= nc) continue;
+      ctx.fillStyle = GRIS_BARRIDO;
+      const bx = x(jj) + blockX0;
+      const by = y(b.precio) - hbPx / 2;
+      ctx.fillRect(bx, by, blockW, hbPx);
+      // Añadimos una línea horizontal tenue que atraviesa el bloque para
+      // marcar visualmente "nivel limpiado" (efecto TradingView)
+      ctx.strokeStyle = 'rgba(200,205,215,0.55)';
+      ctx.lineWidth = 1 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(bx, by + hbPx / 2);
+      ctx.lineTo(bx + blockW, by + hbPx / 2);
+      ctx.stroke();
+    }
+    // ═════════════════════════════════════════════════════════════════
+
+    // Bloques históricos activos (encima de los barridos)
     for (let j = 0; j < nc; j++) {
       for (let k = 0; k < cenV.length; k++) {
         const isGris = grisGrid[j][k], iv = idxGrid[j][k];
