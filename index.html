@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hub">
+<title>Hub Financiero · Enlaces</title>
+<style>
+:root{--bg:#0e1117;--panel:#131722;--panel-2:#1a1e29;--hover:#1f2430;--border:#2a2e39;--border-hover:#363a45;--ink:#d1d4dc;--ink-strong:#f0f3fa;--dim:#787b86;--dim2:#5d606b;--accent:#2962ff;--up:#26a69a;--down:#ef5350;--amber:#f7a600;--hh:57px}
+:root[data-theme=light]{--bg:#f3f5f9;--panel:#fff;--panel-2:#fff;--hover:#eef1f7;--border:#dde1ea;--border-hover:#c3c9d6;--ink:#363a45;--ink-strong:#0e1117;--dim:#6b6f7c;--dim2:#8b8f9b}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+html{scroll-padding-top:calc(var(--hh) + 60px)}
+#stage{min-height:100dvh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--panel);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:8px}
+.brand h1{font-size:16px;font-weight:600;margin:0;color:var(--ink-strong)}
+.tag{font-size:10px;font-weight:600;color:var(--amber);background:rgba(247,166,0,.12);padding:3px 6px;border-radius:4px}
+#ticker{display:flex;align-items:center;gap:12px;font-size:12px;font-variant-numeric:tabular-nums}
+.tk{display:flex;gap:4px;align-items:baseline}
+.tk .s{color:var(--dim);font-weight:600;font-size:10px}.tk .p{color:var(--ink-strong);font-weight:600}.tk .c{font-size:10px;color:var(--dim)}
+.tk .c.up{color:var(--up)}.tk .c.down{color:var(--down)}
+#tkdot{width:6px;height:6px;border-radius:50%;background:var(--dim2)}#tkdot.live{background:var(--up)}#tkdot.poll{background:var(--amber)}
+.bar{position:sticky;top:var(--hh);z-index:9;display:flex;gap:8px;padding:10px 16px;background:var(--bg)}
+.search-box{flex:1;display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--border);padding:8px 12px;border-radius:6px;transition:border-color .2s}
+.search-box:focus-within{border-color:var(--accent)}
+.search-box svg{width:16px;height:16px;stroke:var(--dim);fill:none;stroke-width:2;flex:none}
+.search-box input{flex:1;min-width:0;background:transparent;border:0;color:var(--ink-strong);font:inherit;font-size:16px;outline:0}
+.search-box kbd{font-size:10px;color:var(--dim2);border:1px solid var(--border);border-radius:3px;padding:1px 5px}
+.ib{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);border-radius:6px;padding:0 12px;font-size:15px;cursor:pointer}
+.ib.on{border-color:var(--accent);color:var(--accent)}
+main{flex:1;padding:4px 16px 40px;max-width:1200px;margin:0 auto;width:100%}
+#tools{display:none;gap:8px;flex-wrap:wrap;margin:4px 0 14px}#tools.on{display:flex}
+.btn{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);border-radius:6px;padding:7px 12px;font:inherit;font-size:12px;cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.category{margin-bottom:24px}
+.cat-title{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.cat-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.card{position:relative;display:flex;flex-direction:column;gap:4px;background:var(--panel-2);border:1px solid var(--border);padding:12px 14px;border-radius:6px;text-decoration:none;overflow:hidden;transition:transform .15s,border-color .15s,background .15s}
+.card:hover{border-color:var(--border-hover);background:var(--hover);transform:translateY(-1px)}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cc,var(--accent));opacity:.8}
+.ch{display:flex;justify-content:space-between;gap:8px}
+.ct{font-size:13px;font-weight:600;color:var(--ink-strong);line-height:1.3}
+.ci{font-size:16px;opacity:.85}
+.cd{font-size:11px;color:var(--dim);line-height:1.35}
+.cu{font-size:9px;color:var(--dim2);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+mark{background:rgba(247,166,0,.3);color:inherit;border-radius:2px}
+.act{position:absolute;right:6px;bottom:4px;display:flex;gap:2px}
+.act button{background:none;border:0;color:var(--dim2);font-size:16px;padding:4px 6px;cursor:pointer;line-height:1}
+.act .star.on{color:var(--amber)}.act .del{color:var(--down)}
+#noResults{display:none;text-align:center;padding:40px;color:var(--dim);font-size:14px}
+footer{text-align:center;padding:20px;font-size:10px;color:var(--dim2);border-top:1px solid var(--border)}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--border);border-radius:10px;padding:16px;width:min(92vw,400px)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog h2{margin:0 0 10px;font-size:15px;color:var(--ink-strong)}
+dialog label{display:block;font-size:11px;color:var(--dim);margin:8px 0 3px}
+dialog input,dialog select{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--ink-strong);border-radius:6px;padding:8px;font:inherit;font-size:16px}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}header{padding-left:12px;padding-right:12px}.bar{padding:8px 12px}main{padding:4px 12px 30px}.search-box kbd{display:none}#ticker{gap:8px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}.card:hover{transform:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+<header id="hdr">
+  <div class="brand"><h1>Hub Financiero</h1><span class="tag">LINKS</span></div>
+  <div id="ticker"><span id="tkdot" title="Estado del ticker"></span></div>
+</header>
+<div class="bar">
+  <label class="search-box">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" id="q" placeholder="Buscar herramienta, exchange, noticia..." autocomplete="off" enterkeyhint="search">
+    <kbd>/</kbd>
+  </label>
+  <button class="ib" id="themeBtn" title="Tema" aria-label="Cambiar tema">◐</button>
+  <button class="ib" id="editBtn" title="Editar enlaces" aria-label="Editar enlaces">✎</button>
+</div>
+<main>
+  <div id="tools">
+    <button class="btn pri" id="addBtn">+ Añadir enlace</button>
+    <button class="btn" id="expBtn">Exportar</button>
+    <button class="btn" id="impBtn">Importar</button>
+    <button class="btn" id="rstBtn">Restaurar</button>
+  </div>
+  <div id="links"></div>
+  <div id="noResults">No se encontraron enlaces que coincidan con tu búsqueda.</div>
+</main>
+<footer>Recopilación de enlaces de interés · DYOR</footer>
+</div>
+
+<dialog id="dlg">
+  <form id="frm" method="dialog">
+    <h2>Añadir enlace</h2>
+    <label>Título</label><input id="fT" required maxlength="40">
+    <label>URL</label><input id="fU" type="url" required placeholder="https://">
+    <label>Descripción</label><input id="fD" maxlength="80">
+    <label>Categoría</label><select id="fC"></select>
+    <div class="row"><button class="btn" value="cancel" formnovalidate>Cancelar</button><button class="btn pri" id="fOk" value="ok">Guardar</button></div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+'use strict';
+const KEY='hub.v1';
+const CATS=[
+{id:'fav',name:'Favoritos',color:'#f7a600',links:[]},
+{id:'top',name:'Más usados',color:'#2962ff',links:[]},
+{id:'mias',name:'Mis herramientas',color:'#e91e63',links:[
+['Liquidaciones en directo','Liquidaciones del mercado en tiempo real','liquidaciones_directo.html','💥'],
+['Presión en directo','Presión de compra y venta en tiempo real','presion_directo.html','⚖️'],
+['M2 vs BTC','Liquidez M2 frente a Bitcoin en directo','m2_btc_directo.html','💧'],
+['Ticker cripto','Precios cripto en vivo','ticker_cripto.html','🪙'],
+['Cinta de bolsa','Cinta de cotizaciones de bolsa','cinta_bolsa.html','🎞️'],
+['Gráficos de calor','Mapas de calor del mercado','graficos_calor.html','🌡️'],
+['Gráficos de muros','Muros de órdenes en el libro','graficos_muros.html','🧱'],
+['Bono 30 años','Rendimiento del bono a 30 años','bono_30y.html','📉']]},
+{id:'es',name:'Inversor en España',color:'#ef5350',links:[
+['Trade Republic','Tu broker: cartera y órdenes','https://traderepublic.com/es-es','🟣'],
+['justETF','Buscador y comparador de ETFs','https://www.justetf.com/es/','🧺'],
+['Finect','Fondos, brokers y comunidad de inversores','https://www.finect.com/','🧩'],
+['Rankia','Foros y noticias de inversión en español','https://www.rankia.com/','💬'],
+['CNMV','Regulador: avisos y entidades','https://www.cnmv.es/','🛡️'],
+['Bolsamanía','Noticias y cotizaciones del mercado español','https://www.bolsamania.com/','🇪🇸'],
+['BME (Bolsa Madrid)','Mercado español de valores','https://www.bolsasymercados.es/','🏦'],
+['Calendario de resultados','Fechas de presentación de resultados','https://es.investing.com/earnings-calendar/','🗓️'],
+['Banco de España','Estadísticas y tipos oficiales','https://www.bde.es/','🏛️'],
+['INE','Inflación, empleo y PIB de España','https://www.ine.es/','📑'],
+['Agencia Tributaria','Declaración de renta y ganancias','https://sede.agenciatributaria.gob.es/','🧾']]},
+{id:'cripto',name:'Criptomonedas',color:'#f7a600',links:[
+['TradingView','Gráficos profesionales y análisis técnico','https://es.tradingview.com/','📈'],
+['Kiyotaka','Gráficos con liquidez, order flow y heatmaps','https://kiyotaka.ai/','🥷'],
+['aggr.trade','Order flow agregado de varios exchanges en vivo','https://aggr.trade/','🧲'],
+['Coinglass','Liquidaciones, Open Interest y funding','https://www.coinglass.com/','🔥'],
+['Coinalyze','OI, funding y liquidaciones agregados','https://coinalyze.net/','📐'],
+['CoinMarketCap','Precios, capitalización y rankings','https://coinmarketcap.com/','🪙'],
+['CoinGecko','Datos de mercado y seguimiento de carteras','https://www.coingecko.com/','🦎'],
+['CoinMarketCal','Calendario de eventos y lanzamientos cripto','https://coinmarketcal.com/','📆'],
+['Farside ETF Flows','Flujos diarios de los ETF de BTC y ETH','https://farside.co.uk/btc/','🌊'],
+['Rainbow Chart BTC','Ciclos de Bitcoin a largo plazo','https://www.blockchaincenter.net/en/bitcoin-rainbow-chart/','🌈'],
+['Token Unlocks','Desbloqueos de tokens próximos','https://token.unlocks.app/','🔓'],
+['Polymarket','Mercados de predicción','https://polymarket.com/','🎲'],
+['Binance','Exchange centralizado más grande','https://www.binance.com/','🟡'],
+['Bybit','Derivados y trading de futuros','https://www.bybit.com/','⚫']]},
+{id:'onchain',name:'On-chain y DeFi',color:'#00bcd4',links:[
+['DefiLlama','TVL de protocolos, cadenas y stablecoins','https://defillama.com/','🦙'],
+['DexScreener','Gráficos de DEXs en tiempo real','https://dexscreener.com/','🦅'],
+['GeckoTerminal','Pools y pares de DEXs','https://www.geckoterminal.com/','🦖'],
+['Dune','Paneles on-chain hechos por la comunidad','https://dune.com/browse/dashboards','🔮'],
+['Arkham','Inteligencia on-chain y wallets etiquetadas','https://intel.arkm.com/','🕵️'],
+['Lookonchain','Seguimiento de ballenas en la blockchain','https://lookonchain.com/','🐋'],
+['Whale Alert','Alertas de transacciones grandes','https://whale-alert.io/','🚨'],
+['Bubblemaps','Distribución de holders de un token','https://app.bubblemaps.io/','🫧'],
+['RugCheck','Revisión rápida de riesgo en tokens Solana','https://rugcheck.xyz/','🧪'],
+['DeBank','Cartera DeFi de cualquier dirección','https://debank.com/','🏦'],
+['Etherscan','Explorador de Ethereum','https://etherscan.io/','🔎'],
+['Solscan','Explorador de Solana','https://solscan.io/','🔭'],
+['mempool.space','Explorador de Bitcoin y comisiones','https://mempool.space/','⛏️'],
+['L2Beat','Datos y riesgos de las capas 2','https://l2beat.com/','🧱']]},
+{id:'bolsa',name:'Bolsas y Acciones',color:'#2196f3',links:[
+['Yahoo Finance','Cotizaciones, noticias y datos de empresas','https://finance.yahoo.com/','📊'],
+['Google Finance','Cotizaciones y comparativas rápidas','https://www.google.com/finance/','🔵'],
+['Investing.com','Noticias y datos macroeconómicos','https://es.investing.com/','🌐'],
+['Finviz','Mapa de calor y screener (S&P 500)','https://finviz.com/map.ashx','🌡️'],
+['StockAnalysis','Financieros, ratios y ETFs de EE. UU.','https://stockanalysis.com/','🧮'],
+['Macrotrends','Históricos de ratios y márgenes','https://www.macrotrends.net/','🕰️'],
+['Barchart','Cotizaciones, opciones y futuros','https://www.barchart.com/','📶'],
+['Stooq','Históricos descargables de índices y acciones','https://stooq.com/','🗄️'],
+['SEC EDGAR','Informes oficiales de empresas de EE. UU.','https://www.sec.gov/edgar/search/','📜'],
+['OpenInsider','Compras y ventas de directivos','https://openinsider.com/','🧑‍💼'],
+['Dataroma','Carteras de grandes inversores (13F)','https://www.dataroma.com/m/home.php','🧠'],
+['Nasdaq','Mercado tecnológico de EE. UU.','https://www.nasdaq.com/','💻']]},
+{id:'macro',name:'Macroeconomía',color:'#26a69a',links:[
+['FRED','Miles de series económicas de la Fed de St. Louis','https://fred.stlouisfed.org/','📚'],
+['CME FedWatch','Probabilidades de tipos de la Fed','https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html','🎯'],
+['FED (Reserva Federal)','Comunicados y tipos de interés','https://www.federalreserve.gov/','🏛️'],
+['BCE','Banco Central Europeo','https://www.ecb.europa.eu/','🇪🇺'],
+['Eurostat','Estadísticas oficiales de la UE','https://ec.europa.eu/eurostat','🗺️'],
+['US Treasury','Rendimientos de los bonos del Tesoro','https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve','💵'],
+['BLS','Inflación y empleo de EE. UU.','https://www.bls.gov/','👷'],
+['Forex Factory','Calendario económico en tiempo real','https://www.forexfactory.com/','📅'],
+['Calendario económico','Agenda macro con filtros (Investing)','https://es.investing.com/economic-calendar/','🗒️'],
+['Trading Economics','Indicadores macroeconómicos de países','https://tradingeconomics.com/','🌍']]},
+{id:'noticias',name:'Noticias',color:'#ff7043',links:[
+['CoinDesk','Noticias cripto','https://www.coindesk.com/','🗞️'],
+['Cointelegraph','Noticias cripto en español','https://es.cointelegraph.com/','📣'],
+['Decrypt','Noticias cripto y Web3','https://decrypt.co/','🔐'],
+['CNBC','Noticias de mercados globales','https://www.cnbc.com/markets/','📺'],
+['FinancialJuice','Titulares de mercado en tiempo real','https://www.financialjuice.com/','⚡'],
+['Yahoo Finance Noticias','Titulares de bolsa y empresas','https://finance.yahoo.com/news/','📰']]},
+{id:'analisis',name:'Sentimiento y Herramientas',color:'#9c27b0',links:[
+['TradingView Screener','Filtro de acciones y criptos','https://es.tradingview.com/screener/','🔍'],
+['Fear & Greed cripto','Índice de miedo y codicia (Alternative.me)','https://alternative.me/crypto/fear-and-greed-index/','😨'],
+['Fear & Greed bolsa','Índice de miedo y codicia (CNN)','https://edition.cnn.com/markets/fear-and-greed','🧭'],
+['Portfolio Visualizer','Backtests y análisis de carteras','https://www.portfoliovisualizer.com/','🧰']]},
+{id:'aprender',name:'Aprender',color:'#8bc34a',links:[
+['Investopedia','Diccionario y guías de inversión','https://www.investopedia.com/','🎓'],
+['Bogleheads Wiki','Inversión pasiva y a largo plazo','https://www.bogleheads.org/wiki/Main_Page','📖'],
+['Academia Kiyotaka','Mecánica de mercado y estrategias','https://kiyotaka.ai/user-guides/core/academy','🥋']]}
+];
+const REAL=CATS.filter(c=>c.id!=='fav'&&c.id!=='top');
+
+/* ---------- estado ---------- */
+let S={fav:[],clicks:{},custom:[],removed:[],theme:null};
+try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&typeof r==='object')S=Object.assign(S,r)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let editing=false;
+
+const $=id=>document.getElementById(id);
+const fold=s=>s.split('').map(c=>c.normalize('NFD')[0]).join('').toLowerCase();
+
+function allLinks(){
+  const out=[];
+  REAL.forEach(c=>{
+    c.links.forEach(a=>out.push({t:a[0],d:a[1],u:a[2],i:a[3],c:c.id,custom:false}));
+    S.custom.filter(l=>l.c===c.id).forEach(l=>out.push({t:l.t,d:l.d||'',u:l.u,i:l.i||'🔗',c:c.id,custom:true}));
+  });
+  return out.filter(l=>!S.removed.includes(l.u));
+}
+const catOf=id=>CATS.find(c=>c.id===id);
+
+/* ---------- render ---------- */
+function hl(node,text,term){
+  if(!term){node.textContent=text;return}
+  const f=fold(text);let i=0,k;
+  while((k=f.indexOf(term,i))>-1){
+    node.append(text.slice(i,k));
+    const m=document.createElement('mark');m.textContent=text.slice(k,k+term.length);node.append(m);
+    i=k+term.length;
+  }
+  node.append(text.slice(i));
+}
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+
+function card(l,term){
+  const cat=catOf(l.c);
+  const a=el('a','card');a.href=l.u;a.target='_blank';a.rel='noopener noreferrer';
+  a.style.setProperty('--cc',cat.color);
+  const h=el('div','ch'),t=el('div','ct');hl(t,l.t,term);h.append(t,el('div','ci',l.i));
+  const d=el('div','cd');hl(d,l.d,term);
+  let dom;try{dom=new URL(l.u).hostname.replace(/^www\./,'')}catch(e){dom=l.u}
+  a.append(h,d,el('div','cu',dom));
+  const act=el('div','act');
+  const star=el('button','star'+(S.fav.includes(l.u)?' on':''),S.fav.includes(l.u)?'★':'☆');
+  star.type='button';star.title='Favorito';
+  star.onclick=e=>{e.preventDefault();e.stopPropagation();
+    S.fav=S.fav.includes(l.u)?S.fav.filter(x=>x!==l.u):[...S.fav,l.u];save();render()};
+  act.append(star);
+  if(editing){
+    const del=el('button','del','✕');del.type='button';del.title='Quitar';
+    del.onclick=e=>{e.preventDefault();e.stopPropagation();
+      if(!confirm('¿Quitar "'+l.t+'"?'))return;
+      if(l.custom)S.custom=S.custom.filter(x=>x.u!==l.u);else S.removed.push(l.u);
+      S.fav=S.fav.filter(x=>x!==l.u);save();render()};
+    act.append(del);
+  }
+  a.append(act);
+  a.addEventListener('click',e=>{
+    if(e.target.closest('.act'))return;
+    S.clicks[l.u]=(S.clicks[l.u]||0)+1;save();
+  });
+  return a;
+}
+
+function section(cat,links,term){
+  const s=el('div','category');
+  s.append(el('div','cat-title',cat.name));
+  const g=el('div','grid');links.forEach(l=>g.append(card(l,term)));
+  s.append(g);return s;
+}
+
+function render(){
+  const term=fold($('q').value.trim());
+  const box=$('links');box.textContent='';
+  const all=allLinks();let n=0;
+  if(!term){
+    const fav=S.fav.map(u=>all.find(l=>l.u===u)).filter(Boolean);
+    if(fav.length)box.append(section(CATS[0],fav.map(l=>({...l,c:'fav'})),''));
+    const top=all.filter(l=>S.clicks[l.u]>0).sort((a,b)=>S.clicks[b.u]-S.clicks[a.u]).slice(0,4);
+    if(top.length)box.append(section(CATS[1],top.map(l=>({...l,c:'top'})),''));
+  }
+  REAL.forEach(cat=>{
+    const ls=all.filter(l=>l.c===cat.id&&(!term||fold(l.t+' '+l.d+' '+l.u).includes(term)));
+    if(!ls.length)return;n+=ls.length;box.append(section(cat,ls,term));
+  });
+  $('noResults').style.display=n===0?'block':'none';
+}
+
+/* ---------- búsqueda ---------- */
+$('q').addEventListener('input',render);
+document.addEventListener('keydown',e=>{
+  if(e.key==='/'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();$('q').focus();$('q').select()}
+  if(e.key==='Escape'&&document.activeElement===$('q')){$('q').value='';render();$('q').blur()}
+});
+
+/* ---------- tema ---------- */
+function applyTheme(){
+  const t=S.theme||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+  document.documentElement.dataset.theme=t;
+  document.querySelector('meta[name=theme-color]').content=t==='light'?'#ffffff':'#0e1117';
+}
+$('themeBtn').onclick=()=>{S.theme=document.documentElement.dataset.theme==='light'?'dark':'light';save();applyTheme()};
+applyTheme();
+
+/* ---------- altura real del header (arregla sticky con notch) ---------- */
+const hdr=$('hdr');
+const setHH=()=>document.documentElement.style.setProperty('--hh',hdr.offsetHeight+'px');
+setHH();
+if('ResizeObserver' in window)new ResizeObserver(setHH).observe(hdr);else addEventListener('resize',setHH);
+
+/* ---------- edición ---------- */
+$('editBtn').onclick=()=>{editing=!editing;$('editBtn').classList.toggle('on',editing);$('tools').classList.toggle('on',editing);render()};
+const fC=$('fC');
+REAL.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;fC.append(o)});
+$('addBtn').onclick=()=>{$('frm').reset();$('dlg').showModal()};
+$('frm').addEventListener('submit',e=>{
+  if(e.submitter&&e.submitter.value!=='ok')return;
+  let u=$('fU').value.trim();
+  try{u=new URL(u).href}catch(x){return}
+  if(!/^https?:/.test(u))return;
+  S.custom.push({t:$('fT').value.trim(),u,d:$('fD').value.trim(),c:fC.value,i:'🔗'});
+  S.removed=S.removed.filter(x=>x!==u);save();render();
+});
+$('expBtn').onclick=async()=>{
+  const j=JSON.stringify(S);
+  try{await navigator.clipboard.writeText(j);alert('Copiado al portapapeles. Pégalo donde quieras como copia de seguridad.')}
+  catch(e){prompt('Copia tus datos:',j)}
+};
+$('impBtn').onclick=()=>{
+  const j=prompt('Pega aquí los datos exportados:');if(!j)return;
+  try{const r=JSON.parse(j);S=Object.assign({fav:[],clicks:{},custom:[],removed:[],theme:null},r);save();applyTheme();render()}
+  catch(e){alert('Datos no válidos.')}
+};
+$('rstBtn').onclick=()=>{
+  if(!confirm('¿Restaurar todo? Se borran favoritos, usos y cambios.'))return;
+  S={fav:[],clicks:{},custom:[],removed:[],theme:null};save();applyTheme();render();
+};
+
+/* ---------- ticker: BTC, ETH, SOL con reconexión, respaldo y pausa ---------- */
+const COINS=[['btcusdt','BTC','bitcoin'],['ethusdt','ETH','ethereum'],['solusdt','SOL','solana']];
+const tk={},tkEl=$('ticker'),dot=$('tkdot');
+COINS.forEach(c=>{
+  const w=el('span','tk');const s=el('span','s',c[1]),p=el('span','p','—'),ch=el('span','c','');
+  w.append(s,p,ch);tkEl.insertBefore(w,dot);tk[c[0]]={p,ch,id:c[2]};
+});
+function setPrice(key,price,pct){
+  const t=tk[key];if(!t||!isFinite(price))return;
+  t.p.textContent='$'+price.toLocaleString('es-ES',{maximumFractionDigits:price<10?3:0});
+  if(isFinite(pct)){t.ch.textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';t.ch.className='c '+(pct>=0?'up':'down')}
+}
+let ws=null,retry=0,timer=null,poll=null;
+function stopAll(){clearTimeout(timer);clearInterval(poll);poll=null;if(ws){ws.onclose=null;ws.close();ws=null}}
+async function fetchBackup(){
+  try{
+    const ids=COINS.map(c=>c[2]).join(',');
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+ids+'&vs_currencies=usd&include_24hr_change=true');
+    const j=await r.json();
+    COINS.forEach(c=>{const d=j[c[2]];if(d)setPrice(c[0],d.usd,d.usd_24h_change)});
+    dot.className='poll';
+  }catch(e){}
+}
+function startPoll(){if(poll)return;fetchBackup();poll=setInterval(fetchBackup,60000)}
+function connect(){
+  if(document.hidden)return;
+  try{
+    ws=new WebSocket('wss://stream.binance.com:9443/stream?streams='+COINS.map(c=>c[0]+'@ticker').join('/'));
+    ws.onopen=()=>{retry=0;clearInterval(poll);poll=null;dot.className='live'};
+    ws.onmessage=ev=>{try{const d=JSON.parse(ev.data).data;if(d&&d.s)setPrice(d.s.toLowerCase(),parseFloat(d.c),parseFloat(d.P))}catch(e){}};
+    ws.onclose=()=>{ws=null;dot.className='';startPoll();
+      timer=setTimeout(connect,Math.min(30000,2000*Math.pow(2,retry++)))};
+    ws.onerror=()=>{try{ws.close()}catch(e){}};
+  }catch(e){startPoll();timer=setTimeout(connect,Math.min(30000,2000*Math.pow(2,retry++)))}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){stopAll();dot.className=''}else{retry=0;connect()}
+});
+connect();
+
+/* ---------- PWA: manifest e icono generados al vuelo ---------- */
+try{
+  const cv=document.createElement('canvas');cv.width=cv.height=180;
+  const x=cv.getContext('2d');x.fillStyle='#0e1117';x.fillRect(0,0,180,180);
+  x.fillStyle='#f7a600';x.font='bold 84px -apple-system,Arial,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('HF',90,95);
+  const png=cv.toDataURL('image/png');
+  const ic=document.createElement('link');ic.rel='apple-touch-icon';ic.href=png;document.head.append(ic);
+  const man={name:'Hub Financiero',short_name:'Hub',display:'standalone',background_color:'#0e1117',theme_color:'#0e1117',
+    start_url:location.href.split('#')[0],icons:[{src:png,sizes:'180x180',type:'image/png'}]};
+  const ml=document.createElement('link');ml.rel='manifest';
+  ml.href=URL.createObjectURL(new Blob([JSON.stringify(man)],{type:'application/manifest+json'}));
+  document.head.append(ml);
+}catch(e){}
+
+render();
+})();
+</script>
+</body>
+</html>
