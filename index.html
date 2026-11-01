@@ -19,6 +19,8 @@ header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-
 .brand{display:flex;align-items:center;gap:8px}
 .brand h1{font-size:16px;font-weight:600;margin:0;color:var(--ink-strong)}
 .tag{font-size:10px;font-weight:600;color:var(--amber);background:rgba(247,166,0,.12);padding:3px 6px;border-radius:4px}
+a.idx{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 8px;border-radius:12px;border:1px solid var(--border);background:var(--panel-2);color:var(--ink-strong);text-decoration:none;white-space:nowrap}
+a.idx[hidden]{display:none}
 #ticker{display:flex;align-items:center;gap:12px;font-size:12px;font-variant-numeric:tabular-nums}
 .tk{display:flex;gap:4px;align-items:baseline}
 .tk .s{color:var(--dim);font-weight:600;font-size:10px}.tk .p{color:var(--ink-strong);font-weight:600}.tk .c{font-size:10px;color:var(--dim)}
@@ -67,7 +69,7 @@ dialog input,dialog select{width:100%;background:var(--panel-2);border:1px solid
 <body>
 <div id="stage">
 <header id="hdr">
-  <div class="brand"><h1>Hub Financiero</h1><span class="tag">LINKS</span></div>
+  <div class="brand"><h1>Hub Financiero</h1><span class="tag">LINKS</span><a id="idx" class="idx" href="caro_barato_btc.html" title="BTC: caro o barato" hidden></a></div>
   <div id="ticker"><span id="tkdot" title="Estado del ticker"></span></div>
 </header>
 <div class="bar">
@@ -111,6 +113,7 @@ const CATS=[
 {id:'fav',name:'Favoritos',color:'#f7a600',links:[]},
 {id:'top',name:'Más usados',color:'#2962ff',links:[]},
 {id:'mias',name:'Mis herramientas',color:'#e91e63',links:[
+['BTC ¿Caro o barato?','Índice 0–100 con datos en vivo','caro_barato_btc.html','⚖️'],
 ['Liquidaciones en directo','Liquidaciones del mercado en tiempo real','liquidaciones_directo.html','💥'],
 ['Presión en directo','Presión de compra y venta en tiempo real','presion_directo.html','⚖️'],
 ['M2 vs BTC','Liquidez M2 frente a Bitcoin en directo','m2_btc_directo.html','💧'],
@@ -393,6 +396,24 @@ try{
   ml.href=URL.createObjectURL(new Blob([JSON.stringify(man)],{type:'application/manifest+json'}));
   document.head.append(ml);
 }catch(e){}
+
+/* ---------- índice BTC caro/barato (lo calcula caro_barato_btc.html en un iframe oculto) ---------- */
+const idx=$('idx');
+function showIdx(d){
+  if(!d||typeof d.v!=='number'||typeof d.lab!=='string'||!/^#[0-9a-f]{3,6}$/i.test(d.col))return;
+  idx.hidden=false;idx.textContent='';
+  const dt=el('span');dt.style.cssText='width:7px;height:7px;border-radius:50%;margin-right:5px;background:'+d.col;
+  idx.append(dt,d.v+' · '+d.lab);
+}
+try{showIdx(JSON.parse(localStorage.getItem('hub.idx')||'null'))}catch(e){}
+const bf=document.createElement('iframe');bf.src='caro_barato_btc.html';bf.hidden=true;bf.tabIndex=-1;bf.title='';
+addEventListener('message',e=>{
+  const d=e.data;
+  if(!d||d.type!=='btc-index'||e.source!==bf.contentWindow)return;
+  showIdx(d);
+  try{localStorage.setItem('hub.idx',JSON.stringify({v:d.v,lab:d.lab,col:d.col}))}catch(x){}
+});
+document.body.append(bf);
 
 render();
 })();
