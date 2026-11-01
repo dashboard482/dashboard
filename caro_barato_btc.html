@@ -32,10 +32,6 @@ svg text{fill:var(--dim);font-size:9px;font-weight:600;text-anchor:middle}
 .bar{position:relative;height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}
 .bar i{position:absolute;inset:0 auto 0 0;border-radius:4px;transition:width .6s ease}
 .row .t{font-size:11px;color:var(--dim);margin-top:4px}
-.man{display:grid;grid-template-columns:1fr 90px;gap:8px 10px;align-items:center}
-.man label{font-size:12px}.man label small{display:block;color:var(--dim);font-size:10px}
-.man input{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--strong);border-radius:6px;padding:8px;font:inherit;font-size:16px}
-.man a{color:var(--accent)}
 button{width:100%;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:12px;font:inherit;font-weight:600;cursor:pointer}
 button:disabled{opacity:.6}
 .note{font-size:10px;color:var(--dim);line-height:1.5;margin:12px 2px 0}
@@ -63,32 +59,16 @@ button:disabled{opacity:.6}
 
 <section class="card"><h2>Componentes</h2><div id="comps"></div></section>
 
-<section class="card">
-<h2>Datos manuales (opcionales)</h2>
-<div class="man">
-<label>DXY (dólar)<small>Sin API gratuita fiable. Consúltalo en Investing o TradingView.</small></label>
-<input id="mDxy" type="number" step="0.01" inputmode="decimal" placeholder="ej. 100.5">
-<label>Google Trends «bitcoin»<small>0–100. <a href="https://trends.google.es/trends/explore?q=bitcoin&date=today%203-m" target="_blank" rel="noopener noreferrer">Abrir Trends</a></small></label>
-<input id="mTr" type="number" step="1" min="0" max="100" inputmode="numeric" placeholder="0–100">
-<label>Liquidez (nota 0–10)<small>Tu propia lectura de liquidez global.</small></label>
-<input id="mLiq" type="number" step="1" min="0" max="10" inputmode="numeric" placeholder="0–10">
-</div>
-</section>
-
 <button id="refresh">Actualizar</button>
-<p class="note">Escala: 0 = caro, 100 = barato. El índice es la media de las notas (0–10) de los componentes disponibles. Los umbrales de cada nota son una aproximación a tus dos índices, ajústalos en el código si quieres. Datos de Binance y Alternative.me. Indicador informativo, no es consejo financiero.</p>
+<p class="note">Escala: 0 = caro, 100 = barato. El índice es la media de las notas (0–10) de los componentes disponibles; si una fuente falla, ese componente se omite. Todo se calcula solo, sin datos manuales. Algunos componentes son aproximaciones: el DXY se calcula con los tipos de cambio del BCE, el interés se mide con las visitas diarias a Bitcoin en Wikipedia (en vez de Google Trends) y la liquidez con el suministro de stablecoins. Los umbrales de cada nota están ajustados a tus dos índices, cámbialos en el código si quieres. Fuentes: Binance, Alternative.me, Frankfurter (BCE), Wikimedia y DefiLlama. Indicador informativo, no es consejo financiero.</p>
 </div>
 
 <script>
 (function(){
 'use strict';
-const KEY='btcgauge.v1',$=id=>document.getElementById(id);
-let M={dxy:'',trends:'',liq:''};
-try{Object.assign(M,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
-const saveM=()=>{try{localStorage.setItem(KEY,JSON.stringify(M))}catch(e){}};
+const $=id=>document.getElementById(id);
 const clamp=(x,a=0,b=10)=>Math.max(a,Math.min(b,x)),R=x=>Math.round(clamp(x));
 const fmt=n=>n.toLocaleString('es-ES',{maximumFractionDigits:0});
-const num=v=>v!==''&&v!=null&&isFinite(+v);
 let D={};
 
 /* ---- medidor ---- */
@@ -121,18 +101,21 @@ function cycle(m){
 }
 const phase=m=>m<12?'post-halving':m<18?'zona de techo típica':m<36?'bear normal':'acumulación';
 const fundScore=f=>f>0.02?5-(f-0.02)/0.02*2.5:f<-0.01?5+(-0.01-f)/0.01*2.5:5;
+/* DXY: cesta oficial ponderada, con los tipos USD→divisa del BCE */
+const W=[['EUR',.576],['JPY',.136],['GBP',.119],['CAD',.091],['SEK',.042],['CHF',.036]];
+const dxyCalc=r=>W.every(([c])=>r[c]>0)?50.14348112*W.reduce((a,[c,w])=>a*Math.pow(r[c],w),1):null;
 
 function comps(){
   const o=[],d=D;
   if(d.ema!=null){const p=(d.price/d.ema-1)*100;
-    o.push(['EMA 200',R(6-0.3*p),(p>=0?'+':'')+p.toFixed(1)+'% — '+(p>10?'alejado':p<-5?'por debajo':'cerca')])}
+    o.push(['EMA 200',R(6-0.3*p),(p>=0?'+':'')+p.toFixed(1)+'% sobre la EMA 200 — '+(p>10?'alejado':p<-5?'por debajo':'cerca')])}
   if(d.rsi!=null)o.push(['RSI 14d',R(5+(50-d.rsi)*0.3),d.rsi.toFixed(1)+' — '+(d.rsi>70?'sobrecompra':d.rsi<30?'sobreventa':'neutral')]);
   if(d.fg7!=null){const a=d.fg7;
     o.push(['Fear & Greed',R(10-a/10),'media 7d '+a.toFixed(0)+' (hoy '+d.fgNow+') — '+(a>=75?'codicia extrema':a>=55?'codicia':a>=45?'neutral':a>=25?'miedo':'miedo extremo')])}
   if(d.fund!=null)o.push(['Funding rate',R(fundScore(d.fund)),(d.fund>=0?'+':'')+d.fund.toFixed(4)+'% — '+(d.fund>0.02?'largos apalancados':d.fund<-0.01?'cortos pagan':'neutro')]);
-  if(num(M.dxy)){const x=+M.dxy;o.push(['DXY dólar',R(5.5+(x-100)*1.6),x.toFixed(2)+' — '+(x<99?'débil':x>103?'fuerte':'medio')])}
-  if(num(M.trends)){const t=+M.trends;o.push(['Google Trends',R(10-t/12),t+'% — interés '+(t<30?'muy bajo':t<60?'medio':'alto')])}
-  if(num(M.liq))o.push(['Liquidez',R(+M.liq),'nota manual'])
+  if(d.dxy!=null)o.push(['DXY dólar',R(5.5+(d.dxy-100)*1.6),d.dxy.toFixed(2)+' (calculado con tipos del BCE) — '+(d.dxy<99?'débil':d.dxy>103?'fuerte':'medio')]);
+  if(d.int!=null)o.push(['Interés (Wikipedia)',R(10-d.int/12),d.int.toFixed(0)+'% del máximo anual — interés '+(d.int<30?'muy bajo':d.int<60?'medio':'alto')]);
+  if(d.liq)o.push(['Liquidez (stablecoins)',R(d.liq.p/10),(d.liq.g>=0?'+':'')+d.liq.g.toFixed(1)+'% en 13 sem (percentil '+d.liq.p.toFixed(0)+') — '+(d.liq.p>66?'expansión':d.liq.p<33?'contracción':'neutral')]);
   const m=(Date.now()-HALV)/(30.44*864e5);
   o.push(['Ciclo halving',R(cycle(m)),'Mes '+Math.floor(m)+' — '+phase(m)]);
   return o;
@@ -158,19 +141,27 @@ function render(){
   $('label').textContent=lab;$('label').style.color=col;
   $('needle').style.transform='rotate('+(ok?-90+1.8*v:-90)+'deg)';
   $('price').textContent=D.price?'$'+fmt(D.price):'—';
-  const miss=[];if(D.ema==null)miss.push('velas');if(D.fg7==null)miss.push('Fear & Greed');if(D.fund==null)miss.push('funding');
+  const miss=[];
+  if(D.ema==null)miss.push('velas');if(D.fg7==null)miss.push('Fear & Greed');if(D.fund==null)miss.push('funding');
+  if(D.dxy==null)miss.push('DXY');if(D.int==null)miss.push('interés');if(!D.liq)miss.push('liquidez');
   $('meta').textContent=list.length+(list.length===1?' componente':' componentes')+' · '+(D.t?'actualizado '+D.t.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'');
-  if(miss.length){const e=document.createElement('span');e.className='err';e.textContent=' · sin datos de: '+miss.join(', ')+(miss.length===3?'. No hay conexión con las APIs: ábrelo en el navegador, no en una vista previa.':'');$('meta').append(e)}
+  if(miss.length){const e=document.createElement('span');e.className='err';
+    e.textContent=' · sin datos de: '+miss.join(', ')+(miss.length>=6?'. No hay conexión con las APIs: ábrelo en el navegador, no en una vista previa.':'');
+    $('meta').append(e)}
 }
 
 /* ---- datos en vivo ---- */
 async function j(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json()}
+const day=n=>new Date(Date.now()-n*864e5).toISOString().slice(0,10).replace(/-/g,'');
 async function load(){
   $('refresh').disabled=true;
-  const [k,f,fr]=await Promise.allSettled([
+  const [k,f,fr,fx,wk,st]=await Promise.allSettled([
     j('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=1000'),
     j('https://api.alternative.me/fng/?limit=7'),
-    j('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT')
+    j('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT'),
+    j('https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR,JPY,GBP,CAD,SEK,CHF'),
+    j('https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/Bitcoin/daily/'+day(365)+'/'+day(1)),
+    j('https://stablecoins.llama.fi/stablecoincharts/all')
   ]);
   D={};
   let c=null;
@@ -179,16 +170,23 @@ async function load(){
   if(c&&c.length>210){D.price=c[c.length-1];D.ema=ema(c,200);D.rsi=rsi(c)}
   if(f.status==='fulfilled'){const v=f.value.data.map(x=>+x.value);D.fgNow=v[0];D.fg7=v.reduce((a,b)=>a+b)/v.length}
   if(fr.status==='fulfilled')D.fund=+fr.value.lastFundingRate*100;
+  if(fx.status==='fulfilled'){const x=dxyCalc(fx.value.rates||{});if(x)D.dxy=x}
+  if(wk.status==='fulfilled'){
+    const v=(wk.value.items||[]).map(x=>x.views);
+    if(v.length>60){const a=[];for(let i=6;i<v.length;i++)a.push(v.slice(i-6,i+1).reduce((p,q)=>p+q)/7);
+      D.int=a[a.length-1]/Math.max(...a)*100}
+  }
+  if(st.status==='fulfilled'&&Array.isArray(st.value)){
+    const t=st.value.slice(-460).map(x=>x.totalCirculatingUSD&&x.totalCirculatingUSD.peggedUSD).filter(x=>x>0);
+    if(t.length>300){const g=[];for(let i=91;i<t.length;i++)g.push(t[i]/t[i-91]-1);
+      const last=g[g.length-1],yr=g.slice(-365);
+      D.liq={g:last*100,p:yr.filter(x=>x<=last).length/yr.length*100}}
+  }
   D.t=new Date();
   render();
   $('refresh').disabled=false;
 }
 
-/* ---- manuales ---- */
-[['mDxy','dxy'],['mTr','trends'],['mLiq','liq']].forEach(([id,k])=>{
-  const el=$(id);el.value=M[k];
-  el.addEventListener('input',()=>{M[k]=el.value;saveM();render()});
-});
 $('refresh').onclick=load;
 setInterval(()=>{if(!document.hidden)load()},300000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&(!D.t||Date.now()-D.t>60000))load()});
