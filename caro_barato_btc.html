@@ -140,6 +140,7 @@ function render(){
   $('score').firstChild.textContent=ok?v:'—';
   $('label').textContent=lab;$('label').style.color=col;
   $('needle').style.transform='rotate('+(ok?-90+1.8*v:-90)+'deg)';
+  try{if(parent!==window)parent.postMessage({type:'btc-index',v:ok?v:null,lab:lab,col:col},'*')}catch(e){}
   $('price').textContent=D.price?'$'+fmt(D.price):'—';
   const miss=[];
   if(D.ema==null)miss.push('velas');if(D.fg7==null)miss.push('Fear & Greed');if(D.fund==null)miss.push('funding');
