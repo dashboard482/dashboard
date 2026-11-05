@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub Financiero - Bolsa & Mercados</title>
+    <style>
+        :root {
+            --bg-main: #0b0c10;
+            --bg-card: #13161f;
+            --bg-card-hover: #1a1e2b;
+            --border-color: #202637;
+            --text-primary: #e6e8ec;
+            --text-secondary: #8a94a6;
+            --accent-green: #00e676;
+            --accent-red: #ff5252;
+            --accent-gold: #ffb300;
+            --accent-blue: #2979ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Top Header & Search */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 20px;
+        }
+
+        .brand-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge-live {
+            font-size: 0.75rem;
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--accent-green);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .search-box {
+            position: relative;
+            flex-grow: 1;
+            max-width: 500px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 16px 10px 38px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        /* Ticker Top Bar */
+        .ticker-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .ticker-val {
+            color: var(--text-primary);
+        }
+
+        .change-up { color: var(--accent-green); }
+        .change-down { color: var(--accent-red); }
+
+        /* Main Section & Layout */
+        .section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.15s, border-color 0.15s, background 0.15s;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 110px;
+        }
+
+        .card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .card-sub {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .star-icon {
+            color: var(--border-color);
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .star-icon.active {
+            color: var(--accent-gold);
+        }
+
+        .card-footer-val {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        /* Movimientos Table Module */
+        .movers-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .movers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
+        .movers-table th, .movers-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .movers-table th {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .flash-up {
+            animation: flashGreen 0.6s ease;
+        }
+        .flash-down {
+            animation: flashRed 0.6s ease;
+        }
+
+        @keyframes flashGreen {
+            0% { background-color: rgba(0, 230, 118, 0.3); }
+            100% { background-color: transparent; }
+        }
+
+        @keyframes flashRed {
+            0% { background-color: rgba(255, 82, 82, 0.3); }
+            100% { background-color: transparent; }
+        }
+
+        footer {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-title">
+            Hub Financiero <span class="badge-live">• MERCADOS EN DIRECTO</span>
+        </div>
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Buscar herramienta, índice, acción, materia prima...">
+        </div>
+    </header>
+
+    <!-- Top Continuous Ticker -->
+    <div class="ticker-bar" id="tickerBar">
+        <div class="ticker-item"><span>ORO (XAU):</span> <span class="ticker-val" id="tk-xau">Cargando...</span></div>
+        <div class="ticker-item"><span>PLATA (XAG):</span> <span class="ticker-val" id="tk-xag">Cargando...</span></div>
+        <div class="ticker-item"><span>APPLE (AAPL):</span> <span class="ticker-val" id="tk-aapl">Cargando...</span></div>
+        <div class="ticker-item"><span>TESLA (TSLA):</span> <span class="ticker-val" id="tk-tsla">Cargando...</span></div>
+        <div class="ticker-item"><span>NVIDIA (NVDA):</span> <span class="ticker-val" id="tk-nvda">Cargando...</span></div>
+    </div>
+
+    <!-- Sección Dinámica: Favoritos -->
+    <div id="favsSection" style="display: none;">
+        <div class="section-title">⭐ MIS HERRAMIENTAS FAVORITAS</div>
+        <div class="grid-container" id="favsGrid"></div>
+    </div>
+
+    <!-- Herramientas Principales -->
+    <div class="section-title">HERRAMIENTAS DE BOLSA & TRADING</div>
+    <div class="grid-container">
+        <div class="card" data-title="Oro en Directo (Binance WS)">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Oro Spot (XAU/USDT)</div>
+                    <div class="card-sub">WebSocket en Vivo (Binance)</div>
+                </div>
+                <span class="star-icon" onclick="toggleFav(event, this)">★</span>
+            </div>
+            <div class="card-footer-val">
+                <span id="card-xau-price">$0.00</span>
+                <span id="card-xau-change" class="change-up">0.00%</span>
+            </div>
+        </div>
+
+        <div class="card" data-title="Plata en Directo (Binance WS)">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Plata Spot (XAG/USDT)</div>
+                    <div class="card-sub">WebSocket en Vivo (Binance)</div>
+                </div>
+                <span class="star-icon" onclick="toggleFav(event, this)">★</span>
+            </div>
+            <div class="card-footer-val">
+                <span id="card-xag-price">$0.00</span>
+                <span id="card-xag-change" class="change-up">0.00%</span>
+            </div>
+        </div>
+
+        <div class="card" data-title="Apple Inc (AAPL)">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Apple (AAPL)</div>
+                    <div class="card-sub">API Finnhub (Wall Street)</div>
+                </div>
+                <span class="star-icon" onclick="toggleFav(event, this)">★</span>
+            </div>
+            <div class="card-footer-val">
+                <span id="card-aapl-price">$0.00</span>
+                <span id="card-aapl-change">0.00%</span>
+            </div>
+        </div>
+
+        <div class="card" data-title="Tesla Inc (TSLA)">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Tesla (TSLA)</div>
+                    <div class="card-sub">API Finnhub (Wall Street)</div>
+                </div>
+                <span class="star-icon" onclick="toggleFav(event, this)">★</span>
+            </div>
+            <div class="card-footer-val">
+                <span id="card-tsla-price">$0.00</span>
+                <span id="card-tsla-change">0.00%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Mayores Movimientos -->
+    <div class="movers-container">
+        <div class="section-title">🔥 MAYORES MOVIMIENTOS EN TIEMPO REAL</div>
+        <table class="movers-table">
+            <thead>
+                <tr>
+                    <th>ACTIVO</th>
+                    <th>PRECIO REAL</th>
+                    <th>VARIACIÓN (24H)</th>
+                    <th>FUENTE</th>
+                </tr>
+            </thead>
+            <tbody id="moversTableBody">
+                <!-- Se llena con JS dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        Datos en tiempo real vía Binance WebSocket & Finnhub.io REST API. Conexión directa desde cliente sin servidor propio.
+    </footer>
+
+    <script>
+        // Tu API Key configurada
+        const FINNHUB_API_KEY = "Dashcupr01qm680ehpu0dashcupr01qm680ehpug";
+
+        // Estructura de estado para los precios
+        const marketData = {
+            XAU: { price: 0, change: 0, prev: 0 },
+            XAG: { price: 0, change: 0, prev: 0 },
+            AAPL: { price: 0, change: 0, prev: 0 },
+            TSLA: { price: 0, change: 0, prev: 0 },
+            NVDA: { price: 0, change: 0, prev: 0 }
+        };
+
+        // 1. CONEXIÓN WEBSOCKET DE BINANCE (Oro y Plata)
+        function initBinanceWS() {
+            const ws = new WebSocket('wss://stream.binance.com:9443/ws/xauusdt@ticker/xagusdt@ticker');
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const symbol = data.s === 'XAUUSDT' ? 'XAU' : 'XAG';
+                const price = parseFloat(data.c);
+                const change = parseFloat(data.P);
+
+                updateAssetData(symbol, price, change);
+            };
+
+            ws.onerror = (err) => console.error("WS Error: ", err);
+        }
+
+        // 2. PETICIÓN A FINNHUB API (Acciones Wall Street)
+        async function fetchFinnhubStock(symbol) {
+            try {
+                const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`);
+                const data = await res.json();
+                if (data && data.c) {
+                    const price = data.c;
+                    const change = ((data.c - data.pc) / data.pc) * 100;
+                    updateAssetData(symbol, price, change);
+                }
+            } catch(e) {
+                console.error("Error Finnhub:", e);
+            }
+        }
+
+        function pollStocks() {
+            ['AAPL', 'TSLA', 'NVDA'].forEach(sym => fetchFinnhubStock(sym));
+        }
+
+        // Actualiza el DOM y ejecuta el efecto flash
+        function updateAssetData(symbol, price, change) {
+            const asset = marketData[symbol];
+            const isUp = change >= 0;
+            const classChange = isUp ? 'change-up' : 'change-down';
+            const sign = isUp ? '+' : '';
+
+            // Ticker superior
+            const tkEl = document.getElementById(`tk-${symbol.toLowerCase()}`);
+            if(tkEl) {
+                tkEl.innerHTML = `$${price.toFixed(2)} <span class="${classChange}">(${sign}${change.toFixed(2)}%)</span>`;
+            }
+
+            // Tarjetas
+            const cardPrice = document.getElementById(`card-${symbol.toLowerCase()}-price`);
+            const cardChange = document.getElementById(`card-${symbol.toLowerCase()}-change`);
+
+            if(cardPrice && cardChange) {
+                cardPrice.innerText = `$${price.toFixed(2)}`;
+                cardChange.innerText = `${sign}${change.toFixed(2)}%`;
+                cardChange.className = classChange;
+            }
+
+            asset.price = price;
+            asset.change = change;
+
+            renderMoversTable();
+        }
+
+        // Renderiza la tabla de movimientos
+        function renderMoversTable() {
+            const tbody = document.getElementById('moversTableBody');
+            tbody.innerHTML = '';
+
+            Object.keys(marketData).forEach(symbol => {
+                const data = marketData[symbol];
+                if(data.price === 0) return;
+
+                const tr = document.createElement('tr');
+                const isUp = data.change >= 0;
+                const classChange = isUp ? 'change-up' : 'change-down';
+
+                tr.innerHTML = `
+                    <td><strong>${symbol}</strong></td>
+                    <td>$${data.price.toFixed(2)}</td>
+                    <td class="${classChange}">${isUp ? '▲' : '▼'} ${data.change.toFixed(2)}%</td>
+                    <td><small style="color:var(--text-secondary)">${symbol === 'XAU' || symbol === 'XAG' ? 'Binance WS' : 'Finnhub Realtime'}</small></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Inicialización al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            initBinanceWS();
+            pollStocks();
+            setInterval(pollStocks, 15000); // Consulta cada 15 segs las acciones
+        });
+    </script>
+</body>
+</html>
