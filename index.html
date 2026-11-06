@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
+<title>Hub Financiero · Enlaces</title>
+<style>
+:root{--bg:#0e1117;--panel:#131722;--panel-2:#1a1e29;--hover:#1f2430;--border:#2a2e39;--border-hover:#363a45;--ink:#d1d4dc;--ink-strong:#f0f3fa;--dim:#787b86;--dim2:#5d606b;--accent:#2962ff;--up:#26a69a;--down:#ef5350;--amber:#f7a600;--hh:57px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+#stage{min-height:100dvh;display:flex;flex-direction:column}
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--border)}
+.brand h1{font-size:16px;font-weight:600;margin:0;color:var(--ink-strong)}
+.tag{font-size:10px;font-weight:600;color:var(--amber);background:rgba(247,166,0,.12);padding:3px 6px;border-radius:4px}
+#ticker{display:flex;align-items:center;gap:12px;font-size:12px;font-variant-numeric:tabular-nums}
+.tk{display:flex;gap:4px;align-items:baseline}
+.tk .s{color:var(--dim);font-weight:600;font-size:10px}.tk .p{color:var(--ink-strong);font-weight:600}.tk .c{font-size:10px;color:var(--dim)}
+.tk .c.up{color:var(--up)}.tk .c.down{color:var(--down)}
+#tkdot{width:6px;height:6px;border-radius:50%;background:var(--dim2)}#tkdot.live{background:var(--up)}
+.bar{position:sticky;top:var(--hh);z-index:9;display:flex;gap:8px;padding:10px 16px;background:var(--bg)}
+.search-box{flex:1;display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--border);padding:8px 12px;border-radius:6px}
+.search-box input{flex:1;background:transparent;border:0;color:var(--ink-strong);font:inherit;font-size:16px;outline:0}
+main{flex:1;padding:4px 16px 40px;max-width:1200px;margin:0 auto;width:100%}
+.category{margin-bottom:24px}
+.cat-title{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.cat-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.card{position:relative;display:flex;flex-direction:column;gap:4px;background:var(--panel-2);border:1px solid var(--border);padding:12px 14px;border-radius:6px;text-decoration:none}
+.card:hover{border-color:var(--border-hover);background:var(--hover)}
+.ch{display:flex;justify-content:space-between;gap:8px}
+.ct{font-size:13px;font-weight:600;color:var(--ink-strong)}
+.ci{font-size:16px}
+.cd{font-size:11px;color:var(--dim)}
+.cu{font-size:9px;color:var(--dim2);margin-top:6px}
+footer{text-align:center;padding:20px;font-size:10px;color:var(--dim2);border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div id="stage">
+<header>
+  <div class="brand"><h1>Hub Financiero</h1><span class="tag">LINKS</span></div>
+  <div id="ticker"><span id="tkdot"></span></div>
+</header>
+<main>
+  <div id="links"></div>
+</main>
+<footer>Recopilación de enlaces de interés · DYOR</footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+const CATS=[
+{id:'mias',name:'Mis herramientas',color:'#e91e63',links:[
+  ['Noticias del día','Titulares de cripto, mercados y España','noticias.html','📰'],
+  ['BTC ¿Caro o barato?','Índice 0–100 con datos en vivo','caro_barato_btc.html','⚖️'],
+  ['Liquidaciones en directo','Liquidaciones del mercado en tiempo real','liquidaciones_directo.html','💥'],
+  ['Presión en directo','Presión de compra y venta en tiempo real','presion_directo.html','⚖️'],
+  ['Ticker cripto','Precios cripto en vivo','ticker_cripto.html','🪙'],
+  ['Cinta de precios (55 criptos)','Precios y mayores movimientos de 55 criptos','cinta_bolsa.html','🎞️'],
+  ['Hub de Bolsa y Cartera','Cotizaciones de bolsa, ETFs, innovación y materias primas','hub_bolsa.html','📈'],
+  ['Gráficos de calor','Mapas de calor del mercado','graficos_calor.html','🌡️']
+]}
+];
+
+const box=document.getElementById('links');
+CATS.forEach(cat=>{
+  const s=document.createElement('div');
+  s.className='category';
+  s.innerHTML=`<div class="cat-title">${cat.name}</div>`;
+  const g=document.createElement('div');
+  g.className='grid';
+  cat.links.forEach(l=>{
+    const a=document.createElement('a');
+    a.className='card';
+    a.href=l[2];
+    a.target='_blank';
+    a.innerHTML=`<div class="ch"><div class="ct">${l[0]}</div><div class="ci">${l[3]}</div></div><div class="cd">${l[1]}</div><div class="cu">${l[2]}</div>`;
+    g.append(a);
+  });
+  s.append(g);
+  box.append(s);
+});
+
+// Ticker superior BTC
+const ws=new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@ticker');
+ws.onmessage=e=>{
+  try{
+    const d=JSON.parse(e.data);
+    if(d&&d.c){
+      document.getElementById('ticker').innerHTML=`<span style="color:var(--ink-strong);font-weight:600">BTC $${parseFloat(d.c).toLocaleString('es-ES',{maximumFractionDigits:0})}</span> <span style="color:${parseFloat(d.P)>=0?'var(--up)':'var(--down)'}">${parseFloat(d.P)>=0?'+':''}${parseFloat(d.P).toFixed(2)}%</span>`;
+      document.getElementById('tkdot').className='live';
+    }
+  }catch(err){}
+};
+})();
+</script>
+</body>
+</html>
