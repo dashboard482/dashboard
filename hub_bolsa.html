@@ -18,14 +18,15 @@
   --down:#ef5350;
 }
 *{box-sizing:border-box}
-body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1200px;margin:0 auto}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+body{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1200px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-strong);text-decoration:none;background:var(--panel-2);border:1px solid var(--border);padding:6px 12px;border-radius:6px}
 .status-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim)}
 .dot-live{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 6px var(--up)}
-.cat-title{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
-.cat-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.widget-box{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:15px;margin-bottom:20px}
+.section-title{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.tape-container{margin-bottom:12px;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.widget-box{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:16px}
 </style>
 </head>
 <body>
@@ -34,91 +35,37 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   <a href="index.html" class="back-btn">← Volver al Hub</a>
   <div class="status-badge">
     <span class="dot-live"></span>
-    <span>MI CARTERA & MERCADOS GLOBALES (EN VIVO)</span>
+    <span>MERCADOS & CARTERA (EN VIVO)</span>
   </div>
 </header>
 
-<div class="cat-title">ETFs Globales (Vanguard / FTSE)</div>
-<div class="widget-box">
+<!-- CINTAS DE COTIZACIONES SUPERIORES (FLUIDAS PARA MÓVIL) -->
+<div class="section-title">Cinta Global: ETFs & Innovación</div>
+<div class="tape-container">
   <div class="tradingview-widget-container">
     <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
     {
-      "width": "100%",
-      "height": "220",
-      "symbolsGroups": [
-        {
-          "name": "ETFs FTSE",
-          "symbols": [
-            { "name": "XETRA:VGWL", "displayName": "Vanguard FTSE All-World UCITS ETF" },
-            { "name": "LSE:VWRL", "displayName": "Vanguard FTSE All-World (USD)" }
-          ]
-        }
+      "symbols": [
+        { "proName": "XETRA:VGWL", "title": "Vanguard All-World" },
+        { "proName": "NASDAQ:SPCX", "title": "SpaceX" },
+        { "proName": "NYSE:MP", "title": "MP Materials" },
+        { "proName": "NYSE:IONQ", "title": "IonQ" },
+        { "proName": "COMEX:GC1!", "title": "Oro" },
+        { "proName": "COMEX:SI1!", "title": "Plata" }
       ],
       "showSymbolLogo": true,
       "colorTheme": "dark",
       "isTransparent": true,
+      "displayMode": "adaptive",
       "locale": "es"
     }
     </script>
   </div>
 </div>
 
-<div class="cat-title">Innovación, Espacio (SpaceX), Cuántica y Materiales</div>
-<div class="widget-box">
-  <div class="tradingview-widget-container">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
-    {
-      "width": "100%",
-      "height": "360",
-      "symbolsGroups": [
-        {
-          "name": "Temáticos & Innovación",
-          "symbols": [
-            { "name": "NASDAQ:SPCX", "displayName": "SpaceX (Class A)" },
-            { "name": "XETRA:J20A", "displayName": "VanEck Space Innovators UCITS ETF" },
-            { "name": "NYSE:MP", "displayName": "MP Materials Corp." },
-            { "name": "NYSE:IONQ", "displayName": "IonQ, Inc." }
-          ]
-        }
-      ],
-      "showSymbolLogo": true,
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "locale": "es"
-    }
-    </script>
-  </div>
-</div>
-
-<div class="cat-title">Materias Primas & Metales (En Directo)</div>
-<div class="widget-box">
-  <div class="tradingview-widget-container">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
-    {
-      "width": "100%",
-      "height": "220",
-      "symbolsGroups": [
-        {
-          "name": "Metales",
-          "symbols": [
-            { "name": "COMEX:GC1!", "displayName": "Oro (Gold)" },
-            { "name": "COMEX:SI1!", "displayName": "Plata (Silver)" }
-          ]
-        }
-      ],
-      "showSymbolLogo": true,
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "locale": "es"
-    }
-    </script>
-  </div>
-</div>
-
-<div class="cat-title">Mapa de Calor Sectorial (S&P 500)</div>
+<!-- MAPA DE CALOR DETALLADO ABAJO -->
+<div class="section-title">Mapa de Calor Sectorial (S&P 500)</div>
 <div class="widget-box">
   <div class="tradingview-widget-container">
     <div class="tradingview-widget-container__widget"></div>
@@ -128,7 +75,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
       "dataSource": "SPX500",
       "grouping": "sector",
       "width": "100%",
-      "height": "450",
+      "height": "420",
       "colorTheme": "dark",
       "locale": "es",
       "symbolUrl": "",
