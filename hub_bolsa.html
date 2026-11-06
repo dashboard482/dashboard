@@ -10,17 +10,12 @@
   --bg:#0e1117;
   --panel:#131722;
   --panel-2:#1a1e29;
-  --hover:#1f2430;
   --border:#2a2e39;
-  --border-hover:#363a45;
   --ink:#d1d4dc;
   --ink-strong:#f0f3fa;
   --dim:#787b86;
-  --dim2:#5d606b;
-  --accent:#2962ff;
   --up:#26a69a;
   --down:#ef5350;
-  --amber:#f7a600;
 }
 *{box-sizing:border-box}
 body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1200px;margin:0 auto}
@@ -30,18 +25,14 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .dot-live{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 6px var(--up)}
 .cat-title{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
 .cat-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px;margin-bottom:25px}
 .card{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
 .card-title{font-size:12px;font-weight:600;color:var(--dim);display:flex;justify-content:space-between}
-.card-price{font-size:20px;font-weight:700;color:var(--ink-strong);font-variant-numeric:tabular-nums}
+.card-price{font-size:22px;font-weight:700;color:var(--ink-strong);font-variant-numeric:tabular-nums}
 .card-change{font-size:12px;font-weight:600}
 .up{color:var(--up)}
 .down{color:var(--down)}
-.table-box{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-top:10px}
-table{width:100%;border-collapse:collapse;font-size:13px;text-align:left}
-th,td{padding:10px 14px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
-th{background:var(--panel);color:var(--dim);font-size:11px;font-weight:600;text-transform:uppercase}
-tr:last-child td{border-bottom:none}
+.widget-box{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:15px;margin-bottom:20px}
 </style>
 </head>
 <body>
@@ -54,144 +45,98 @@ tr:last-child td{border-bottom:none}
   </div>
 </header>
 
-<div class="cat-title">Principales Cotizaciones</div>
-<div class="grid" id="cardsGrid">
-  <!-- Se generan dinámicamente -->
+<div class="cat-title">Materias Primas (WebSocket Directo)</div>
+<div class="grid">
+  <div class="card">
+    <div class="card-title"><span>ORO SPOT (XAU/USDT)</span> <span>🥇</span></div>
+    <div id="price-XAU" class="card-price">Conectando...</div>
+    <div id="change-XAU" class="card-change">—</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>PLATA SPOT (XAG/USDT)</span> <span>🥈</span></div>
+    <div id="price-XAG" class="card-price">Conectando...</div>
+    <div id="change-XAG" class="card-change">—</div>
+  </div>
 </div>
 
-<div class="cat-title">Mayores Movimientos de Hoy</div>
-<div class="table-box">
-  <table>
-    <thead>
-      <tr>
-        <th>Activo</th>
-        <th>Precio</th>
-        <th>Variación 24h</th>
-        <th>Mercado</th>
-      </tr>
-    </thead>
-    <tbody id="moversBody"></tbody>
-  </table>
+<div class="cat-title">Acciones de Wall Street (Cotizaciones Oficiales)</div>
+<div class="widget-box">
+  <!-- Widget oficial de TradingView incrustado sin bloqueos CORS -->
+  <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
+    {
+      "width": "100%",
+      "height": "400",
+      "symbolsGroups": [
+        {
+          "name": "Tecnología y Grandes",
+          "symbols": [
+            { "name": "NASDAQ:AAPL", "displayName": "Apple" },
+            { "name": "NASDAQ:TSLA", "displayName": "Tesla" },
+            { "name": "NASDAQ:NVDA", "displayName": "Nvidia" },
+            { "name": "NASDAQ:MSFT", "displayName": "Microsoft" },
+            { "name": "NASDAQ:AMZN", "displayName": "Amazon" },
+            { "name": "NASDAQ:GOOGL", "displayName": "Google" }
+          ]
+        }
+      ],
+      "showSymbolLogo": true,
+      "colorTheme": "dark",
+      "isTransparent": true,
+      "locale": "es"
+    }
+    </script>
+  </div>
+</div>
+
+<div class="cat-title">Mapa de Calor Sectorial (S&P 500)</div>
+<div class="widget-box">
+  <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+    {
+      "exchanges": [],
+      "dataSource": "SPX500",
+      "grouping": "sector",
+      "width": "100%",
+      "height": "450",
+      "colorTheme": "dark",
+      "locale": "es",
+      "symbolUrl": "",
+      "isTransparent": true
+    }
+    </script>
+  </div>
 </div>
 
 <script>
 (function(){
   'use strict';
-
-  // Configuración de activos con símbolos universales
-  const assets = {
-    XAU: { name: 'Oro Spot', symbol: 'GC=F', price: 0, change: 0, type: 'Materias Primas' },
-    XAG: { name: 'Plata Spot', symbol: 'SI=F', price: 0, change: 0, type: 'Materias Primas' },
-    AAPL: { name: 'Apple Inc.', symbol: 'AAPL', price: 0, change: 0, type: 'Wall Street' },
-    TSLA: { name: 'Tesla Inc.', symbol: 'TSLA', price: 0, change: 0, type: 'Wall Street' },
-    NVDA: { name: 'NVIDIA Corp.', symbol: 'NVDA', price: 0, change: 0, type: 'Wall Street' },
-    MSFT: { name: 'Microsoft Corp.', symbol: 'MSFT', price: 0, change: 0, type: 'Wall Street' }
-  };
-
-  // Crear estructura visual de tarjetas de forma dinámica
-  const grid = document.getElementById('cardsGrid');
-  Object.keys(assets).forEach(key => {
-    const item = assets[key];
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="card-title"><span>${item.name} (${key})</span> <span>📈</span></div>
-      <div id="price-${key}" class="card-price">Cargando...</div>
-      <div id="change-${key}" class="card-change">—</div>
-    `;
-    grid.appendChild(card);
-  });
-
-  function updateUI() {
-    Object.keys(assets).forEach(key => {
-      const item = assets[key];
-      const priceEl = document.getElementById(`price-${key}`);
-      const changeEl = document.getElementById(`change-${key}`);
-      if(!priceEl || !changeEl) return;
-
-      if(item.price > 0) {
-        const isUp = item.change >= 0;
-        const sign = isUp ? '+' : '';
-        const colorClass = isUp ? 'up' : 'down';
-
-        priceEl.textContent = '$' + item.price.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        changeEl.textContent = `${sign}${item.change.toFixed(2)}%`;
-        changeEl.className = `card-change ${colorClass}`;
-      }
-    });
-    renderTable();
-  }
-
-  function renderTable() {
-    const tbody = document.getElementById('moversBody');
-    tbody.innerHTML = '';
-
-    const list = Object.keys(assets)
-      .map(k => ({ sym: k, ...assets[k] }))
-      .filter(a => a.price > 0)
-      .sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
-
-    list.forEach(item => {
-      const tr = document.createElement('tr');
-      const isUp = item.change >= 0;
-      const sign = isUp ? '+' : '';
-      const colorClass = isUp ? 'up' : 'down';
-
-      tr.innerHTML = `
-        <td><strong>${item.name}</strong> <small style="color:var(--dim)">(${item.sym})</small></td>
-        <td>$${item.price.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-        <td class="${colorClass}">${sign}${item.change.toFixed(2)}%</td>
-        <td><small style="color:var(--dim)">${item.type}</small></td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // Consulta mediante un proxy público gratuito para evitar bloqueos CORS y obtener caídas/subidas reales de mercado
-  async function fetchMarketData() {
-    for (const key of Object.keys(assets)) {
-      const ticker = assets[key].symbol;
-      try {
-        // Usamos una API abierta pública que recopila los datos reales de Yahoo Finance
-        const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=2d`);
-        const data = await res.json();
-        const result = data.chart.result[0];
-        const meta = result.meta;
-        
-        const currentPrice = meta.regularMarketPrice;
-        const previousClose = meta.chartPreviousClose || meta.previousClose;
-        
-        if (currentPrice) {
-          assets[key].price = currentPrice;
-          if (previousClose) {
-            assets[key].change = ((currentPrice - previousClose) / previousClose) * 100;
-          }
-        }
-      } catch (e) {
-        console.warn(`Error obteniendo ${key}, usando respaldo secundario...`, e);
-      }
-    }
-    updateUI();
-  }
-
-  // Fallback de Binance WebSockets en paralelo para asegurar que las criptos/materias primas tokenizadas tengan flujo instantáneo
-  function connectBinanceFallback() {
+  // Conexión WebSocket para Oro y Plata en tiempo real
+  function connectBinance() {
     try {
-      const ws = new WebSocket('wss://stream.binance.com:9443/ws/paxgusdt@ticker'); // Paxos Gold respaldado por oro real
+      const ws = new WebSocket('wss://stream.binance.com:9443/ws/xauusdt@ticker/xagusdt@ticker');
       ws.onmessage = (e) => {
         const d = JSON.parse(e.data);
-        if(d && d.c) {
-          assets['XAU'].price = parseFloat(d.c);
-          assets['XAU'].change = parseFloat(d.P);
-          updateUI();
+        const sym = d.s === 'XAUUSDT' ? 'XAU' : 'XAG';
+        const price = parseFloat(d.c);
+        const change = parseFloat(d.P);
+        const isUp = change >= 0;
+
+        const pEl = document.getElementById(`price-${sym}`);
+        const cEl = document.getElementById(`change-${sym}`);
+        if(pEl && cEl) {
+          pEl.textContent = '$' + price.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+          cEl.textContent = (isUp ? '+' : '') + change.toFixed(2) + '%';
+          cEl.className = `card-change ${isUp ? 'up' : 'down'}`;
         }
       };
+      ws.onerror = () => setTimeout(connectBinance, 5000);
+      ws.onclose = () => setTimeout(connectBinance, 5000);
     } catch(err) {}
   }
-
-  fetchMarketData();
-  connectBinanceFallback();
-  setInterval(fetchMarketData, 30000); // Actualiza cada 30 segundos
+  connectBinance();
 })();
 </script>
 </body>
