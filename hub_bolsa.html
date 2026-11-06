@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
+<title>Hub de Bolsa & Mercados</title>
+<style>
+:root{
+  --bg:#0e1117;
+  --panel:#131722;
+  --panel-2:#1a1e29;
+  --border:#2a2e39;
+  --ink:#d1d4dc;
+  --ink-strong:#f0f3fa;
+  --dim:#787b86;
+  --up:#26a69a;
+  --down:#ef5350;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1200px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-strong);text-decoration:none;background:var(--panel-2);border:1px solid var(--border);padding:6px 12px;border-radius:6px}
+.status-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim)}
+.dot-live{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 6px var(--up)}
+.cat-title{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+.cat-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px;margin-bottom:25px}
+.card{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.card-title{font-size:12px;font-weight:600;color:var(--dim);display:flex;justify-content:space-between}
+.card-price{font-size:22px;font-weight:700;color:var(--ink-strong);font-variant-numeric:tabular-nums}
+.card-change{font-size:12px;font-weight:600}
+.up{color:var(--up)}
+.down{color:var(--down)}
+.widget-box{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:15px;margin-bottom:20px}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="back-btn">← Volver al Hub</a>
+  <div class="status-badge">
+    <span class="dot-live"></span>
+    <span>MERCADOS GLOBALES (EN VIVO)</span>
+  </div>
+</header>
+
+<div class="cat-title">Materias Primas (WebSocket Directo)</div>
+<div class="grid">
+  <div class="card">
+    <div class="card-title"><span>ORO SPOT (XAU/USDT)</span> <span>🥇</span></div>
+    <div id="price-XAU" class="card-price">Conectando...</div>
+    <div id="change-XAU" class="card-change">—</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>PLATA SPOT (XAG/USDT)</span> <span>🥈</span></div>
+    <div id="price-XAG" class="card-price">Conectando...</div>
+    <div id="change-XAG" class="card-change">—</div>
+  </div>
+</div>
+
+<div class="cat-title">Acciones de Wall Street (Cotizaciones Oficiales)</div>
+<div class="widget-box">
+  <!-- Widget oficial de TradingView incrustado sin bloqueos CORS -->
+  <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js" async>
+    {
+      "width": "100%",
+      "height": "400",
+      "symbolsGroups": [
+        {
+          "name": "Tecnología y Grandes",
+          "symbols": [
+            { "name": "NASDAQ:AAPL", "displayName": "Apple" },
+            { "name": "NASDAQ:TSLA", "displayName": "Tesla" },
+            { "name": "NASDAQ:NVDA", "displayName": "Nvidia" },
+            { "name": "NASDAQ:MSFT", "displayName": "Microsoft" },
+            { "name": "NASDAQ:AMZN", "displayName": "Amazon" },
+            { "name": "NASDAQ:GOOGL", "displayName": "Google" }
+          ]
+        }
+      ],
+      "showSymbolLogo": true,
+      "colorTheme": "dark",
+      "isTransparent": true,
+      "locale": "es"
+    }
+    </script>
+  </div>
+</div>
+
+<div class="cat-title">Mapa de Calor Sectorial (S&P 500)</div>
+<div class="widget-box">
+  <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+    {
+      "exchanges": [],
+      "dataSource": "SPX500",
+      "grouping": "sector",
+      "width": "100%",
+      "height": "450",
+      "colorTheme": "dark",
+      "locale": "es",
+      "symbolUrl": "",
+      "isTransparent": true
+    }
+    </script>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  // Conexión WebSocket para Oro y Plata en tiempo real
+  function connectBinance() {
+    try {
+      const ws = new WebSocket('wss://stream.binance.com:9443/ws/xauusdt@ticker/xagusdt@ticker');
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        const sym = d.s === 'XAUUSDT' ? 'XAU' : 'XAG';
+        const price = parseFloat(d.c);
+        const change = parseFloat(d.P);
+        const isUp = change >= 0;
+
+        const pEl = document.getElementById(`price-${sym}`);
+        const cEl = document.getElementById(`change-${sym}`);
+        if(pEl && cEl) {
+          pEl.textContent = '$' + price.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+          cEl.textContent = (isUp ? '+' : '') + change.toFixed(2) + '%';
+          cEl.className = `card-change ${isUp ? 'up' : 'down'}`;
+        }
+      };
+      ws.onerror = () => setTimeout(connectBinance, 5000);
+      ws.onclose = () => setTimeout(connectBinance, 5000);
+    } catch(err) {}
+  }
+  connectBinance();
+})();
+</script>
+</body>
+</html>
