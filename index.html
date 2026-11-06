@@ -172,7 +172,7 @@ const CATS=[
 ['Finviz','Mapa de calor y screener (S&P 500)','https://finviz.com/map.ashx','🌡️'],
 ['StockAnalysis','Financieros, ratios y ETFs de EE. UU.','https://stockanalysis.com/','🧮'],
 ['Macrotrends','Históricos de ratios y márgenes','https://www.macrotrends.net/','🕰️'],
-['Barchart','Cotizaciones, opciones y futuros','https://www.barchart.com/','📶'],
+['Barchart','Cotizaciones, opciones y futures','https://www.barchart.com/','📶'],
 ['Stooq','Históricos descargables de índices y acciones','https://stooq.com/','🗄️'],
 ['SEC EDGAR','Informes oficiales de empresas de EE. UU.','https://www.sec.gov/edgar/search/','📜'],
 ['OpenInsider','Compras y ventas de directivos','https://openinsider.com/','🧑‍💼'],
@@ -310,7 +310,7 @@ function applyTheme(){
 $('themeBtn').onclick=()=>{S.theme=document.documentElement.dataset.theme==='light'?'dark':'light';save();applyTheme()};
 applyTheme();
 
-/* ---------- altura real del header (arregla sticky con notch) ---------- */
+/* ---------- altura real del header ---------- */
 const hdr=$('hdr');
 const setHH=()=>document.documentElement.style.setProperty('--hh',hdr.offsetHeight+'px');
 setHH();
@@ -344,7 +344,7 @@ $('rstBtn').onclick=()=>{
   S={fav:[],clicks:{},custom:[],removed:[],theme:null};save();applyTheme();render();
 };
 
-/* ---------- ticker: BTC, ETH, SOL con reconexión, respaldo y pausa ---------- */
+/* ---------- ticker cripto superior: BTC, ETH, SOL con Binance WS ---------- */
 const COINS=[['btcusdt','BTC','bitcoin'],['ethusdt','ETH','ethereum'],['solusdt','SOL','solana']];
 const tk={},tkEl=$('ticker'),dot=$('tkdot');
 COINS.forEach(c=>{
@@ -384,7 +384,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 connect();
 
-/* ---------- PWA: manifest e icono generados al vuelo ---------- */
+/* ---------- PWA ---------- */
 try{
   const cv=document.createElement('canvas');cv.width=cv.height=180;
   const x=cv.getContext('2d');x.fillStyle='#0e1117';x.fillRect(0,0,180,180);
@@ -398,7 +398,7 @@ try{
   document.head.append(ml);
 }catch(e){}
 
-/* ---------- índice BTC caro/barato (lo calcula caro_barato_btc.html en un iframe oculto) ---------- */
+/* ---------- índice BTC caro/barato ---------- */
 const idx=$('idx');
 function showIdx(d){
   if(!d||typeof d.v!=='number'||typeof d.lab!=='string'||!/^#[0-9a-f]{3,6}$/i.test(d.col))return;
