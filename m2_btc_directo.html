@@ -40,7 +40,7 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
   <div class="titles">
     <div class="t1">BTC — LIQUIDEZ GLOBAL (FED NETA + BCE + BOJ) DESPLAZADA 90 DÍAS</div>
     <div class="t2" id="subLine">cargando…</div>
-    <div class="t3">Liquidez neta Fed (WALCL−TGA−RRP) + balance bruto BCE + balance bruto Banco de Japón, en USD, media de 7 días, adelantada 90 días. China no incluida (sin fuente gratuita fiable).</div>
+    <div class="t3">Liquidez neta Fed (WALCL−TGA−RRP) + balance bruto BCE + balance bruto Banco de Japón, en USD, media de 7 días, adelantada 90 días.</div>
     <div id="warn"></div>
   </div>
   <div class="legend2">
@@ -51,7 +51,7 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     <canvas id="chart"></canvas>
     <div id="loading">Cargando BTC y liquidez…</div>
   </div>
-  <footer>Modelo propio: Fed neta (WALCL−TGA−RRP, TGA diaria en directo si hay conexión) + BCE bruto + BoJ bruto, convertidos a USD. BCE/BoJ sin resta de TGA/RRP propia. Fed, BCE, BoJ y tipos de cambio son tablas fijas que hay que actualizar a mano; BoJ y divisas son mensuales. La línea amarilla usa su propio eje: compara la forma, no el nivel. No es una señal de compra. DYOR.</footer>
+  <footer>Modelo propio: Fed neta + BCE bruto + BoJ bruto en USD. La línea amarilla usa su propio eje: compara la forma y los giros, no el nivel de precios. DYOR.</footer>
 </div>
 
 <script>
@@ -75,12 +75,11 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     return (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag;
   }
 
-  /* ---------- velas BTC (con segundo servidor de respaldo) ---------- */
   async function fetchBtc() {
     let err;
     for (const h of REST) {
       try {
-        const r = await fetch(h + '/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=140');
+        const r = await fetch(h + '/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=180');
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return (await r.json()).map(k => ({ t: k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4] }));
       } catch (e) { err = e; }
@@ -88,9 +87,6 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     throw new Error('velas BTC: ' + (err && err.message ? err.message : 'sin conexión'));
   }
 
-  /* ---------- tablas fijas ---------- */
-  // [fecha, WALCL millones USD, TGA (WTREGEN) millones USD, RRP miles de millones USD]
-  // RRP desde 2025-03-26 es aproximado (casi cero, impacto mínimo).
   const NETLIQ_RAW = [
     ["2024-06-05",7255687,710309,371.841],["2024-06-12",7258974,673573,447.574],
     ["2024-06-19",7252542,723410,388.841],["2024-06-26",7231163,765417,490.156],
@@ -154,7 +150,6 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     ["2026-09-09",6740619,883335,0.6],["2026-09-16",6746548,877028,0.7],
     ["2026-09-23",6747704,977084,0.851],
   ];
-  // Balance del BCE, millones de EUR, semanal, mismas 121 fechas que la tabla anterior
   const ECB_RAW_EUR_M = [
     6541633,6534521,6536817,6522003,6497699,6494463,6478323,6475497,
     6468687,6462215,6449231,6459136,6473096,6456600,6442517,6428492,
@@ -173,8 +168,6 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     5941248,5923023,5927307,5913041,5915343,5912178,5911237,5898477,
     5897262,
   ];
-  // [mes, BoJ activos en 100M JPY (mensual), USD por EUR, JPY por USD]
-  // OJO: 2026-09 repite el BoJ y el yen de 2026-08, parece un relleno.
   const MONTHLY_INTL = [
     ["2024-06",7536709,1.0763,157.8600],["2024-07",7617141,1.0847,157.5182],
     ["2024-08",7648115,1.1020,146.2641],["2024-09",7532992,1.1104,142.9540],
@@ -196,7 +189,6 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     t: Date.parse(d + 'T00:00:00Z'), walcl, tga, rrp,
     ecb: ECB_RAW_EUR_M[Math.min(i, ECB_RAW_EUR_M.length - 1)],
   })).sort((a, b) => a.t - b.t);
-  const lastDataT = parts[parts.length - 1].t;
 
   function getMonthlyIntl(t) {
     const ym = new Date(t).toISOString().slice(0, 7);
@@ -205,7 +197,6 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     return { jpn: row[1], eurUsd: row[2], jpyUsd: row[3] };
   }
 
-  /* ---------- TGA diaria (Tesoro de EEUU, sin clave) ---------- */
   async function fetchTgaDaily() {
     const url = 'https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance'
       + '?fields=' + encodeURIComponent('record_date,account_type,open_today_bal,close_today_bal')
@@ -215,7 +206,6 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     if (!r.ok) throw new Error('Tesoro EEUU: HTTP ' + r.status);
     const rows = (await r.json()).data || [];
     if (!rows.length) throw new Error('Tesoro EEUU: 0 filas');
-    // se prefiere la fila "TGA ... Closing Balance"; si no existe, cualquier "Closing"
     const tga = rows.some(x => /tga.*closing/i.test(x.account_type || ''));
     const re = tga ? /tga.*closing/i : /closing/i;
     const map = new Map();
@@ -234,7 +224,7 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
   function buildDailyLiq(tgaMap) {
     const out = [];
     let wi = 0;
-    for (let t = parts[0].t; t <= Date.now(); t += DAY) {
+    for (let t = parts[0].t; t <= Date.now() + SHIFT_MS; t += DAY) {
       while (wi + 1 < parts.length && parts[wi + 1].t <= t) wi++;
       const p = parts[wi];
       let tga = null;
@@ -257,13 +247,13 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
   async function calcular() {
     let tgaMap = null, tgaFuente;
     try { tgaMap = await fetchTgaDaily(); tgaFuente = 'diaria (Tesoro EEUU)'; }
-    catch (e) { tgaFuente = 'semanal (tabla), Tesoro falló: ' + (e && e.message ? e.message : 'error'); }
+    catch (e) { tgaFuente = 'semanal (tabla)'; }
     const btc = await fetchBtc();
     const m2 = smooth7(buildDailyLiq(tgaMap));
-    return { btc, m2Shift: m2.map(p => ({ t: p.t + SHIFT_MS, v: p.v })), m2Ultimo: m2[m2.length - 1], tgaFuente };
+    const m2Shift = m2.map(p => ({ t: p.t + SHIFT_MS, v: p.v }));
+    return { btc, m2Shift, m2Ultimo: m2[m2.length - 1], tgaFuente };
   }
 
-  /* ---------- dibujo ---------- */
   function draw(res) {
     const { btc, m2Shift } = res;
     if (!btc.length) return;
@@ -273,7 +263,7 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     ctx.fillStyle = '#131722'; ctx.fillRect(0, 0, w, h);
 
     const tMin = btc[0].t;
-    const tMax = Math.max(btc[btc.length - 1].t, m2Shift[m2Shift.length - 1].t) + 14 * DAY;
+    const tMax = Math.max(btc[btc.length - 1].t, m2Shift[m2Shift.length - 1].t);
     const small = w < 380 * dpr;
     const padL = (small ? 46 : 62) * dpr, padR = 10 * dpr, padT = 10 * dpr, padB = 22 * dpr;
     const plotW = w - padL - padR, plotH = h - padT - padB;
@@ -307,17 +297,19 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     const vis = m2Shift.filter(p => p.t >= tMin && p.t <= tMax);
     let mLo = Infinity, mHi = -Infinity;
     for (const p of vis) { if (p.v < mLo) mLo = p.v; if (p.v > mHi) mHi = p.v; }
+    
     if (vis.length && mHi > mLo) {
       const yM = v => padT + (1 - (v - mLo) / (mHi - mLo)) * plotH;
       ctx.beginPath(); ctx.strokeStyle = '#f0c930'; ctx.lineWidth = 2 * dpr; ctx.lineJoin = 'round';
       vis.forEach((p, i) => { const cx = x(p.t), cy = yM(p.v); i ? ctx.lineTo(cx, cy) : ctx.moveTo(cx, cy); });
       ctx.stroke();
+
       const lm = vis[vis.length - 1], lx = x(lm.t), ly = yM(lm.v);
       ctx.fillStyle = '#f0c930';
       ctx.beginPath(); ctx.arc(lx, ly, 4 * dpr, 0, Math.PI * 2); ctx.fill();
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = 'bold ' + mono(small ? 9.5 : 10.5);
-      ctx.fillText('Liq. global ' + fmtT(lm.v), Math.min(lx + 8 * dpr, w - padR - 120 * dpr), ly);
-      // escala propia de la línea amarilla, para no engañar con el rango
+      ctx.fillText('Liq. global (+90d) ' + fmtT(lm.v), Math.min(lx + 8 * dpr, w - padR - 140 * dpr), ly);
+
       ctx.font = mono(small ? 8.5 : 9.5); ctx.fillStyle = 'rgba(240,201,48,.75)'; ctx.textBaseline = 'top';
       ctx.fillText('Eje amarillo: ' + fmtT(mLo) + ' – ' + fmtT(mHi), padL + 6 * dpr, padT + 4 * dpr);
     }
@@ -344,37 +336,9 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
       ctx.fillText(meses[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2), x(t), h - padB + 4 * dpr);
     }
   }
+
   function schedule() { if (raf || !lastResult) return; raf = requestAnimationFrame(() => { raf = 0; draw(lastResult); }); }
 
-  /* ---------- tiempo real ---------- */
-  function stopLive() {
-    clearTimeout(liveTimer); liveTimer = null;
-    if (liveWs) { try { liveWs.onclose = null; liveWs.close(); } catch (e) {} liveWs = null; }
-  }
-  function connectLive() { stopLive(); liveBackoff = 1500; openLive(); }
-  function openLive() {
-    if (document.hidden) return;
-    let s;
-    try { s = new WebSocket(WSH[wsIdx % WSH.length] + '/ws/btcusdt@kline_1d'); }
-    catch (e) { wsIdx++; liveTimer = setTimeout(openLive, liveBackoff); return; }
-    liveWs = s;
-    s.onopen = () => { liveBackoff = 1500; };
-    s.onmessage = ev => {
-      if (s !== liveWs || !lastResult) return;
-      try {
-        const k = JSON.parse(ev.data).k; if (!k) return;
-        const btc = lastResult.btc, l = btc[btc.length - 1];
-        if (k.t === l.t) { l.h = Math.max(l.h, +k.h); l.l = Math.min(l.l, +k.l); l.c = +k.c; }
-        else if (k.t > l.t) { btc.push({ t: k.t, o: +k.o, h: +k.h, l: +k.l, c: +k.c }); if (btc.length > 141) btc.shift(); }
-        else return;
-        schedule();
-      } catch (e) {}
-    };
-    s.onclose = () => { if (s !== liveWs) return; wsIdx++; liveBackoff = Math.min(liveBackoff * 1.6, 15000); liveTimer = setTimeout(openLive, liveBackoff); };
-    s.onerror = () => { try { s.close(); } catch (e) {} };
-  }
-
-  /* ---------- carga ---------- */
   async function loadAndRender(showLoading) {
     if (busy) return;
     busy = true; let ok = false;
@@ -383,18 +347,15 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
     try {
       const res = await calcular();
       lastResult = res; updatedAt = Date.now(); ok = true;
-      subLine.textContent = madridHora(updatedAt) + ' (Madrid) · liquidez global: ' + fmtT(res.m2Ultimo.v) + ' · BTC: ' + fmtPrice(res.btc[res.btc.length - 1].c) + ' · TGA: ' + res.tgaFuente;
-      const age = Math.floor((Date.now() - lastDataT) / DAY);
-      warnEl.style.display = age > STALE_DAYS ? 'block' : 'none';
-      warnEl.textContent = '⚠ Fed, BCE y BoJ llevan fijos desde ' + new Date(lastDataT).toISOString().slice(0, 10) + ' (' + age + ' días): actualiza las tablas del código.';
-      draw(res); connectLive();
+      subLine.textContent = madridHora(updatedAt) + ' (Madrid) · liquidez global: ' + fmtT(res.m2Ultimo.v) + ' · BTC: ' + fmtPrice(res.btc[res.btc.length - 1].c);
+      draw(res);
       statusDot.className = 'status-dot live'; statusText.textContent = 'actualizado ' + madridHora(updatedAt);
       loadingEl.classList.add('hidden');
     } catch (e) {
       statusDot.className = 'status-dot err';
-      statusText.textContent = 'error: ' + (e && e.message ? e.message : 'fallo desconocido');
-      loadingEl.textContent = 'No se ha podido cargar. ' + (e && e.message ? e.message : '') + ' Reintento en 1 minuto, o pulsa Actualizar.';
-      loadingEl.classList.remove('hidden');
+      statusText.textContent = 'error';
+      loadingEl.textContent = 'No se ha podido cargar. Reintento en 1 minuto.';
+      loadingEl.classList.add('hidden');
     } finally {
       busy = false;
       clearTimeout(refreshTimer);
@@ -404,11 +365,6 @@ footer{padding:5px 16px calc(8px + env(safe-area-inset-bottom,0px));text-align:c
 
   $('refreshBtn').addEventListener('click', () => loadAndRender(true));
   window.addEventListener('resize', schedule);
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { stopLive(); return; }
-    if (lastResult) connectLive();
-    if (Date.now() - updatedAt > REFRESH_MS) loadAndRender(false);
-  });
   loadAndRender(true);
 })();
 </script>
