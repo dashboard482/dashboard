@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Señales y Resumen de Mercado - Hub Financiero</title>
+<title>Señales de Mercado - Análisis Técnico</title>
 <style>
 :root{
   --bg:#0e1117;
@@ -27,69 +27,38 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 
 <header>
   <a href="index.html" class="back-btn">← Volver al Hub</a>
-  <span style="font-size:12px; color:var(--dim);">MERCADOS EN DIRECTO</span>
+  <span style="font-size:12px; color:var(--dim);">SEÑALES Y RESUMEN TÉCNICO</span>
 </header>
 
-<!-- BLOQUE 1: Vista General (Acciones, Índices, Forex, Cripto con pestañas) -->
 <div class="widget-container">
-  <div class="title-section">📈 Paneles de Mercado por Categorías</div>
+  <div class="title-section">📊 Resumen de Indicadores Técnicos (Compra / Venta)</div>
+
+  <!-- Widget de Análisis Técnico en modo múltiple para ver muchos activos -->
   <div class="tradingview-widget-container">
     <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
     {
-      "colorTheme": "dark",
-      "dateRange": "12M",
-      "showChart": true,
-      "locale": "es",
+      "interval": "1h",
       "width": "100%",
-      "height": "600",
-      "largeChartUrl": "",
       "isTransparent": true,
-      "showSymbolLogo": true,
-      "showFloatingTooltip": true,
-      "tabs": [
-        {
-          "title": "Bolsa / Índices",
-          "symbols": [
-            { "s": "FOREXCOM:SPXUSD", "d": "S&P 500" },
-            { "s": "FOREXCOM:NSXUSD", "d": "Nasdaq 100" },
-            { "s": "FOREXCOM:DJI", "d": "Dow Jones" },
-            { "s": "INDEX:DEU40", "d": "DAX Alemania" },
-            { "s": "INDEX:IBEX", "d": "IBEX 35" }
-          ]
-        },
-        {
-          "title": "Acciones Top EE.UU.",
-          "symbols": [
-            { "s": "NASDAQ:AAPL", "d": "Apple" },
-            { "s": "NASDAQ:MSFT", "d": "Microsoft" },
-            { "s": "NASDAQ:NVDA", "d": "NVIDIA" },
-            { "s": "NASDAQ:TSLA", "d": "Tesla" },
-            { "s": "NASDAQ:AMZN", "d": "Amazon" },
-            { "s": "NASDAQ:GOOGL", "d": "Alphabet (Google)" },
-            { "s": "NYSE:META", "d": "Meta" }
-          ]
-        },
-        {
-          "title": "Criptomonedas",
-          "symbols": [
-            { "s": "BINANCE:BTCUSDT", "d": "Bitcoin" },
-            { "s": "BINANCE:ETHUSDT", "d": "Ethereum" },
-            { "s": "BINANCE:SOLUSDT", "d": "Solana" },
-            { "s": "BINANCE:BNBUSDT", "d": "BNB" },
-            { "s": "BINANCE:XRPUSDT", "d": "XRP" }
-          ]
-        },
-        {
-          "title": "Forex & Materias Primas",
-          "symbols": [
-            { "s": "FX:EURUSD", "d": "EUR/USD" },
-            { "s": "FX:GBPUSD", "d": "GBP/USD" },
-            { "s": "FX:USDJPY", "d": "USD/JPY" },
-            { "s": "OANDA:XAUUSD", "d": "Oro" },
-            { "s": "TVC:USOIL", "d": "Petróleo WTI" }
-          ]
-        }
+      "height": "550",
+      "symbol": "FOREXCOM:SPXUSD",
+      "showIntervalTabs": true,
+      "displayMode": "multiple",
+      "colorTheme": "dark",
+      "locale": "es",
+      "symbols": [
+        { "description": "S&P 500", "proName": "FOREXCOM:SPXUSD" },
+        { "description": "Nasdaq 100", "proName": "FOREXCOM:NSXUSD" },
+        { "description": "Apple", "proName": "NASDAQ:AAPL" },
+        { "description": "Microsoft", "proName": "NASDAQ:MSFT" },
+        { "description": "NVIDIA", "proName": "NASDAQ:NVDA" },
+        { "description": "Tesla", "proName": "NASDAQ:TSLA" },
+        { "description": "Bitcoin", "proName": "BINANCE:BTCUSDT" },
+        { "description": "Ethereum", "proName": "BINANCE:ETHUSDT" },
+        { "description": "Solana", "proName": "BINANCE:SOLUSDT" },
+        { "description": "EUR/USD", "proName": "FX:EURUSD" },
+        { "description": "Oro", "proName": "OANDA:XAUUSD" }
       ]
     }
     </script>
