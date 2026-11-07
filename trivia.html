@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wall Street & Trading Trivia — Hub Financiero</title>
+<style>
+:root{--bg:#131722;--panel:#1e222d;--border:#2a2e39;--ink:#eef1f0;--dim:#787b86;--accent:#2962ff;--success:#26a69a;--danger:#ef5350;--amber:#FFB84D}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;flex-direction:column;min-height:100vh;max-width:600px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.back-btn{font-size:13px;color:var(--ink);text-decoration:none;background:var(--panel);border:1px solid var(--border);padding:6px 12px;border-radius:6px}
+.quiz-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);flex:1;display:flex;flex-direction:column;justify-content:between}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:16px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);width:0%;transition:width 0.3s ease}
+.meta-info{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:12px}
+.question-title{font-size:16px;font-weight:600;margin-bottom:20px;line-height:1.4}
+.options-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.option-btn{background:var(--bg);border:1px solid var(--border);color:var(--ink);padding:12px 16px;border-radius:8px;font-size:14px;text-align:left;cursor:pointer;transition:all 0.2s}
+.option-btn:hover:not(:disabled){border-color:var(--accent);background:rgba(41,98,255,0.05)}
+.option-btn.correct{background:rgba(38,166,154,0.15);border-color:var(--success);color:var(--success);font-weight:600}
+.option-btn.incorrect{background:rgba(239,83,80,0.15);border-color:var(--danger);color:var(--danger)}
+.next-btn{background:var(--accent);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:none;width:100%}
+.next-btn:hover{opacity:0.9}
+.results-screen{text-align:center;padding:20px 0;display:none}
+.score-big{font-size:48px;font-weight:700;color:var(--amber);margin:10px 0}
+.share-btn{background:#000;color:#fff;border:1px solid var(--border);padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;margin-top:16px;text-decoration:none}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="back-btn">← Volver al Hub</a>
+  <span style="font-size:13px; color:var(--dim);">🧠 Wall Street Trivia</span>
+</header>
+
+<div class="quiz-card" id="quizContainer">
+  <div class="meta-info">
+    <span id="questionCounter">Pregunta 1 de 10</span>
+    <span id="categoryLabel">Trading & Mercados</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  
+  <div class="question-title" id="questionText">Cargando pregunta...</div>
+  
+  <div class="options-list" id="optionsList"></div>
+  
+  <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Siguiente pregunta →</button>
+</div>
+
+<div class="quiz-card results-screen" id="resultsScreen">
+  <h3>¡Test Completado! 🎉</h3>
+  <p style="color:var(--dim); font-size:13px;">Has demostrado tus conocimientos sobre mercados y grandes inversores.</p>
+  <div class="score-big" id="finalScore">0/10</div>
+  <p id="scoreMessage" style="font-size:14px; margin-bottom:20px;"></p>
+  <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+    <button class="back-btn" onclick="restartQuiz()" style="cursor:pointer; padding:12px 20px;">🔄 Jugar de nuevo</button>
+    <a id="shareTwitterBtn" class="share-btn" target="_blank" href="#">𝕏 Compartir resultado</a>
+  </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    category: "Grandes Inversores",
+    q: "¿Qué fondo de cobertura fundado por Jim Simons es famoso por haber generado la rentabilidad anual más alta de la historia de Wall Street usando matemáticas y cuantitativa pura (Medallion Fund)?",
+    options: ["Bridgewater Associates", "Renaissance Technologies", "Citadel LLC", "BlackRock"],
+    correct: 1
+  },
+  {
+    category: "Historia Financiera",
+    q: "¿En qué año ocurrió el famoso crash bursátil del 'Jueves Negro' que dio inicio a la Gran Depresión?",
+    options: ["1914", "1929", "1933", "1950"],
+    correct: 1
+  },
+  {
+    category: "Trading & Psicología",
+    q: "En el mundo del trading, ¿qué mide exactamente el indicador ATR (Average True Range)?",
+    options: ["La tendencia alcista o bajista", "La volatilidad del precio", "El volumen de negociación oculto", "Los puntos de liquidación de apalancamiento"],
+    correct: 1
+  },
+  {
+    category: "Cultura Económica",
+    q: "¿A qué famoso inversor se le conoce como el 'Oráculo de Omaha'?",
+    options: ["George Soros", "Ray Dalio", "Warren Buffett", "Charlie Munger"],
+    correct: 2
+  },
+  {
+    category: "Macroeconomía",
+    q: "¿Qué nombre recibe la operación masiva de inyección de liquidez en la economía que realizan los bancos centrales comprando activos financieros?",
+    options: ["Quantitative Easing (QE)", "Margin Call", "Reverse Repo", "Short Squeeze"],
+    correct: 0
+  },
+  {
+    category: "Grandes Inversores",
+    q: "¿Quién fue el inversor macroeconómico que 'rompió el Banco de Inglaterra' en 1992 apostando contra la libra esterlina?",
+    options: ["Stanley Druckenmiller", "Paul Tudor Jones", "George Soros", "Carl Icahn"],
+    correct: 2
+  },
+  {
+    category: "Trading & Mercados",
+    q: "¿Qué significa en la jerga de los mercados un 'Short Squeeze'?",
+    options: ["Una caída repentina del mercado", "Una subida violenta provocada porque los bajistas se ven forzados a comprar para cerrar posiciones", "El cierre de exchanges por falta de liquidez", "Una corrección sana del 10%"],
+    correct: 1
+  },
+  {
+    category: "Cultura Económica",
+    q: "¿Qué representa el famoso toro de bronce (Charging Bull) ubicado cerca de Wall Street en Nueva York?",
+    options: ["La fuerza y el optimismo de los mercados alcistas", "La agresividad de la Reserva Federal", "El inicio del patrón oro", "El auge de las criptomonedas"],
+    correct: 0
+  },
+  {
+    category: "Criptomonedas & Bitcoin",
+    q: "¿En qué año se minó el bloque génesis (el primer bloque) de Bitcoin por Satoshi Nakamoto?",
+    options: ["2008", "2009", "2010", "2011"],
+    correct: 1
+  },
+  {
+    category: "Trading & Gestión de Riesgo",
+    q: "Según la regla clásica de gestión de riesgo en trading, ¿qué porcentaje máximo de la cuenta se recomienda arriesgar por operación individual?",
+    options: ["Entre un 10% y un 15%", "Exactamente el 50%", "Entre un 1% y un 2%", "No importa el porcentaje si hay apalancamiento"],
+    correct: 2
+  }
+];
+
+let currentQuestion = 0;
+let score = 0;
+let answered = false;
+
+const questionCounter = document.getElementById('questionCounter');
+const categoryLabel = document.getElementById('categoryLabel');
+const progressFill = document.getElementById('progressFill');
+const questionText = document.getElementById('questionText');
+const optionsList = document.getElementById('optionsList');
+const nextBtn = document.getElementById('nextBtn');
+const quizContainer = document.getElementById('quizContainer');
+const resultsScreen = document.getElementById('resultsScreen');
+const finalScore = document.getElementById('finalScore');
+const scoreMessage = document.getElementById('scoreMessage');
+const shareTwitterBtn = document.getElementById('shareTwitterBtn');
+
+function loadQuestion() {
+  answered = false;
+  nextBtn.style.display = 'none';
+  const q = quizData[currentQuestion];
+  
+  questionCounter.textContent = `Pregunta ${currentQuestion + 1} de ${quizData.length}`;
+  categoryLabel.textContent = q.category;
+  progressFill.style.width = `${((currentQuestion) / quizData.length) * 100}%`;
+  questionText.textContent = q.q;
+  
+  optionsList.innerHTML = '';
+  q.options.forEach((opt, index) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = opt;
+    btn.onclick = () => selectOption(index, btn);
+    optionsList.appendChild(btn);
+  });
+}
+
+function selectOption(selectedIndex, btn) {
+  if (answered) return;
+  answered = true;
+  
+  const q = quizData[currentQuestion];
+  const buttons = optionsList.getElementsByTagName('button');
+  
+  if (selectedIndex === q.correct) {
+    btn.classList.add('correct');
+    score++;
+  } else {
+    btn.classList.add('incorrect');
+    buttons[q.correct].classList.add('correct');
+  }
+  
+  // Deshabilitar todos
+  for (let b of buttons) {
+    b.disabled = true;
+  }
+  
+  if (currentQuestion < quizData.length - 1) {
+    nextBtn.textContent = 'Siguiente pregunta →';
+  } else {
+    nextBtn.textContent = 'Ver resultados finales 🏆';
+  }
+  nextBtn.style.display = 'block';
+}
+
+function nextQuestion() {
+  currentQuestion++;
+  if (currentQuestion < quizData.length) {
+    loadQuestion();
+  } else {
+    showResults();
+  }
+}
+
+function showResults() {
+  quizContainer.style.display = 'none';
+  resultsScreen.style.display = 'block';
+  finalScore.textContent = `${score} / ${quizData.length}`;
+  
+  let msg = "";
+  if (score === 10) msg = "¡Nivel Dios! Estás listo para gestionar un fondo de cobertura en Wall Street. 🚀";
+  else if (score >= 7) msg = "¡Excelente conocimiento financiero! Dominas los mercados y la historia bursátil. 📈";
+  else if (score >= 4) msg = "Buen intento, tienes bases sólidas pero toca repasar algunos conceptos clave de trading y macro. 💡";
+  else msg = "Estás empezando en este mundo. ¡Sigue explorando el Hub Financiero para aprender más! 📚";
+  
+  scoreMessage.textContent = msg;
+  
+  const tweetText = encodeURIComponent(`He conseguido un ${score}/${quizData.length} en el Wall Street & Trading Trivia de mi Hub Financiero 📊🧠 ¿Puedes superarme?\n\nPrueba tus conocimientos aquí:`);
+  shareTwitterBtn.href = `https://twitter.com/intent/tweet?text=${tweetText}`;
+}
+
+function restartQuiz() {
+  currentQuestion = 0;
+  score = 0;
+  resultsScreen.style.display = 'none';
+  quizContainer.style.display = 'flex';
+  loadQuestion();
+}
+
+loadQuestion();
+</script>
+
+</body>
+</html>
