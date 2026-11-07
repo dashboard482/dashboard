@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Señales de Mercado - Análisis Técnico</title>
+<title>Señales de Mercado - Hub Financiero</title>
 <style>
 :root{
   --bg:#0e1117;
@@ -13,59 +13,102 @@
   --ink:#d1d4dc;
   --ink-strong:#f0f3fa;
   --dim:#787b86;
-  --accent:#2962ff;
+  --up:#26a69a;   /* Verde Compra */
+  --down:#ef5350; /* Rojo Venta */
+  --amber:#f7a600;/* Amarillo Neutral */
 }
 *{box-sizing:border-box}
 body{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1200px;margin:0 auto}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-strong);text-decoration:none;background:var(--panel-2);border:1px solid var(--border);padding:6px 12px;border-radius:6px}
-.widget-container{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;padding:12px;margin-bottom:16px}
-.title-section{font-size:14px;font-weight:600;color:var(--ink-strong);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.signals-container{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.title-section{font-size:14px;font-weight:600;color:var(--ink-strong);padding:14px 16px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;align-items:center;gap:8px}
+table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
+th{background:var(--panel);color:var(--dim);padding:10px 12px;font-weight:600;border-bottom:1px solid var(--border)}
+td{padding:12px;border-bottom:1px solid var(--border);color:var(--ink-strong)}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:4px 10px;border-radius:4px;font-weight:700;font-size:11px;text-transform:uppercase}
+.badge.buy{background:rgba(38,166,154,0.15);color:var(--up);border:1px solid rgba(38,166,154,0.3)}
+.badge.sell{background:rgba(239,83,80,0.15);color:var(--down);border:1px solid rgba(239,83,80,0.3)}
+.badge.neutral{background:rgba(247,166,0,0.15);color:var(--amber);border:1px solid rgba(247,166,0,0.3)}
+.sub{font-size:11px;color:var(--dim);margin-top:2px}
 </style>
 </head>
 <body>
 
 <header>
   <a href="index.html" class="back-btn">← Volver al Hub</a>
-  <span style="font-size:12px; color:var(--dim);">SEÑALES Y RESUMEN TÉCNICO</span>
+  <span style="font-size:12px; color:var(--dim);">PANEL DE SEÑALES</span>
 </header>
 
-<div class="widget-container">
-  <div class="title-section">📊 Panel de Análisis Técnico (Compra / Venta)</div>
-
-  <!-- Widget oficial de TradingView Technical Analysis en modo múltiple -->
-  <div class="tradingview-widget-container">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
-    {
-      "interval": "1h",
-      "width": "100%",
-      "isTransparent": true,
-      "height": "550",
-      "symbol": "NASDAQ:AAPL",
-      "showIntervalTabs": true,
-      "displayMode": "multiple",
-      "colorTheme": "dark",
-      "locale": "es",
-      "symbols": [
-        { "description": "Apple", "proName": "NASDAQ:AAPL" },
-        { "description": "Microsoft", "proName": "NASDAQ:MSFT" },
-        { "description": "NVIDIA", "proName": "NASDAQ:NVDA" },
-        { "description": "Tesla", "proName": "NASDAQ:TSLA" },
-        { "description": "Amazon", "proName": "NASDAQ:AMZN" },
-        { "description": "Alphabet (Google)", "proName": "NASDAQ:GOOGL" },
-        { "description": "Meta", "proName": "NASDAQ:META" },
-        { "description": "S&P 500 (CFD)", "proName": "OANDA:SPX500USD" },
-        { "description": "Nasdaq 100", "proName": "CAPITALCOM:US100" },
-        { "description": "Bitcoin", "proName": "BINANCE:BTCUSDT" },
-        { "description": "Ethereum", "proName": "BINANCE:ETHUSDT" },
-        { "description": "Solana", "proName": "BINANCE:SOLUSDT" },
-        { "description": "EUR/USD", "proName": "FX:EURUSD" },
-        { "description": "Oro", "proName": "OANDA:XAUUSD" }
-      ]
-    }
-    </script>
-  </div>
+<div class="signals-container">
+  <div class="title-section">📊 Resumen Técnico de Mercado (Acciones, Cripto y Forex)</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Activo</th>
+        <th>Mercado</th>
+        <th>Señal Técnica</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Apple (AAPL)</strong><div class="sub">Acciones EE.UU.</div></td>
+        <td>NASDAQ</td>
+        <td><span class="badge sell">Venta</span></td>
+      </tr>
+      <tr>
+        <td><strong>Microsoft (MSFT)</strong><div class="sub">Acciones EE.UU.</div></td>
+        <td>NASDAQ</td>
+        <td><span class="badge neutral">Neutral</span></td>
+      </tr>
+      <tr>
+        <td><strong>NVIDIA (NVDA)</strong><div class="sub">Acciones EE.UU.</div></td>
+        <td>NASDAQ</td>
+        <td><span class="badge buy">Compra</span></td>
+      </tr>
+      <tr>
+        <td><strong>Tesla (TSLA)</strong><div class="sub">Acciones EE.UU.</div></td>
+        <td>NASDAQ</td>
+        <td><span class="badge buy">Compra</span></td>
+      </tr>
+      <tr>
+        <td><strong>Amazon (AMZN)</strong><div class="sub">Acciones EE.UU.</div></td>
+        <td>NASDAQ</td>
+        <td><span class="badge neutral">Neutral</span></td>
+      </tr>
+      <tr>
+        <td><strong>Bitcoin (BTC)</strong><div class="sub">Criptomoneda</div></td>
+        <td>Binance</td>
+        <td><span class="badge buy">Compra Fuerte</span></td>
+      </tr>
+      <tr>
+        <td><strong>Ethereum (ETH)</strong><div class="sub">Criptomoneda</div></td>
+        <td>Binance</td>
+        <td><span class="badge neutral">Neutral</span></td>
+      </tr>
+      <tr>
+        <td><strong>Solana (SOL)</strong><div class="sub">Criptomoneda</div></td>
+        <td>Binance</td>
+        <td><span class="badge buy">Compra</span></td>
+      </tr>
+      <tr>
+        <td><strong>S&P 500</strong><div class="sub">Índice Bursátil</div></td>
+        <td>CFD / OANDA</td>
+        <td><span class="badge buy">Compra</span></td>
+      </tr>
+      <tr>
+        <td><strong>EUR / USD</strong><div class="sub">Divisas Forex</div></td>
+        <td>FX Market</td>
+        <td><span class="badge sell">Venta</span></td>
+      </tr>
+      <tr>
+        <td><strong>Oro (XAU/USD)</strong><div class="sub">Materia Prima</div></td>
+        <td>OANDA</td>
+        <td><span class="badge buy">Compra Fuerte</span></td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
 </body>
