@@ -122,10 +122,11 @@ const CATS=[
 ['Cinta de bolsa','Cinta de cotizaciones de bolsa','cinta_bolsa.html','🎞️'],
 ['Hub de Bolsa y Cartera','Cotizaciones de bolsa, ETFs, innovación y materias primas','hub_bolsa.html','📈'],
 ['Calendario Macroeconómico','Eventos clave, IPC, Fed y BCE en vivo','calendario_macro.html','📅'],
-['Señales de Mercado','Análisis técnico en vivo y resumen de activos (Forex, Cripto, Índices)','senales.html','📊'],
+['Señales de Mercado','Análisis técnico en vivo y resumen de activos','senales.html','📊'],
 ['Gráficos de calor','Mapas de calor del mercado','graficos_calor.html','🌡️'],
 ['Gráficos de muros','Muros de órdenes en el libro','graficos_muros.html','🧱'],
-['Bono 30 años','Rendimiento del bono a 30 años','bono_30y.html','📉']]},
+['Bono 30 años','Rendimiento del bono a 30 años','bono_30y.html','📉']
+]},
 {id:'es',name:'Inversor en España',color:'#ef5350',links:[
 ['Trade Republic','Tu broker: cartera y órdenes','https://traderepublic.com/es-es','🟣'],
 ['justETF','Buscador y comparador de ETFs','https://www.justetf.com/es/','🧺'],
@@ -137,7 +138,8 @@ const CATS=[
 ['Calendario de resultados','Fechas de presentación de resultados','https://es.investing.com/earnings-calendar/','🗓️'],
 ['Banco de España','Estadísticas y tipos oficiales','https://www.bde.es/','🏛️'],
 ['INE','Inflación, empleo y PIB de España','https://www.ine.es/','📑'],
-['Agencia Tributaria','Declaración de renta y ganancias','https://sede.agenciatributaria.gob.es/','🧾']]},
+['Agencia Tributaria','Declaración de renta y ganancias','https://sede.agenciatributaria.gob.es/','🧾']
+]},
 {id:'cripto',name:'Criptomonedas',color:'#f7a600',links:[
 ['TradingView','Gráficos profesionales y análisis técnico','https://es.tradingview.com/','📈'],
 ['Kiyotaka','Gráficos con liquidez, order flow y heatmaps','https://kiyotaka.ai/','🥷'],
@@ -152,7 +154,8 @@ const CATS=[
 ['Token Unlocks','Desbloqueos de tokens próximos','https://token.unlocks.app/','🔓'],
 ['Polymarket','Mercados de predicción','https://polymarket.com/','🎲'],
 ['Binance','Exchange centralizado más grande','https://www.binance.com/','🟡'],
-['Bybit','Derivados y trading de futuros','https://www.bybit.com/','⚫']]},
+['Bybit','Derivados y trading de futuros','https://www.bybit.com/','⚫']
+]},
 {id:'onchain',name:'On-chain y DeFi',color:'#00bcd4',links:[
 ['DefiLlama','TVL de protocolos, cadenas y stablecoins','https://defillama.com/','🦙'],
 ['DexScreener','Gráficos de DEXs en tiempo real','https://dexscreener.com/','🦅'],
@@ -167,7 +170,8 @@ const CATS=[
 ['Etherscan','Explorador de Ethereum','https://etherscan.io/','🔎'],
 ['Solscan','Explorador de Solana','https://solscan.io/','🔭'],
 ['mempool.space','Explorador de Bitcoin y comisiones','https://mempool.space/','⛏️'],
-['L2Beat','Datos y riesgos de las capas 2','https://l2beat.com/','🧱']]},
+['L2Beat','Datos y riesgos de las capas 2','https://l2beat.com/','🧱']
+]},
 {id:'bolsa',name:'Bolsas y Acciones',color:'#2196f3',links:[
 ['Yahoo Finance','Cotizaciones, noticias y datos de empresas','https://finance.yahoo.com/','📊'],
 ['Google Finance','Cotizaciones y comparativas rápidas','https://www.google.com/finance/','🔵'],
@@ -180,7 +184,8 @@ const CATS=[
 ['SEC EDGAR','Informes oficiales de empresas de EE. UU.','https://www.sec.gov/edgar/search/','📜'],
 ['OpenInsider','Compras y ventas de directivos','https://openinsider.com/','🧑‍💼'],
 ['Dataroma','Carteras de grandes inversores (13F)','https://www.dataroma.com/m/home.php','🧠'],
-['Nasdaq','Mercado tecnológico de EE. UU.','https://www.nasdaq.com/','💻']]},
+['Nasdaq','Mercado tecnológico de EE. UU.','https://www.nasdaq.com/','💻']
+]},
 {id:'macro',name:'Macroeconomía',color:'#26a69a',links:[
 ['FRED','Miles de series económicas de la Fed de St. Louis','https://fred.stlouisfed.org/','📚'],
 ['CME FedWatch','Probabilidades de tipos de la Fed','https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html','🎯'],
@@ -191,23 +196,27 @@ const CATS=[
 ['BLS','Inflación y empleo de EE. UU.','https://www.bls.gov/','👷'],
 ['Forex Factory','Calendario económico en tiempo real','https://www.forexfactory.com/','📅'],
 ['Calendario económico','Agenda macro con filtros (Investing)','https://es.investing.com/economic-calendar/','🗒️'],
-['Trading Economics','Indicadores macroeconómicos de países','https://tradingeconomics.com/','🌍']]},
+['Trading Economics','Indicadores macroeconómicos de países','https://tradingeconomics.com/','🌍']
+]},
 {id:'noticias',name:'Noticias',color:'#ff7043',links:[
 ['CoinDesk','Noticias cripto','https://www.coindesk.com/','🗞️'],
 ['Cointelegraph','Noticias cripto en español','https://es.cointelegraph.com/','📣'],
 ['Decrypt','Noticias cripto y Web3','https://decrypt.co/','🔐'],
 ['CNBC','Noticias de mercados globales','https://www.cnbc.com/markets/','📺'],
 ['FinancialJuice','Titulares de mercado en tiempo real','https://www.financialjuice.com/','⚡'],
-['Yahoo Finance Noticias','Titulares de bolsa y empresas','https://finance.yahoo.com/news/','📰']]},
+['Yahoo Finance Noticias','Titulares de bolsa y empresas','https://finance.yahoo.com/news/','📰']
+]},
 {id:'analisis',name:'Sentimiento y Herramientas',color:'#9c27b0',links:[
 ['TradingView Screener','Filtro de acciones y criptos','https://es.tradingview.com/screener/','🔍'],
 ['Fear & Greed cripto','Índice de miedo y codicia (Alternative.me)','https://alternative.me/crypto/fear-and-greed-index/','😨'],
 ['Fear & Greed bolsa','Índice de miedo y codicia (CNN)','https://edition.cnn.com/markets/fear-and-greed','🧭'],
-['Portfolio Visualizer','Backtests y análisis de carteras','https://www.portfoliovisualizer.com/','🧰']]},
+['Portfolio Visualizer','Backtests y análisis de carteras','https://www.portfoliovisualizer.com/','🧰']
+]},
 {id:'aprender',name:'Aprender',color:'#8bc34a',links:[
 ['Investopedia','Diccionario y guías de inversión','https://www.investopedia.com/','🎓'],
 ['Bogleheads Wiki','Inversión pasiva y a largo plazo','https://www.bogleheads.org/wiki/Main_Page','📖'],
-['Academia Kiyotaka','Mecánica de mercado y estrategias','https://kiyotaka.ai/user-guides/core/academy','🥋']]
+['Academia Kiyotaka','Mecánica de mercado y estrategias','https://kiyotaka.ai/user-guides/core/academy','🥋']
+]}
 ];
 const REAL=CATS.filter(c=>c.id!=='fav'&&c.id!=='top');
 
