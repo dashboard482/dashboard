@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mapas de Mercado - Hub Financiero</title>
+<style>
+:root{
+  --bg:#0e1117;
+  --panel:#131722;
+  --panel-2:#1a1e29;
+  --border:#2a2e39;
+  --ink:#d1d4dc;
+  --ink-strong:#f0f3fa;
+  --dim:#787b86;
+  --accent:#2962ff;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1200px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-strong);text-decoration:none;background:var(--panel-2);border:1px solid var(--border);padding:6px 12px;border-radius:6px}
+.widget-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;padding:12px;margin-bottom:20px}
+.section-title{font-size:14px;font-weight:600;color:var(--ink-strong);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sub{font-size:11px;color:var(--dim);margin-bottom:16px;text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="back-btn">← Volver al Hub</a>
+  <span style="font-size:12px; color:var(--dim);">MAPAS DE CALOR EN VIVO</span>
+</header>
+
+<div class="sub">Visualiza el rendimiento en tiempo real de los principales mercados bursátiles y criptomonedas del mundo.</div>
+
+<!-- MAPA DE CALOR: ACCIONES / BOLSA -->
+<div class="widget-box">
+  <div class="section-title">🗺️ Mapa de Calor - Acciones Globales & Tecnología</div>
+  <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js" async>
+    {
+      "exchanges": [],
+      "dataSource": "SPX500",
+      "grouping": "sector",
+      "blockSize": "market_cap_basic",
+      "blockColor": "change",
+      "locale": "es",
+      "symbolUrl": "",
+      "colorTheme": "dark",
+      "hasTopBar": true,
+      "isTransparent": true,
+      "width": "100%",
+      "height": "550"
+    }
+    </script>
+  </div>
+</div>
+
+<!-- MAPA DE CALOR: CRIPTOMONEDAS -->
+<div class="widget-box">
+  <div class="section-title">🪙 Mapa de Calor - Criptomonedas</div>
+  <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-crypto-coins-heatmap.js" async>
+    {
+      "dataSource": "Crypto",
+      "blockSize": "market_cap_calc",
+      "blockColor": "change",
+      "locale": "es",
+      "symbolUrl": "",
+      "colorTheme": "dark",
+      "hasTopBar": true,
+      "isTransparent": true,
+      "width": "100%",
+      "height": "500"
+    }
+    </script>
+  </div>
+</div>
+
+</body>
+</html>
