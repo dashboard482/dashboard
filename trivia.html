@@ -8,8 +8,11 @@
 :root{--bg:#131722;--panel:#1e222d;--border:#2a2e39;--ink:#eef1f0;--dim:#787b86;--accent:#2962ff;--success:#26a69a;--danger:#ef5350;--amber:#FFB84D}
 *{box-sizing:border-box}
 body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;flex-direction:column;min-height:100vh;max-width:600px;margin:0 auto}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
 .back-btn{font-size:13px;color:var(--ink);text-decoration:none;background:var(--panel);border:1px solid var(--border);padding:6px 12px;border-radius:6px}
+.wisdom-trigger{font-size:13px;color:var(--amber);background:rgba(255,184,77,0.1);border:1px solid rgba(255,184,77,0.3);padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600}
+.wisdom-trigger:hover{background:rgba(255,184,77,0.2)}
+
 .quiz-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);flex:1;display:flex;flex-direction:column;justify-content:between}
 .progress-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:16px;overflow:hidden}
 .progress-fill{height:100%;background:var(--accent);width:0%;transition:width 0.3s ease}
@@ -22,15 +25,30 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .option-btn.incorrect{background:rgba(239,83,80,0.15);border-color:var(--danger);color:var(--danger)}
 .next-btn{background:var(--accent);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:none;width:100%}
 .next-btn:hover{opacity:0.9}
+
 .results-screen{text-align:center;padding:20px 0;display:none}
 .score-big{font-size:48px;font-weight:700;color:var(--amber);margin:10px 0}
 .share-btn{background:#000;color:#fff;border:1px solid var(--border);padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;margin-top:16px;text-decoration:none}
+
+/* Estilos del Modal de Sabiduría */
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--border);border-radius:12px;padding:20px;width:min(92vw,500px);max-height:80vh;display:flex;flex-direction:column}
+dialog::backdrop{background:rgba(0,0,0,0.7)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.modal-header h2{margin:0;font-size:16px;color:var(--amber)}
+.close-modal{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer}
+.quote-box{background:var(--bg);border-left:3px solid var(--amber);padding:14px;border-radius:0 8px 8px 0;margin-bottom:15px;font-style:italic;font-size:14px;line-height:1.5}
+.quote-author{font-style:normal;font-weight:600;color:var(--ink);margin-top:8px;display:block;font-size:13px}
+.modal-actions{display:flex;gap:10px;justify-content:space-between;align-items:center}
+.category-badge{font-size:10px;background:rgba(41,98,255,0.2);color:var(--accent);padding:3px 8px;border-radius:4px;font-weight:600}
 </style>
 </head>
 <body>
 
 <header>
-  <a href="index.html" class="back-btn">← Volver al Hub</a>
+  <div style="display:flex; gap:8px; align-items:center;">
+    <a href="index.html" class="back-btn">← Hub</a>
+    <button class="wisdom-trigger" onclick="openWisdomModal()">💡 Sabiduría de Inversores</button>
+  </div>
   <span style="font-size:13px; color:var(--dim);">🧠 Wall Street Trivia</span>
 </header>
 
@@ -59,7 +77,95 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   </div>
 </div>
 
+<!-- Modal de Sabiduría Financiera -->
+<dialog id="wisdomModal">
+  <div class="modal-header">
+    <h2>💡 Archivo de Sabiduría Financiera (50 Joyas)</h2>
+    <button class="close-modal" onclick="closeWisdomModal()">✕</button>
+  </div>
+  <div class="quote-box" id="quoteContainer">
+    <span id="quoteText">"Cargando frase..."</span>
+    <span class="quote-author" id="quoteAuthor">— Autor</span>
+  </div>
+  <div class="modal-actions">
+    <span class="category-badge" id="quoteCategory">Inversión a Largo Plazo</span>
+    <button class="back-btn" onclick="getRandomQuote()" style="background:var(--accent); color:#fff; border-color:var(--accent); cursor:pointer;">Siguiente Consejo ➔</button>
+  </div>
+</dialog>
+
 <script>
+// --- 50 CONSEJOS Y CITAS MAESTRAS DE LAS FINANZAS ---
+const wisdomQuotes = [
+  { text: "Sé temeroso cuando los demás sean codiciosos, y sé codicioso cuando los demás tengan temor.", author: "Warren Buffett", cat: "Psicología de Mercado" },
+  { text: "El riesgo proviene de no saber lo que estás haciendo.", author: "Warren Buffett", cat: "Gestión de Riesgo" },
+  { text: "En los negocios, lo que es cómodo rara vez es rentable.", author: "Ray Dalio", cat: "Estrategia Macro" },
+  { text: "Los mercados pueden permanecer irracionales más tiempo del que tú puedes permanecer disolvente.", author: "John Maynard Keynes", cat: "Gestión de Riesgo" },
+  { text: "No intentes comprar en el fondo ni vender en el pico. Es imposible, excepto para los mentirosos.", author: "Bernard Baruch", cat: "Psicología del Trading" },
+  { text: "La clave para invertir no es evaluar cuánto va a influir una industria en la sociedad, sino determinar la ventaja competitiva de cualquier empresa.", author: "Warren Buffett", cat: "Análisis Fundamental" },
+  { text: "Si no estás dispuesto a poseer una acción durante 10 años, ni siquiera pienses en tenerla durante 10 minutos.", author: "Warren Buffett", cat: "Inversión a Largo Plazo" },
+  { text: "Perder dinero es doloroso, pero perder la oportunidad de aprender de esa pérdida es peor.", author: "George Soros", cat: "Psicología del Trading" },
+  { text: "El precio es lo que pagas. El valor es lo que obtienes.", author: "Warren Buffett", cat: "Análisis Fundamental" },
+  { text: "La diversificación es una protección contra la ignorancia. Tiene poco sentido si sabes lo que estás haciendo.", author: "Warren Buffett", cat: "Gestión de Cartera" },
+  { text: "Todo el mundo tiene un plan hasta que recibe un puñetazo en la cara.", author: "Mike Tyson (Trading)", cat: "Gestión de Riesgo" },
+  { text: "Los mercados alcistas nacen en el pesimismo, crecen en el escepticismo, maduran en el optimismo y mueren en la euforia.", author: "Sir John Templeton", cat: "Ciclos de Mercado" },
+  { text: "La regla número 1 es nunca perder dinero. La regla número 2 es nunca olvidar la regla número 1.", author: "Warren Buffett", cat: "Gestión de Riesgo" },
+  { text: "Invertir debería ser más como ver secar la pintura o ver crecer la hierba. Si quieres emoción, ¡sal al casino!", author: "Paul Samuelson", cat: "Inversión a Largo Plazo" },
+  { text: "Las grandes fortunas se hacen comprando cuando hay sangre en las calles, incluso si parte de esa sangre es tu propia sangre.", author: "Barón Rothschild", cat: "Psicología de Mercado" },
+  { text: "Comprar una compañía maravillosa a un precio justo es mucho mejor que comprar una compañía justa a un precio maravilloso.", author: "Charlie Munger", cat: "Análisis Fundamental" },
+  { text: "Un inversor inteligente es un realista que compra a los optimistas y vende a los pesimistas.", author: "Benjamin Graham", cat: "Value Investing" },
+  { text: "El mercado de valores está diseñado para transferir dinero del activo al paciente.", author: "Warren Buffett", cat: "Psicología del Trading" },
+  { text: "Cae siete veces, levántate ocho. En el trading, la resiliencia importa más que la primera racha ganadora.", author: "Proverbio / Trader Anónimo", cat: "Psicología del Trading" },
+  { text: "Nunca inviertas en un negocio que no puedas entender.", author: "Warren Buffett", cat: "Análisis Fundamental" },
+  { text: "La emoción es tu peor enemiga cuando inviertes.", author: "Benjamin Graham", cat: "Psicología de Mercado" },
+  { text: "Para tener éxito en los mercados, debes ser capaz de aceptar estar equivocado con frecuencia.", author: "George Soros", cat: "Gestión de Riesgo" },
+  { text: "El corto plazo es un concurso de popularidad; el largo plazo es una báscula de pesaje.", author: "Benjamin Graham", cat: "Inversión a Largo Plazo" },
+  { text: "Si gastas demasiado en cosas que no necesitas, pronto tendrás que vender las cosas que sí necesitas.", author: "Warren Buffett", cat: "Educación Financiera" },
+  { text: "La paciencia es amarga, pero su fruto es dulce.", author: "Jean-Jacques Rousseau (Inversión)", cat: "Inversión a Largo Plazo" },
+  { text: "La mayor fuente de riqueza es el conocimiento que no se detiene.", author: "Ray Dalio", cat: "Cultura Financiera" },
+  { text: "No esperes a comprar bienes raíces o activos financieros; compra y espera.", author: "Will Rogers", cat: "Inversión a Largo Plazo" },
+  { text: "Un hombre con una cartera diversificada duerme mejor por la noche.", author: "Harry Markowitz", cat: "Gestión de Cartera" },
+  { text: "La especulación es un juego emocionante, pero el error es confundirla con la inversión.", author: "Benjamin Graham", cat: "Trading y Especulación" },
+  { text: "La disciplina es el puente entre las metas financieras y el éxito económico.", author: "Jim Rohn", cat: "Psicología del Trading" },
+  { text: "Los errores de inversión se dividen en dos categorías: las acciones que no compraste y las que sí compraste.", author: "Peter Lynch", cat: "Análisis de Inversión" },
+  { text: "En el mundo del dinero, el exceso de confianza precede directamente al desastre.", author: "Howard Marks", cat: "Gestión de Riesgo" },
+  { text: "Lo peligroso no es lo que no sabes; es lo que sabes con certeza y que simplemente no es así.", author: "Mark Twain / Ray Dalio", cat: "Filosofía de Mercado" },
+  { text: "La tasa de rendimiento real se calcula restando la inflación al beneficio nominal. Nunca olvides el poder de la inflación.", author: "Ray Dalio", cat: "Macroeconomía" },
+  { text: "Las tendencias son tus amigas hasta que se doblan en la esquina.", author: "Ed Seykota", cat: "Trading Técnico" },
+  { text: "Cortar las pérdidas rápidamente y dejar correr los beneficios es el secreto del éxito en el trading.", author: "David Ricardo", cat: "Gestión de Riesgo" },
+  { text: "Si el análisis fuera fácil, todos serían ricos. Lo difícil es mantener la cabeza fría cuando el mercado se desploma.", author: "Charlie Munger", cat: "Psicología de Mercado" },
+  { text: "La innovación distingue entre un líder y un seguidor en los mercados financieros.", author: "Steve Jobs", cat: "Tendencias de Inversión" },
+  { text: "El dinero nunca duerme, pero las malas decisiones de inversión te quitarán el sueño.", author: "Gordon Gekko (Modificado)", cat: "Gestión de Riesgo" },
+  { text: "Cuando baje la marea, sabremos quién estaba nadando desnudo.", author: "Warren Buffett", cat: "Ciclos de Crédito" },
+  { text: "La simplicidad es la máxima sofisticación en la gestión de carteras.", author: "Leonardo da Vinci (Aplicado a Finanzas)", cat: "Estrategia" },
+  { text: "No pongas todos los huevos en la misma cesta.", author: "Proverbio Popular (Diversificación)", cat: "Gestión de Cartera" },
+  { text: "La libertad financiera es poder decir no a lo que no te gusta.", author: "Naval Ravikant", cat: "Filosofía Financiera" },
+  { text: "Gastar dinero en cosas que no te aportan valor a largo plazo es comprar pasivos disfrazados de activos.", author: "Robert Kiyosaki", cat: "Educación Financiera" },
+  { text: "El interés compuesto es la octava maravilla del mundo. Quien lo entiende, lo gana; quien no, lo paga.", author: "Albert Einstein", cat: "Inversión a Largo Plazo" },
+  { text: "Estudia el pasado si quieres pronosticar el futuro de los mercados.", author: "Confucio (Adaptado a Macro)", cat: "Historia Financiera" },
+  { text: "El mercado premia la disciplina y castiga duramente la impulsividad.", author: "Brett Steenbarger", cat: "Psicología del Trading" },
+  { text: "Una recesión es un mercado bajista doloroso, pero también la mayor fábrica de millonarios de la década.", author: "John Templeton", cat: "Ciclos de Mercado" },
+  { text: "Nunca confíes en un pronosticador que predice el futuro exacto del precio sin gestionar el riesgo.", author: "Nassim Taleb", cat: "Gestión de Riesgo" },
+  { text: "El objetivo del inversor experto no es buscar emociones fuertes, sino alcanzar la consistencia.", author: "Van Tharp", cat: "Trading Profesional" }
+];
+
+function openWisdomModal() {
+  getRandomQuote();
+  document.getElementById('wisdomModal').showModal();
+}
+
+function closeWisdomModal() {
+  document.getElementById('wisdomModal').close();
+}
+
+function getRandomQuote() {
+  const randomIndex = Math.floor(Math.random() * wisdomQuotes.length);
+  const q = wisdomQuotes[randomIndex];
+  document.getElementById('quoteText').textContent = `"${q.text}"`;
+  document.getElementById('quoteAuthor').textContent = `— ${q.author}`;
+  document.getElementById('quoteCategory').textContent = q.cat;
+}
+
+// --- LÓGICA DEL TRIVIAL ---
 const quizData = [
   {
     category: "Grandes Inversores",
@@ -174,7 +280,6 @@ function selectOption(selectedIndex, btn) {
     buttons[q.correct].classList.add('correct');
   }
   
-  // Deshabilitar todos
   for (let b of buttons) {
     b.disabled = true;
   }
