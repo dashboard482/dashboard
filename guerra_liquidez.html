@@ -2,48 +2,47 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Guerra de Liquidez BTC — Order Book Live</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>BTC Space Wars — Guerra de Liquidez</title>
 <style>
-:root{--bg:#07090e;--panel:#10141d;--green:#00ffcc;--red:#ff3366;--amber:#ffcc00;--text:#f0f3fa}
+:root{--bg:#030508;--panel:#0d111a;--green:#00ffcc;--red:#ff2a5f;--amber:#ffcc00;--text:#f0f3fa}
 *{box-sizing:border-box}
-body,html{margin:0;padding:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Courier New', Courier, monospace;overflow:hidden}
+body,html{margin:0;padding:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;overflow:hidden}
 #stage{position:fixed;inset:0;display:flex;flex-direction:column}
-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--panel);border-bottom:1px solid rgba(255,255,255,.1);z-index:10;box-shadow:0 4px 20px rgba(0,0,0,0.5)}
-.brand{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;letter-spacing:1px}
-.dot{width:8px;height:8px;border-radius:50%;background:#666}
-.dot.live{background:var(--green);box-shadow:0 0 10px var(--green)}
-.ctl{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--text);font-family:inherit;font-size:12px;padding:6px 14px;border-radius:6px;text-decoration:none;cursor:pointer;transition:all .2s}
-.ctl:hover{background:rgba(255,255,255,.15)}
-#canvasContainer{flex:1;position:relative;width:100%;height:100%;background:radial-gradient(circle at center, #111827 0%, #07090e 100%)}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--panel);border-bottom:1px solid rgba(255,255,255,.1);z-index:10}
+.brand{font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;letter-spacing:0.5px}
+.dot{width:7px;height:7px;border-radius:50%;background:#666}
+.dot.live{background:var(--green);box-shadow:0 0 8px var(--green)}
+.ctl{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,0.2);color:var(--text);font-size:11px;padding:5px 10px;border-radius:6px;text-decoration:none}
+#canvasContainer{flex:1;position:relative;width:100%;height:100%;background:radial-gradient(circle at center, #111b33 0%, #030508 100%)}
 canvas{display:block;width:100%;height:100%}
-.hud-overlay{position:absolute;top:15px;left:15px;right:15px;display:flex;justify-content:space-between;pointer-events:none;font-size:11px;text-shadow:0 2px 6px rgba(0,0,0,0.9)}
-.army-box{background:rgba(16,20,29,0.85);border:1px solid rgba(255,255,255,0.2);padding:10px 14px;border-radius:10px;backdrop-filter:blur(6px);box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.hud-overlay{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;pointer-events:none;font-size:10px}
+.army-box{background:rgba(13,17,26,0.9);border:1px solid rgba(255,255,255,0.2);padding:6px 10px;border-radius:8px;backdrop-filter:blur(4px)}
 .army-box.green{border-color:var(--green);color:var(--green)}
 .army-box.red{border-color:var(--red);color:var(--red)}
-.center-price{text-align:center;background:rgba(16,20,29,0.85);padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.3);backdrop-filter:blur(6px);box-shadow:0 8px 32px rgba(0,0,0,0.4)}
-footer{padding:8px 16px;text-align:center;font-size:10px;color:rgba(255,255,255,.4);background:var(--panel);border-top:1px solid rgba(255,255,255,.1)}
+.center-price{text-align:center;background:rgba(13,17,26,0.9);padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.3);backdrop-filter:blur(4px)}
+footer{padding:6px;text-align:center;font-size:9px;color:rgba(255,255,255,.4);background:var(--panel);border-top:1px solid rgba(255,255,255,.1)}
 </style>
 </head>
 <body>
 <div id="stage">
   <header>
-    <div class="brand"><span id="dot" class="dot"></span><span>⚡ WARZONE: BTC ORDER BOOK</span></div>
+    <div class="brand"><span id="dot" class="dot"></span><span>🚀 BTC SPACE WARS: ORDER BOOK</span></div>
     <a class="ctl" href="index.html">← Hub</a>
   </header>
   
   <div id="canvasContainer">
     <div class="hud-overlay">
-      <div class="army-box green">🟢 TOROS (BIDS)<br><b id="bidVol" style="font-size:15px">0.0 BTC</b></div>
+      <div class="army-box green">🟢 FLOTA COMPRAS<br><b id="bidVol" style="font-size:13px">0 BTC</b></div>
       <div class="center-price">
-        PRECIO EN VIVO<br><b id="btcPrice" style="font-size:18px; color:var(--amber); text-shadow:0 0 10px rgba(255,204,0,0.5)">$—</b>
+        PRECIO BTC<br><b id="btcPrice" style="font-size:14px; color:var(--amber)">$—</b>
       </div>
-      <div class="army-box red" style="text-align:right">🔴 OSOS (ASKS)<br><b id="askVol" style="font-size:15px">0.0 BTC</b></div>
+      <div class="army-box red" style="text-align:right">🔴 FLOTA VENTAS<br><b id="askVol" style="font-size:13px">0 BTC</b></div>
     </div>
     <canvas id="battleCanvas"></canvas>
   </div>
   
-  <footer>Visualizador de combate cibernético · Conexión WebSocket en directo con Binance</footer>
+  <footer>Batalla espacial en tiempo real · Conexión WebSocket Binance</footer>
 </div>
 
 <script>
@@ -65,73 +64,119 @@ resize();
 let currentPrice = 0;
 let bids = [];
 let asks = [];
-let projectiles = [];
+let ships = [];
+let lasers = [];
 let explosions = [];
-let screenShake = 0;
 
-// Clase para proyectiles de láser avanzados
-class Laser {
-  constructor(isBuy, amount) {
-    this.x = isBuy ? width * 0.15 : width * 0.85;
-    this.y = Math.random() * (height * 0.7) + (height * 0.15);
-    this.targetX = isBuy ? width * 0.75 : width * 0.25;
-    this.targetY = height / 2 + (Math.random() - 0.5) * (height * 0.5);
-    this.speed = 35;
-    const angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
-    this.vx = Math.cos(angle) * this.speed;
-    this.vy = Math.sin(angle) * this.speed;
-    this.color = isBuy ? '#00ffcc' : '#ff3366';
-    this.size = Math.min(Math.max(amount * 3, 3), 10);
+// Clase para las Naves espaciales de cada bando
+class Ship {
+  constructor(isBuy) {
     this.isBuy = isBuy;
+    this.x = isBuy ? 40 : width - 40;
+    this.y = Math.random() * (height - 120) + 60;
+    this.targetY = this.y + (Math.random() - 0.5) * 100;
+    this.speed = 1.5 + Math.random() * 2;
+    this.color = isBuy ? '#00ffcc' : '#ff2a5f';
+    this.size = 14 + Math.random() * 6;
   }
   update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    // Si llega al centro o destino, genera explosión y muere
-    if (Math.abs(this.x - width/2) < 30) {
-      explosions.push(new Explosion(this.x, this.y, this.color));
-      return true;
-    }
-    return false;
+    // Movimiento flotante arriba y abajo
+    if (this.y < this.targetY) this.y += 0.5;
+    else this.y -= 0.5;
+    if (Math.random() < 0.02) this.targetY = Math.random() * (height - 120) + 60;
   }
   draw() {
     ctx.save();
-    ctx.shadowBlur = 15;
+    ctx.fillStyle = this.color;
+    ctx.shadowBlur = 12;
     ctx.shadowColor = this.color;
+    ctx.beginPath();
+    // Dibujar forma de nave espacial poligonal
+    if (this.isBuy) {
+      ctx.moveTo(this.x + this.size, this.y);
+      ctx.lineTo(this.x - this.size, this.y - this.size * 0.7);
+      ctx.lineTo(this.x - this.size * 0.5, this.y);
+      ctx.lineTo(this.x - this.size, this.y + this.size * 0.7);
+    } else {
+      ctx.moveTo(this.x - this.size, this.y);
+      ctx.lineTo(this.x + this.size, this.y - this.size * 0.7);
+      ctx.lineTo(this.x + this.size * 0.5, this.y);
+      ctx.lineTo(this.x + this.size, this.y + this.size * 0.7);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// Clase para disparos láser animados
+class LaserShot {
+  constructor(isBuy, startY) {
+    this.x = isBuy ? 60 : width - 60;
+    this.y = startY;
+    this.vx = isBuy ? 22 : -22;
+    this.color = isBuy ? '#00ffcc' : '#ff2a5f';
+  }
+  update() {
+    this.x += this.vx;
+  }
+  draw() {
+    ctx.save();
     ctx.strokeStyle = this.color;
-    ctx.lineWidth = this.size;
+    ctx.lineWidth = 4;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = this.color;
     ctx.beginPath();
     ctx.moveTo(this.x, this.y);
-    ctx.lineTo(this.x - this.vx * 0.8, this.y - this.vy * 0.8);
+    ctx.lineTo(this.x - this.vx * 0.6, this.y);
     ctx.stroke();
     ctx.restore();
   }
 }
 
-// Clase para las explosiones al chocar los trades
-class Explosion {
+// Clase para explosiones de impacto
+class ParticleExplosion {
   constructor(x, y, color) {
     this.x = x;
     this.y = y;
     this.color = color;
-    this.radius = 5;
-    this.maxRadius = Math.random() * 30 + 20;
-    this.alpha = 1;
+    this.particles = [];
+    for (let i = 0; i < 12; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 4 + 1;
+      this.particles.push({
+        x: x, y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1
+      });
+    }
   }
   update() {
-    this.radius += 3;
-    this.alpha -= 0.05;
+    this.particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= 0.04;
+    });
   }
   draw() {
     ctx.save();
-    ctx.globalAlpha = Math.max(this.alpha, 0);
-    ctx.strokeStyle = this.color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.stroke();
+    this.particles.forEach(p => {
+      if (p.alpha <= 0) return;
+      ctx.fillStyle = this.color;
+      ctx.globalAlpha = p.alpha;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
     ctx.restore();
   }
+}
+
+// Crear flota inicial de naves espaciales
+for (let i = 0; i < 6; i++) {
+  ships.push(new Ship(true));  // Naves de compra
+  ships.push(new Ship(false)); // Naves de venta
 }
 
 let wsBook = null;
@@ -145,14 +190,14 @@ function connectStreams() {
     currentPrice = parseFloat(data.p);
     btcPriceEl.textContent = '$' + currentPrice.toLocaleString('es-ES', {maximumFractionDigits:0});
     
-    const isBuy = !data.m; 
-    const qty = parseFloat(data.q);
-    
-    if (projectiles.length < 80) {
-      projectiles.push(new Laser(isBuy, qty));
-    }
-    if (qty > 0.3) {
-      screenShake = 12; // Temblor potente si hay orden grande
+    const isBuy = !data.m;
+    // Disparar láser desde una nave aleatoria del bando correspondiente
+    const bandoNaves = ships.filter(s => s.isBuy === isBuy);
+    if (bandoNaves.length > 0) {
+      const shooter = bandoNaves[Math.floor(Math.random() * bandoNaves.length)];
+      if (lasers.length < 30) {
+        lasers.push(new LaserShot(isBuy, shooter.y));
+      }
     }
   };
 
@@ -173,90 +218,88 @@ function connectStreams() {
 }
 connectStreams();
 
-// Bucle de animación principal a 60 FPS
 function animate() {
-  ctx.save();
-  if (screenShake > 0) {
-    const ox = (Math.random() - 0.5) * screenShake;
-    const oy = (Math.random() - 0.5) * screenShake;
-    ctx.translate(ox, oy);
-    screenShake *= 0.85;
-  }
-
-  // Fondo dinámico con estela ligera
-  ctx.fillStyle = 'rgba(7, 9, 14, 0.4)';
+  // Fondo de espacio con estela estelar
+  ctx.fillStyle = 'rgba(3, 5, 8, 0.4)';
   ctx.fillRect(0, 0, width, height);
 
-  // Línea central láser divisoria
-  ctx.strokeStyle = 'rgba(255, 204, 0, 0.4)';
+  // Línea de frente en el centro de la batalla
+  ctx.strokeStyle = 'rgba(255, 204, 0, 0.35)';
   ctx.lineWidth = 2;
-  ctx.shadowBlur = 10;
-  ctx.shadowColor = 'var(--amber)';
+  ctx.setLineDash([6, 6]);
   ctx.beginPath();
-  ctx.moveTo(width / 2, 0);
-  ctx.lineTo(width / 2, height);
+  ctx.moveTo(width / 2, 70);
+  ctx.lineTo(width / 2, height - 20);
   ctx.stroke();
-  ctx.shadowBlur = 0;
+  ctx.setLineDash([]);
 
-  // Renderizar Muros de Compras (Torres Verdes - Izquierda)
-  let bMax = Math.max(...bids.map(x => x[1]), 1);
-  bids.slice(0, 10).forEach((b, i) => {
-    const barH = height / 12;
-    const y = i * barH + 40;
-    const maxW = width * 0.32;
-    const w = (b[1] / bMax) * maxW;
+  // Renderizar Muros de Compras (Escudos de energía verdes - Izquierda)
+  let maxBidVal = Math.max(...bids.map(x => x[1]), 1);
+  bids.slice(0, 8).forEach((b, i) => {
+    const rowH = (height - 100) / 8;
+    const y = i * rowH + 80;
+    const maxBarW = (width / 2) - 70;
+    const barW = Math.min((b[1] / maxBidVal) * maxBarW, maxBarW);
 
     ctx.fillStyle = 'rgba(0, 255, 204, 0.15)';
-    ctx.fillRect(width / 2 - 20 - w, y, w, barH - 6);
+    ctx.fillRect(width / 2 - 30 - barW, y, barW, rowH - 8);
     
-    // Núcleo de energía de la muralla
     ctx.fillStyle = '#00ffcc';
     ctx.shadowBlur = 8;
     ctx.shadowColor = '#00ffcc';
-    ctx.fillRect(width / 2 - 24, y, 4, barH - 6);
+    ctx.fillRect(width / 2 - 32, y, 3, rowH - 8);
     ctx.shadowBlur = 0;
   });
 
-  // Renderizar Muros de Ventas (Torres Rojas - Derecha)
-  let aMax = Math.max(...asks.map(x => x[1]), 1);
-  asks.slice(0, 10).forEach((a, i) => {
-    const barH = height / 12;
-    const y = i * barH + 40;
-    const maxW = width * 0.32;
-    const w = (a[1] / aMax) * maxW;
+  // Renderizar Muros de Ventas (Escudos de energía rojos - Derecha)
+  let maxAskVal = Math.max(...asks.map(x => x[1]), 1);
+  asks.slice(0, 8).forEach((a, i) => {
+    const rowH = (height - 100) / 8;
+    const y = i * rowH + 80;
+    const maxBarW = (width / 2) - 70;
+    const barW = Math.min((a[1] / maxAskVal) * maxBarW, maxBarW);
 
-    ctx.fillStyle = 'rgba(255, 51, 102, 0.15)';
-    ctx.fillRect(width / 2 + 20, y, w, barH - 6);
-
-    // Núcleo de energía de la muralla
-    ctx.fillStyle = '#ff3366';
+    ctx.fillStyle = 'rgba(255, 42, 95, 0.15)';
+    ctx.fillRect(width / 2 + 30, y, barW, rowH - 8);
+    
+    ctx.fillStyle = '#ff2a5f';
     ctx.shadowBlur = 8;
-    ctx.shadowColor = '#ff3366';
-    ctx.fillRect(width / 2 + 20, y, 4, barH - 6);
+    ctx.shadowColor = '#ff2a5f';
+    ctx.fillRect(width / 2 + 30, y, 3, rowH - 8);
     ctx.shadowBlur = 0;
   });
 
-  // Actualizar y dibujar láseres / proyectiles
-  for (let i = projectiles.length - 1; i >= 0; i--) {
-    let p = projectiles[i];
-    if (p.update()) {
-      projectiles.splice(i, 1);
-    } else {
-      p.draw();
+  // Actualizar y pintar naves
+  ships.forEach(s => {
+    s.update();
+    s.draw();
+  });
+
+  // Actualizar y pintar láseres
+  for (let i = lasers.length - 1; i >= 0; i--) {
+    let l = lasers[i];
+    l.update();
+    l.draw();
+
+    // Si cruza el centro, genera explosión
+    if (Math.abs(l.x - width / 2) < 20) {
+      explosions.push(new ParticleExplosion(l.x, l.y, l.color));
+      lasers.splice(i, 1);
+    } else if (l.x < 0 || l.x > width) {
+      lasers.splice(i, 1);
     }
   }
 
-  // Actualizar y dibujar explosiones
+  // Actualizar y pintar explosiones de partículas
   for (let i = explosions.length - 1; i >= 0; i--) {
     let ex = explosions[i];
     ex.update();
     ex.draw();
-    if (ex.alpha <= 0) {
+    if (ex.particles[0].alpha <= 0) {
       explosions.splice(i, 1);
     }
   }
 
-  ctx.restore();
   requestAnimationFrame(animate);
 }
 
