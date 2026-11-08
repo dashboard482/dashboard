@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guerra de Liquidez BTC — Order Book Live</title>
+<style>
+:root{--bg:#0b0e14;--panel:#131722;--green:#26a69a;--red:#ef5350;--amber:#FFB84D;--text:#eef1f0}
+*{box-sizing:border-box}
+body,html{margin:0;padding:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--panel);border-bottom:1px solid rgba(255,255,255,.1);z-index:10}
+.brand{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:#666}
+.dot.live{background:var(--green);box-shadow:0 0 8px var(--green)}
+.ctl{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:var(--text);font-family:inherit;font-size:12px;padding:6px 12px;border-radius:6px;text-decoration:none;cursor:pointer}
+.ctl:active{background:rgba(255,255,255,.2)}
+#canvasContainer{flex:1;position:relative;width:100%;height:100%}
+canvas{display:block;width:100%;height:100%}
+.hud-overlay{position:absolute;top:15px;left:15px;right:15px;display:flex;justify-content:space-between;pointer-events:none;font-size:12px;text-shadow:0 2px 4px rgba(0,0,0,0.8)}
+.army-box{background:rgba(19,23,34,0.75);border:1px solid rgba(255,255,255,0.15);padding:8px 12px;border-radius:8px;backdrop-filter:blur(4px)}
+.army-box.green{border-color:var(--green);color:var(--green)}
+.army-box.red{border-color:var(--red);color:var(--red)}
+footer{padding:6px 16px;text-align:center;font-size:10px;color:rgba(255,255,255,.4);background:var(--panel);border-top:1px solid rgba(255,255,255,.1)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div class="brand"><span id="dot" class="dot"></span><span>BATALLA DE MUROS (BTC/USDT)</span></div>
+    <a class="ctl" href="index.html">← Hub</a>
+  </header>
+  
+  <div id="canvasContainer">
+    <div class="hud-overlay">
+      <div class="army-box green">🟢 EJÉRCITO COMPRAS (BIDS)<br><b id="bidVol" style="font-size:14px">0 BTC</b></div>
+      <div style="text-align:center; background:rgba(0,0,0,0.6); padding:6px 12px; border-radius:6px; border:1px solid rgba(255,255,255,.2);">
+        PRECIO ACTUAL<br><b id="btcPrice" style="font-size:16px; color:var(--amber)">$—</b>
+      </div>
+      <div class="army-box red" style="text-align:right">🔴 EJÉRCITO VENTAS (ASKS)<br><b id="askVol" style="font-size:14px">0 BTC</b></div>
+    </div>
+    <canvas id="battleCanvas"></canvas>
+  </div>
+  
+  <footer>Visualizador táctico en directo · Órdenes de Binance en tiempo real</footer>
+</div>
+
+<script>
+const canvas = document.getElementById('battleCanvas');
+const ctx = canvas.getContext('2d');
+const dot = document.getElementById('dot');
+const btcPriceEl = document.getElementById('btcPrice');
+const bidVolEl = document.getElementById('bidVol');
+const askVolEl = document.getElementById('askVol');
+
+let width, height;
+function resize() {
+  width = canvas.width = canvas.clientWidth * window.devicePixelRatio;
+  height = canvas.height = canvas.clientHeight * window.devicePixelRatio;
+}
+window.addEventListener('resize', resize);
+resize();
+
+let currentPrice = 0;
+let bids = [];
+let asks = [];
+let particles = [];
+let screenShake = 0;
+
+// Clase para los proyectiles de los trades
+class Missile {
+  constructor(isBuy, amount) {
+    this.x = isBuy ? width * 0.3 : width * 0.7;
+    this.y = Math.random() * height;
+    this.targetX = isBuy ? width * 0.85 : width * 0.15;
+    this.targetY = height / 2 + (Math.random() - 0.5) * (height * 0.6);
+    this.vx = (this.targetX - this.x) / 25;
+    this.vy = (this.targetY - this.y) / 25;
+    this.color = isBuy ? '#26a69a' : '#ef5350';
+    this.size = Math.min(Math.max(amount * 2, 2), 12);
+    this.life = 25;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.life--;
+  }
+  draw() {
+    ctx.fillStyle = this.color;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// Conexión WebSocket a Binance para Order Book (depth) y Trades
+let wsBook = null;
+let wsTrade = null;
+
+function connectStreams() {
+  // Streaming de trades para disparar proyectiles
+  wsTrade = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@trade');
+  wsTrade.onopen = () => { dot.className = 'dot live'; };
+  wsTrade.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    currentPrice = parseFloat(data.p);
+    btcPriceEl.textContent = '$' + currentPrice.toLocaleString('es-ES', {maximumFractionDigits:0});
+    
+    const isBuy = !data.m; // m es true si el maker fue el vendedor (por tanto taker sell)
+    const qty = parseFloat(data.q);
+    if (particles.length < 150) {
+      particles.push(new Missile(isBuy, qty));
+    }
+    if (qty > 0.5) screenShake = 8; // Temblor de pantalla si hay orden grande
+  };
+
+  // Streaming del libro de órdenes superficial (depth20) para los muros
+  wsBook = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@depth20@100ms');
+  wsBook.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    bids = data.bids.map(b => [parseFloat(b[0]), parseFloat(b[1])]);
+    asks = data.asks.map(a => [parseFloat(a[0]), parseFloat(a[1])]);
+
+    const totalBids = bids.reduce((acc, x) => acc + x[1], 0);
+    const totalAsks = asks.reduce((acc, x) => acc + x[1], 0);
+
+    bidVolEl.textContent = totalBids.toFixed(1) + ' BTC';
+    askVolEl.textContent = totalAsks.toFixed(1) + ' BTC';
+  };
+
+  wsTrade.onclose = () => { dot.className = 'dot'; setTimeout(connectStreams, 3000); };
+}
+connectStreams();
+
+// Bucle de Renderizado Gráfico (60 FPS)
+function animate() {
+  ctx.save();
+  if (screenShake > 0) {
+    const ox = (Math.random() - 0.5) * screenShake;
+    const oy = (Math.random() - 0.5) * screenShake;
+    ctx.translate(ox, oy);
+    screenShake *= 0.9;
+  }
+
+  // Fondo estilo radar táctico oscuro
+  ctx.fillStyle = '#0b0e14';
+  ctx.fillRect(0, 0, width, height);
+
+  // Línea central de combate (Precio actual)
+  ctx.strokeStyle = 'rgba(255, 184, 77, 0.3)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(width / 2, 0);
+  ctx.lineTo(width / 2, height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Dibujar Muros de Compra (Izquierda) y Venta (Derecha) como barras de energía
+  const maxBarW = width * 0.35;
+  
+  // Renderizar Bids (Verdes - Izquierda)
+  let bMax = Math.max(...bids.map(x => x[1]), 1);
+  bids.slice(0, 12).forEach((b, i) => {
+    const barH = height / 14;
+    const y = i * barH + 30;
+    const w = (b[1] / bMax) * maxBarW;
+    
+    ctx.fillStyle = 'rgba(38, 166, 154, 0.25)';
+    ctx.fillRect(width / 2 - 20 - w, y, w, barH - 4);
+    ctx.fillStyle = '#26a69a';
+    ctx.fillRect(width / 2 - 24, y, 4, barH - 4);
+  });
+
+  // Renderizar Asks (Rojos - Derecha)
+  let aMax = Math.max(...asks.map(x => x[1]), 1);
+  asks.slice(0, 12).forEach((a, i) => {
+    const barH = height / 14;
+    const y = i * barH + 30;
+    const w = (a[1] / aMax) * maxBarW;
+
+    ctx.fillStyle = 'rgba(239, 83, 80, 0.25)';
+    ctx.fillRect(width / 2 + 20, y, w, barH - 4);
+    ctx.fillStyle = '#ef5350';
+    ctx.fillRect(width / 2 + 20, y, 4, barH - 4);
+  });
+
+  // Actualizar y dibujar misiles/proyectiles de trades
+  for (let i = particles.length - 1; i >= 0; i--) {
+    p = particles[i];
+    p.update();
+    p.draw();
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+
+  ctx.restore();
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
