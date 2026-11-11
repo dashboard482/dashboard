@@ -69,6 +69,48 @@ dialog input,dialog select{width:100%;background:var(--panel-2);border:1px solid
 </style>
 </head>
 <body>
+
+<!-- PANTALLA DE BLOQUEO VIP -->
+<div id="auth-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <div style="background: #1e293b; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid #2a2e39;">
+        <h2 style="margin-top: 0; color: #f0f3fa;">🔒 Hub Financiero VIP</h2>
+        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Introduce tu contraseña de acceso obtenida al pagar en el bot de Telegram.</p>
+        <input type="password" id="access-code" placeholder="Introduce tu contraseña" style="padding: 10px; width: 90%; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; margin-bottom: 15px; font-size: 16px; outline: none; text-align: center;">
+        <br>
+        <button onclick="checkCode()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 90%;">Desbloquear</button>
+        <p id="error-msg" style="color: #f87171; font-size: 13px; margin-top: 12px; display: none;">Contraseña incorrecta. Págala en @hubfinanciero_bot</p>
+    </div>
+</div>
+
+<script>
+    // Comprueba si ya se había validado antes en este navegador
+    if (localStorage.getItem("hub_unlocked") === "true") {
+        document.getElementById("auth-overlay").style.display = "none";
+    }
+
+    function checkCode() {
+        const input = document.getElementById("access-code").value.trim();
+        const passwordSecreta = "VIP2026"; // Contraseña requerida (coincide con la del bot)
+
+        if (input === passwordSecreta) {
+            localStorage.setItem("hub_unlocked", "true");
+            document.getElementById("auth-overlay").style.display = "none";
+        } else {
+            document.getElementById("error-msg").style.display = "block";
+        }
+    }
+
+    // Permitir desbloquear pulsando la tecla Enter en el input
+    document.addEventListener("DOMContentLoaded", () => {
+        const inputField = document.getElementById("access-code");
+        if(inputField) {
+            inputField.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") checkCode();
+            });
+        }
+    });
+</script>
+
 <div id="stage">
 <header id="hdr">
   <div class="brand"><h1>Hub Financiero</h1><span class="tag">LINKS</span><a id="idx" class="idx" href="caro_barato_btc.html" title="BTC: caro o barato" hidden></a></div>
