@@ -7,11 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Hub">
-<!-- Redirección automática al bot de Telegram -->
-<meta http-equiv="refresh" content="0; url=https://t.me/hubfinanciero_bot">
 <title>Hub Financiero · Enlaces</title>
-<!-- SDK oficial de Telegram Mini Apps -->
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{--bg:#0e1117;--panel:#131722;--panel-2:#1a1e29;--hover:#1f2430;--border:#2a2e39;--border-hover:#363a45;--ink:#d1d4dc;--ink-strong:#f0f3fa;--dim:#787b86;--dim2:#5d606b;--accent:#2962ff;--up:#26a69a;--down:#ef5350;--amber:#f7a600;--hh:57px}
 :root[data-theme=light]{--bg:#f3f5f9;--panel:#fff;--panel-2:#fff;--hover:#eef1f7;--border:#dde1ea;--border-hover:#c3c9d6;--ink:#363a45;--ink-strong:#0e1117;--dim:#6b6f7c;--dim2:#8b8f9b}
@@ -71,21 +67,6 @@ dialog input,dialog select{width:100%;background:var(--panel-2);border:1px solid
 </style>
 </head>
 <body>
-
-<!-- PANTALLA DE REDIRECCIÓN AUTOMÁTICA HACIA EL BOT -->
-<div id="auth-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-    <div style="background: #1e293b; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid #2a2e39;">
-        <h2 style="margin-top: 0; color: #f0f3fa;">🔒 Hub Financiero VIP</h2>
-        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Redirigiendo automáticamente a nuestro bot oficial de Telegram para procesar tu acceso VIP...</p>
-        <a href="https://t.me/hubfinanciero_bot" style="display: inline-block; background: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; width: 90%;">Ir al Bot de Telegram</a>
-    </div>
-</div>
-
-<script>
-    // Redirección inmediata por JS por si acaso falla la etiqueta meta refresh
-    window.location.href = "https://t.me/hubfinanciero_bot";
-</script>
-
 <div id="stage">
 <header id="hdr">
   <div class="brand"><h1>Hub Financiero</h1><span class="tag">LINKS</span><a id="idx" class="idx" href="caro_barato_btc.html" title="BTC: caro o barato" hidden></a></div>
@@ -310,7 +291,7 @@ function card(l,term){
 function section(cat,links,term){
   const s=el('div','category');
   s.append(el('div','cat-title',cat.name));
-  const g=el('grid','grid');links.forEach(l=>g.append(card(l,term)));
+  const g=el('div','grid');links.forEach(l=>g.append(card(l,term)));
   s.append(g);return s;
 }
 
@@ -331,22 +312,6 @@ function render(){
   $('noResults').style.display=n===0?'block':'none';
 }
 
-/* ---------- INTEGRACIÓN TELEGRAM STARS ---------- */
-window.pagarConTelegramStars = function(invoiceLink) {
-  if (window.Telegram && window.Telegram.WebApp) {
-    window.Telegram.WebApp.openInvoice(invoiceLink, function(status) {
-      if (status === 'paid') {
-        alert('¡Pago completado con éxito!');
-        location.reload();
-      } else {
-        console.log('El pago fue cancelado o no se completó:', status);
-      }
-    });
-  } else {
-    alert('Esta función solo está disponible dentro de la Mini App de Telegram.');
-  }
-};
-
 /* ---------- búsqueda ---------- */
 $('q').addEventListener('input',render);
 document.addEventListener('keydown',e=>{
@@ -363,7 +328,7 @@ function applyTheme(){
 $('themeBtn').onclick=()=>{S.theme=document.documentElement.dataset.theme==='light'?'dark':'light';save();applyTheme()};
 applyTheme();
 
-/* ---------- altura real del header ---------- */
+/* ---------- altura real del header (arregla sticky con notch) ---------- */
 const hdr=$('hdr');
 const setHH=()=>document.documentElement.style.setProperty('--hh',hdr.offsetHeight+'px');
 setHH();
@@ -451,7 +416,7 @@ try{
   document.head.append(ml);
 }catch(e){}
 
-/* ---------- índice BTC caro/barato ---------- */
+/* ---------- índice BTC caro/barato (lo calcula caro_barato_btc.html en un iframe oculto) ---------- */
 const idx=$('idx');
 function showIdx(d){
   if(!d||typeof d.v!=='number'||typeof d.lab!=='string'||!/^#[0-9a-f]{3,6}$/i.test(d.col))return;
