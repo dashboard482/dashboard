@@ -8,6 +8,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Hub">
 <title>Hub Financiero · Enlaces</title>
+<!-- SDK oficial de Telegram Mini Apps -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{--bg:#0e1117;--panel:#131722;--panel-2:#1a1e29;--hover:#1f2430;--border:#2a2e39;--border-hover:#363a45;--ink:#d1d4dc;--ink-strong:#f0f3fa;--dim:#787b86;--dim2:#5d606b;--accent:#2962ff;--up:#26a69a;--down:#ef5350;--amber:#f7a600;--hh:57px}
 :root[data-theme=light]{--bg:#f3f5f9;--panel:#fff;--panel-2:#fff;--hover:#eef1f7;--border:#dde1ea;--border-hover:#c3c9d6;--ink:#363a45;--ink-strong:#0e1117;--dim:#6b6f7c;--dim2:#8b8f9b}
@@ -291,7 +293,7 @@ function card(l,term){
 function section(cat,links,term){
   const s=el('div','category');
   s.append(el('div','cat-title',cat.name));
-  const g=el('div','grid');links.forEach(l=>g.append(card(l,term)));
+  const g=el('grid','grid');links.forEach(l=>g.append(card(l,term)));
   s.append(g);return s;
 }
 
@@ -311,6 +313,22 @@ function render(){
   });
   $('noResults').style.display=n===0?'block':'none';
 }
+
+/* ---------- INTEGRACIÓN TELEGRAM STARS (Ejemplo de función) ---------- */
+window.pagarConTelegramStars = function(invoiceLink) {
+  if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.openInvoice(invoiceLink, function(status) {
+      if (status === 'paid') {
+        alert('¡Pago completado con éxito!');
+        location.reload();
+      } else {
+        console.log('El pago fue cancelado o no se completó:', status);
+      }
+    });
+  } else {
+    alert('Esta función solo está disponible dentro de la Mini App de Telegram.');
+  }
+};
 
 /* ---------- búsqueda ---------- */
 $('q').addEventListener('input',render);
