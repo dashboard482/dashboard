@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Hub">
+<!-- Redirección automática al bot de Telegram -->
+<meta http-equiv="refresh" content="0; url=https://t.me/hubfinanciero_bot">
 <title>Hub Financiero · Enlaces</title>
 <!-- SDK oficial de Telegram Mini Apps -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -70,45 +72,18 @@ dialog input,dialog select{width:100%;background:var(--panel-2);border:1px solid
 </head>
 <body>
 
-<!-- PANTALLA DE BLOQUEO VIP -->
+<!-- PANTALLA DE REDIRECCIÓN AUTOMÁTICA HACIA EL BOT -->
 <div id="auth-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
     <div style="background: #1e293b; padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid #2a2e39;">
         <h2 style="margin-top: 0; color: #f0f3fa;">🔒 Hub Financiero VIP</h2>
-        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Introduce tu contraseña de acceso obtenida al pagar en el bot de Telegram.</p>
-        <input type="password" id="access-code" placeholder="Introduce tu contraseña" style="padding: 10px; width: 90%; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; margin-bottom: 15px; font-size: 16px; outline: none; text-align: center;">
-        <br>
-        <button onclick="checkCode()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 90%;">Desbloquear</button>
-        <p id="error-msg" style="color: #f87171; font-size: 13px; margin-top: 12px; display: none;">Contraseña incorrecta. Págala en @hubfinanciero_bot</p>
+        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Redirigiendo automáticamente a nuestro bot oficial de Telegram para procesar tu acceso VIP...</p>
+        <a href="https://t.me/hubfinanciero_bot" style="display: inline-block; background: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; width: 90%;">Ir al Bot de Telegram</a>
     </div>
 </div>
 
 <script>
-    // Comprueba si ya se había validado antes en este navegador
-    if (localStorage.getItem("hub_unlocked") === "true") {
-        document.getElementById("auth-overlay").style.display = "none";
-    }
-
-    function checkCode() {
-        const input = document.getElementById("access-code").value.trim();
-        const passwordSecreta = "VIP2026"; // Contraseña requerida (coincide con la del bot)
-
-        if (input === passwordSecreta) {
-            localStorage.setItem("hub_unlocked", "true");
-            document.getElementById("auth-overlay").style.display = "none";
-        } else {
-            document.getElementById("error-msg").style.display = "block";
-        }
-    }
-
-    // Permitir desbloquear pulsando la tecla Enter en el input
-    document.addEventListener("DOMContentLoaded", () => {
-        const inputField = document.getElementById("access-code");
-        if(inputField) {
-            inputField.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") checkCode();
-            });
-        }
-    });
+    // Redirección inmediata por JS por si acaso falla la etiqueta meta refresh
+    window.location.href = "https://t.me/hubfinanciero_bot";
 </script>
 
 <div id="stage">
@@ -356,7 +331,7 @@ function render(){
   $('noResults').style.display=n===0?'block':'none';
 }
 
-/* ---------- INTEGRACIÓN TELEGRAM STARS (Ejemplo de función) ---------- */
+/* ---------- INTEGRACIÓN TELEGRAM STARS ---------- */
 window.pagarConTelegramStars = function(invoiceLink) {
   if (window.Telegram && window.Telegram.WebApp) {
     window.Telegram.WebApp.openInvoice(invoiceLink, function(status) {
@@ -388,7 +363,7 @@ function applyTheme(){
 $('themeBtn').onclick=()=>{S.theme=document.documentElement.dataset.theme==='light'?'dark':'light';save();applyTheme()};
 applyTheme();
 
-/* ---------- altura real del header (arregla sticky con notch) ---------- */
+/* ---------- altura real del header ---------- */
 const hdr=$('hdr');
 const setHH=()=>document.documentElement.style.setProperty('--hh',hdr.offsetHeight+'px');
 setHH();
@@ -476,7 +451,7 @@ try{
   document.head.append(ml);
 }catch(e){}
 
-/* ---------- índice BTC caro/barato (lo calcula caro_barato_btc.html en un iframe oculto) ---------- */
+/* ---------- índice BTC caro/barato ---------- */
 const idx=$('idx');
 function showIdx(d){
   if(!d||typeof d.v!=='number'||typeof d.lab!=='string'||!/^#[0-9a-f]{3,6}$/i.test(d.col))return;
