@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
+<title>BTC · Compresión de precio</title>
+<style>
+:root{--bg:#0e1117;--panel:#131722;--panel2:#1a1e29;--border:#2a2e39;--ink:#d1d4dc;--strong:#f0f3fa;--dim:#787b86;--accent:#2962ff;--grid:#1f2330;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--panel2:#eef1f7;--border:#dde1ea;--ink:#363a45;--strong:#0e1117;--dim:#6b6f7c;--grid:#e6e9f0;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+header a{color:var(--dim);text-decoration:none;font-size:13px}
+header h1{font-size:16px;margin:0;color:var(--strong)}
+#price{font-weight:600;color:var(--strong);font-variant-numeric:tabular-nums;font-size:14px;min-width:70px;text-align:right}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.card h2{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px}
+.big{font-size:46px;font-weight:700;color:var(--strong);line-height:1;font-variant-numeric:tabular-nums;text-align:center}
+.big small{font-size:16px;color:var(--dim);font-weight:500}
+.zona{font-size:15px;font-weight:700;text-align:center;margin-top:6px}
+.sub{font-size:12px;color:var(--dim);text-align:center;margin-top:4px}
+svg{width:100%;height:auto;display:block;margin:0 auto}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.stat div{background:var(--panel2);border-radius:8px;padding:10px}
+.stat span{display:block;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+.stat strong{display:block;font-size:15px;color:var(--strong);margin-top:3px;font-variant-numeric:tabular-nums}
+.txt{font-size:13px;line-height:1.6;color:var(--ink)}
+.txt p{margin:0 0 10px}
+.warn{background:var(--panel2);border-left:3px solid #ff9800;border-radius:6px;padding:9px 11px;font-size:12px;line-height:1.5;margin-top:10px}
+.note{font-size:10.5px;color:var(--dim);line-height:1.55;margin:12px 2px 0}
+.err{color:#ef5350;font-size:13px;text-align:center;padding:12px 0}
+canvas{display:block}
+.leg{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--dim);margin-top:10px}
+.leg b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+#c1{width:100%;height:210px}#c2{width:100%;height:120px;margin-top:6px}
+.rbar{position:relative;height:10px;background:var(--panel2);border-radius:5px;margin:26px 6px 0}
+.rbar i{position:absolute;top:-6px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:12px solid var(--strong);transform:translateX(-7px);transition:left .6s ease}
+.rbar em{position:absolute;top:-24px;font-style:normal;font-size:11px;font-weight:700;color:var(--strong);white-space:nowrap}
+.rl{display:flex;justify-content:space-between;font-size:11px;margin-top:8px;font-variant-numeric:tabular-nums}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><a href="index.html">← Hub</a><h1>BTC · Compresión</h1><span id="price">—</span></header>
+
+  <div class="card">
+    <h2>Compresión de precio (30 días)</h2>
+    <svg id="g" viewBox="0 0 300 175"></svg>
+    <div class="big" id="sc">—<small>%</small></div>
+    <div class="zona" id="zona">Cargando…</div>
+    <div class="sub" id="d7"></div>
+  </div>
+  <div class="card">
+    <h2>Dónde está el precio en su rango de 30 días</h2>
+    <div class="rbar"><i id="pin" style="left:50%"></i><em id="pinl"></em></div>
+    <div class="rl"><span id="rmin" style="color:#66dd66"></span><span id="rmax" style="color:#66b2ff"></span></div>
+    <div class="stat">
+      <div><span>Rango de 30 días</span><strong id="rng">—</strong></div>
+      <div><span>Posición en el rango</span><strong id="pos">—</strong></div>
+    </div>
+    <div id="avisos"></div>
+  </div>
+  <div class="card">
+    <h2>Historia (12 meses)</h2>
+    <canvas id="c1"></canvas>
+    <canvas id="c2"></canvas>
+    <div class="leg"><span><b style="background:#fff;border:1px solid #888"></b>Precio</span><span><b style="background:#4488ff"></b>Rango 30 d</span><span><b style="background:#ff7700"></b>Compresión ≥ 75%</span></div>
+    <div class="err" id="err" hidden></div>
+  </div>
+  <div class="card">
+    <h2>Qué significa</h2>
+    <div class="txt">
+      <p>Mide lo estrecho que está el rango de precio de BTC en los últimos 30 días, comparado con el de los últimos 12 meses. <b>100% = el rango más estrecho del año; 0% = el más ancho.</b></p>
+      <p><b>Alta:</b> el precio lleva semanas en un pasillo estrecho. Suele anteceder a un movimiento fuerte, pero <b>no dice si será al alza o a la baja</b>.<br><b>Baja:</b> ya hubo un movimiento grande hace poco y la volatilidad ya se ha liberado.</p>
+    </div>
+    <p class="note">Aproximación propia con datos de Binance (precios de cierre diarios); no coincide exactamente con CryptoQuant. Mide volatilidad, no dirección. No es una señal de compra ni de venta. Información, no asesoramiento financiero.</p>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var css=function(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()};
+function timeout(ms){return new Promise(function(_,r){setTimeout(function(){r(new Error('timeout'))},ms)})}
+var HOSTS=['https://api.binance.com','https://data-api.binance.vision'];
+function klines(interval,limit){
+  var i=0;
+  function next(){
+    if(i>=HOSTS.length)return Promise.reject(new Error('sin datos'));
+    var u=HOSTS[i++]+'/api/v3/klines?symbol=BTCUSDT&interval='+interval+'&limit='+limit;
+    return Promise.race([fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}),timeout(12000)]).catch(next);
+  }
+  return next().then(function(k){
+    if(!k||k.length<30)throw new Error('pocos datos');
+    var now=Date.now();
+    if(k[k.length-1][6]>now&&interval!=='1d'&&interval!=='1M'){k=k.slice(0,-1)}
+    return k.map(function(x){return{t:+x[0],h:+x[2],l:+x[3],c:+x[4]}});
+  });
+}
+function loadNow(){
+  var i=0;function next(){
+    if(i>=HOSTS.length)return Promise.resolve(null);
+    return Promise.race([fetch(HOSTS[i++]+'/api/v3/ticker/price?symbol=BTCUSDT').then(function(r){return r.json()}),timeout(8000)]).then(function(j){return +j.price}).catch(next);
+  }return next();
+}
+function showPrice(){loadNow().then(function(p){if(p)$('price').textContent='$'+Math.round(p).toLocaleString('es-ES')})}
+showPrice();setInterval(showPrice,30000);
+var usd=function(v){return'$'+Math.round(v).toLocaleString('es-ES')};
+function sizeCanvas(c,wOverride){
+  var r=c.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2.5),w=wOverride||r.width;
+  c.width=Math.round(w*d);c.height=Math.round(r.height*d);
+  var x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);return{x:x,w:w,h:r.height};
+}
+function rsi14(c){
+  var g=0,l=0,a=1/14,r=[];
+  for(var i=1;i<c.length;i++){var d=c[i]-c[i-1],up=Math.max(d,0),dn=Math.max(-d,0);
+    if(i===1){g=up;l=dn}else{g=a*up+(1-a)*g;l=a*dn+(1-a)*l}}
+  var rs=g/(l||1e-10);return 100-100/(1+rs);
+}
+
+var V=30,H=365,R=null;
+function zona(s){
+  if(s>=90)return['COMPRESIÓN EXTREMA','#ff3333'];
+  if(s>=75)return['COMPRESIÓN FUERTE','#ff7700'];
+  if(s>=60)return['COMPRESIÓN','#ffcc00'];
+  if(s>=40)return['NORMAL','#99dd00'];
+  return['EXPANDIDO','#3388ff'];
+}
+function calc(k){
+  var c=k.map(function(x){return x.c}),n=c.length;
+  var mx=[],mn=[],rg=[],sc=[];
+  for(var i=0;i<n;i++){
+    if(i<V-1){mx.push(NaN);mn.push(NaN);rg.push(NaN);continue}
+    var a=-Infinity,b=Infinity;for(var j=i-V+1;j<=i;j++){if(c[j]>a)a=c[j];if(c[j]<b)b=c[j]}
+    mx.push(a);mn.push(b);rg.push((a-b)/b*100);
+  }
+  for(i=0;i<n;i++){
+    if(i<V-1){sc.push(NaN);continue}
+    var lo=Math.max(V-1,i-H+1),base=rg.slice(lo,i+1);
+    if(base.length>=90){var cnt=0;base.forEach(function(v){if(v>rg[i])cnt++});sc.push(100*cnt/base.length)}else sc.push(NaN);
+  }
+  var u=n-1;if(isNaN(sc[u]))throw new Error('sin score');
+  var first=0;while(isNaN(sc[first]))first++;
+  var desde=Math.max(n-H,first);
+  var win=c.slice(-V),amax=0,amin=0;win.forEach(function(v,i){if(v>win[amax])amax=i;if(v<win[amin])amin=i});
+  var price=c[u],M=mx[u],m=mn[u];
+  return{k:k.slice(desde),c:c.slice(desde),mx:mx.slice(desde),mn:mn.slice(desde),sc:sc.slice(desde),
+    score:sc[u],s7:isNaN(sc[u-7])?null:sc[u-7],s30:isNaN(sc[u-30])?null:sc[u-30],
+    price:price,max30:M,min30:m,rango:rg[u],pos:M>m?(price-m)/(M-m)*100:50,dmax:V-1-amax,dmin:V-1-amin};
+}
+function arc(cx,cy,r,a0,a1){var p=function(a){return[cx+r*Math.cos(a),cy-r*Math.sin(a)]},s=p(a0),e=p(a1);return'M'+s[0].toFixed(2)+' '+s[1].toFixed(2)+' A'+r+' '+r+' 0 0 1 '+e[0].toFixed(2)+' '+e[1].toFixed(2)}
+function gauge(score,col){
+  var z=[[0,40,'#3388ff'],[40,60,'#99dd00'],[60,75,'#ffcc00'],[75,90,'#ff7700'],[90,100,'#ff3333']],s='';
+  z.forEach(function(q){var a0=Math.PI*(1-q[0]/100),a1=Math.PI*(1-q[1]/100);s+='<path d="'+arc(150,150,110,a0,a1)+'" fill="none" stroke="'+q[2]+'" stroke-width="26"/>'});
+  var a=Math.PI*(1-score/100),x=150+92*Math.cos(a),y=150-92*Math.sin(a);
+  s+='<line x1="150" y1="150" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="'+css('--strong')+'" stroke-width="5" stroke-linecap="round"/><circle cx="150" cy="150" r="9" fill="'+css('--strong')+'"/><circle cx="150" cy="150" r="4" fill="'+css('--panel')+'"/>';
+  var t=function(x,y,tx,an){return'<text x="'+x+'" y="'+y+'" fill="'+css('--dim')+'" font-size="9" font-weight="600" text-anchor="'+an+'">'+tx+'</text>'};
+  s+=t(40,170,'0% EXPANDIDO','middle')+t(260,170,'100% EXTREMA','middle')+t(150,28,'50','middle');
+  $('g').innerHTML=s;
+}
+function paint(){
+  if(!R)return;var P={l:6,r:44,t:8,b:16},t0=R.k[0].t,t1=R.k[R.k.length-1].t,sp=t1-t0||1;
+  var A=sizeCanvas($('c1')),B=sizeCanvas($('c2')),dim=css('--dim'),grid=css('--grid'),strong=css('--strong');
+  var X=function(t,w){return P.l+(t-t0)/sp*(w-P.l-P.r)};
+  var lo=Math.min.apply(null,R.mn.filter(isFinite).concat(R.c))*0.98,hi=Math.max.apply(null,R.mx.filter(isFinite).concat(R.c))*1.02;
+  var x=A.x,Y=function(v){return P.t+(1-(v-lo)/(hi-lo))*(A.h-P.t-P.b)};
+  x.font='10px -apple-system,Segoe UI,sans-serif';x.fillStyle=dim;x.textAlign='left';x.strokeStyle=grid;x.lineWidth=1;
+  for(var g=0;g<=4;g++){var v=lo+(hi-lo)*g/4,y=Y(v);x.beginPath();x.moveTo(P.l,y);x.lineTo(A.w-P.r,y);x.stroke();x.fillText('$'+Math.round(v/1000)+'K',A.w-P.r+4,y+3)}
+  x.fillStyle='rgba(68,136,255,.12)';x.beginPath();
+  var st=false;R.k.forEach(function(p,i){if(isNaN(R.mx[i]))return;var xx=X(p.t,A.w),yy=Y(R.mx[i]);st?x.lineTo(xx,yy):x.moveTo(xx,yy);st=true});
+  for(var i=R.k.length-1;i>=0;i--){if(isNaN(R.mn[i]))continue;x.lineTo(X(R.k[i].t,A.w),Y(R.mn[i]))}x.fill();
+  [['mx','#66b2ff'],['mn','#66dd66']].forEach(function(q){x.strokeStyle=q[1];x.setLineDash([2,3]);x.lineWidth=1;x.beginPath();var s=false;R.k.forEach(function(p,i){if(isNaN(R[q[0]][i]))return;var xx=X(p.t,A.w),yy=Y(R[q[0]][i]);s?x.lineTo(xx,yy):x.moveTo(xx,yy);s=true});x.stroke()});x.setLineDash([]);
+  x.strokeStyle=strong;x.lineWidth=1.5;x.beginPath();R.k.forEach(function(p,i){var xx=X(p.t,A.w),yy=Y(R.c[i]);i?x.lineTo(xx,yy):x.moveTo(xx,yy)});x.stroke();
+  /* score */
+  var x2=B.x,Y2=function(v){return 6+(1-v/100)*(B.h-6-P.b)};
+  [[40,'#3388ff'],[60,'#ffcc00'],[75,'#ff7700'],[90,'#ff3333']].forEach(function(l){x2.strokeStyle=l[1];x2.globalAlpha=.55;x2.setLineDash([4,4]);x2.lineWidth=1;x2.beginPath();x2.moveTo(P.l,Y2(l[0]));x2.lineTo(B.w-P.r,Y2(l[0]));x2.stroke();x2.globalAlpha=1;x2.setLineDash([]);x2.fillStyle=dim;x2.font='10px -apple-system,Segoe UI,sans-serif';x2.textAlign='left';x2.fillText(l[0]+'%',B.w-P.r+4,Y2(l[0])+3)});
+  x2.fillStyle='rgba(255,119,0,.4)';
+  var seg=null;R.k.forEach(function(p,i){var on=R.sc[i]>=75;
+    if(on&&seg===null)seg=i;
+    if((!on||i===R.k.length-1)&&seg!==null){var e=on?i:i-1;x2.fillRect(X(R.k[seg].t,B.w),6,Math.max(2,X(R.k[e].t,B.w)-X(R.k[seg].t,B.w)),B.h-6-P.b);seg=null}});
+  x2.strokeStyle=strong;x2.lineWidth=1.3;x2.beginPath();R.k.forEach(function(p,i){var xx=X(p.t,B.w),yy=Y2(R.sc[i]);i?x2.lineTo(xx,yy):x2.moveTo(xx,yy)});x2.stroke();
+  var zc=zona(R.score)[1];x2.fillStyle=zc;x2.beginPath();x2.arc(X(t1,B.w),Y2(R.sc[R.sc.length-1]),4.5,0,7);x2.fill();
+  x2.fillStyle=dim;x2.textAlign='center';
+  for(var q=0;q<=4;q++){var tq=t0+sp*q/4;x2.fillText(new Date(tq).toLocaleDateString('es-ES',{month:'short',year:'2-digit'}),Math.min(Math.max(X(tq,B.w),20),B.w-P.r-8),B.h-3)}
+}
+function show(){
+  var z=zona(R.score);
+  gauge(R.score,z[1]);
+  $('sc').innerHTML=Math.round(R.score)+'<small>%</small>';$('zona').textContent=z[0];$('zona').style.color=z[1];
+  if(R.s7!==null){var d=R.score-R.s7,f=d>2?'▲':d<-2?'▼':'▶';$('d7').textContent=f+' hace 7 días: '+Math.round(R.s7)+'%  ('+(d>=0?'+':'')+Math.round(d)+' puntos)'+(R.s30!==null?' · hace 30 días: '+Math.round(R.s30)+'%':'')}
+  $('pin').style.left=R.pos+'%';
+  var pl=$('pinl');pl.textContent='AHORA '+usd(R.price)+' ('+Math.round(R.pos)+'%)';
+  pl.style.left=R.pos>70?'auto':R.pos<30?'0':Math.max(0,R.pos-18)+'%';pl.style.right=R.pos>70?'0':'auto';
+  $('rmin').textContent='mín '+usd(R.min30);$('rmax').textContent='máx '+usd(R.max30);
+  $('rng').textContent=R.rango.toFixed(1)+'%';$('pos').textContent=Math.round(R.pos)+'% del rango';
+  var av=[];
+  if(R.pos>=85)av.push('Está pegado a la parte alta: superar '+usd(R.max30)+' sería salir del rango por arriba.');
+  else if(R.pos<=15)av.push('Está pegado a la parte baja: perder '+usd(R.min30)+' sería salir del rango por abajo.');
+  if(R.s7!==null&&R.score-R.s7>=40)av.push('El score ha subido de golpe en pocos días. Suele pasar cuando un movimiento fuerte sale de la ventana de 30 días (el rango se estrecha solo), no porque el mercado se haya calmado de repente.');
+  [['máximo',R.dmax],['mínimo',R.dmin]].forEach(function(q){if(q[1]>=25)av.push('El '+q[0]+' del rango es de hace '+q[1]+' días: saldrá de la ventana '+(30-q[1]<=0?'hoy':30-q[1]===1?'en 1 día':'en unos '+(30-q[1])+' días')+' y el rango cambiará solo por eso.')});
+  $('avisos').innerHTML=av.map(function(a){return'<div class="warn">⚠️ '+a+'</div>'}).join('');
+  paint();
+}
+klines('1d',500).then(function(k){R=calc(k);show()}).catch(function(){$('zona').textContent='Sin datos';$('err').hidden=false;$('err').textContent='No se pudo cargar el histórico de BTC. Reintenta en un momento.'});
+var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){if(R){gauge(R.score);paint()}},120)});
+
+})();
+</script>
+<script src="telegram.js" defer></script>
+</body>
+</html>
