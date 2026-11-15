@@ -113,6 +113,9 @@ const KEY='hub.v1';
 const CATS=[
 {id:'fav',name:'Favoritos',color:'#f7a600',links:[]},
 {id:'top',name:'Más usados',color:'#2962ff',links:[]},
+{id:'apoyo',name:'Apoya el proyecto',color:'#2ecc71',links:[
+['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚']
+]},
 {id:'btc',name:'Bitcoin y ciclos',color:'#f7a600',links:[
 ['BTC ¿Caro o barato?','Índice 0–100 con datos en vivo','caro_barato_btc.html','⚖️'],
 ['Panel Bitcoin','24 métricas clave en vivo: precio, media 200 semanas, volatilidad, miedo/codicia, dominancia, funding…','btc_panel.html','🟠'],
@@ -146,10 +149,9 @@ const CATS=[
 ['Gráficos de calor','Mapas de calor del mercado','graficos_calor.html','🌡️'],
 ['Screener de Criptomonedas','Escáner avanzado de activos cripto','screener.html','🔍']
 ]},
-{id:'juegos',name:'Juegos y proyecto',color:'#e91e63',links:[
+{id:'juegos',name:'Juegos',color:'#e91e63',links:[
 ['Street Rush 3D','Carreras infinitas en 3D: esquiva tráfico, combos, power-ups y nitro','street_rush_3d.html','🏎️'],
-['Wall Street Trivia','Pon a prueba tus conocimientos sobre grandes inversores, trading y macroeconomía','trivia.html','🧠'],
-['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚']
+['Wall Street Trivia','Pon a prueba tus conocimientos sobre grandes inversores, trading y macroeconomía','trivia.html','🧠']
 ]},
 {id:'es',name:'Inversor en España',color:'#ef5350',links:[
 ['Trade Republic','Tu broker: cartera y órdenes','https://traderepublic.com/es-es','🟣'],
@@ -310,12 +312,15 @@ function render(){
   const box=$('links');box.textContent='';
   const all=allLinks();let n=0;
   if(!term){
+    const ap=all.filter(l=>l.c==='apoyo');
+    if(ap.length)box.append(section(catOf('apoyo'),ap,''));
     const fav=S.fav.map(u=>all.find(l=>l.u===u)).filter(Boolean);
     if(fav.length)box.append(section(CATS[0],fav.map(l=>({...l,c:'fav'})),''));
     const top=all.filter(l=>S.clicks[l.u]>0).sort((a,b)=>S.clicks[b.u]-S.clicks[a.u]).slice(0,4);
     if(top.length)box.append(section(CATS[1],top.map(l=>({...l,c:'top'})),''));
   }
   REAL.forEach(cat=>{
+    if(!term&&cat.id==='apoyo')return;
     const ls=all.filter(l=>l.c===cat.id&&(!term||fold(l.t+' '+l.d+' '+l.u).includes(term)));
     if(!ls.length)return;n+=ls.length;box.append(section(cat,ls,term));
   });
