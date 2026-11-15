@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
+<title>BTC · Ciclo de halvings</title>
+<style>
+:root{--bg:#0e1117;--panel:#131722;--panel2:#1a1e29;--border:#2a2e39;--ink:#d1d4dc;--strong:#f0f3fa;--dim:#787b86;--accent:#2962ff;--grid:#1f2330;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--panel2:#eef1f7;--border:#dde1ea;--ink:#363a45;--strong:#0e1117;--dim:#6b6f7c;--grid:#e6e9f0;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+header a{color:var(--dim);text-decoration:none;font-size:13px}
+header h1{font-size:16px;margin:0;color:var(--strong)}
+#price{font-weight:600;color:var(--strong);font-variant-numeric:tabular-nums;font-size:14px;min-width:70px;text-align:right}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.card h2{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px}
+.big{font-size:46px;font-weight:700;color:var(--strong);line-height:1;font-variant-numeric:tabular-nums;text-align:center}
+.big small{font-size:16px;color:var(--dim);font-weight:500}
+.zona{font-size:15px;font-weight:700;text-align:center;margin-top:6px}
+.sub{font-size:12px;color:var(--dim);text-align:center;margin-top:4px}
+svg{width:100%;height:auto;display:block;margin:0 auto}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.stat div{background:var(--panel2);border-radius:8px;padding:10px}
+.stat span{display:block;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+.stat strong{display:block;font-size:15px;color:var(--strong);margin-top:3px;font-variant-numeric:tabular-nums}
+.txt{font-size:13px;line-height:1.6;color:var(--ink)}
+.txt p{margin:0 0 10px}
+.warn{background:var(--panel2);border-left:3px solid #ff9800;border-radius:6px;padding:9px 11px;font-size:12px;line-height:1.5;margin-top:10px}
+.note{font-size:10.5px;color:var(--dim);line-height:1.55;margin:12px 2px 0}
+.err{color:#ef5350;font-size:13px;text-align:center;padding:12px 0}
+canvas{display:block}
+.leg{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--dim);margin-top:10px}
+.leg b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+.scr{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;background:var(--panel)}
+#cv{height:380px}
+.hint{font-size:11px;color:var(--dim);margin:6px 2px 0}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><a href="index.html">← Hub</a><h1>BTC · Halvings</h1><span id="price">—</span></header>
+
+  <div class="card">
+    <h2>Ciclo de 4 años</h2>
+    <div class="stat" style="margin:0 0 12px">
+      <div><span>Precio ahora</span><strong id="sP">—</strong></div>
+      <div><span>Meses desde el 4º halving</span><strong id="sM">—</strong></div>
+      <div><span>Máximo real (oct 2025)</span><strong>$126.080</strong></div>
+      <div><span>Caída desde el máximo</span><strong id="sD">—</strong></div>
+    </div>
+    <div class="scr" id="scr"><canvas id="cv"></canvas></div>
+    <div class="hint">↔ Desliza el gráfico hacia los lados para ver todos los años.</div>
+    <div class="leg">
+      <span><b style="background:#00cc44"></b>Bull</span><span><b style="background:#ff3333"></b>Bear</span><span><b style="background:#4488ff"></b>Recuperación</span><span><b style="background:#9966ff"></b>Halving</span><span><b style="background:#ffd700"></b>Máximo / objetivo</span><span><b style="background:#00e5ff"></b>Precio actual</span>
+    </div>
+    <div class="err" id="err" hidden></div>
+  </div>
+  <div class="card">
+    <h2>Cómo leerlo</h2>
+    <div class="txt">
+      <p>Cada ~4 años el halving reduce a la mitad la emisión de BTC. Históricamente al halving le han seguido una fase alcista (≈12-19 meses), una bajista (≈12-14) y una de recuperación (≈14-17). Los colores de fondo marcan esas fases; las de 2026 en adelante son <b>proyecciones propias</b>, no datos.</p>
+      <p>La zona verde de $58K-$78K es el suelo estimado y la zona dorada de 2028-2029 ($200K-$295K) es un objetivo hipotético. No son predicciones: el ciclo pasado no garantiza el siguiente.</p>
+    </div>
+    <p class="note">Precio: Binance (cierres mensuales, disponibles desde 2017). Información, no asesoramiento financiero.</p>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var css=function(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()};
+function timeout(ms){return new Promise(function(_,r){setTimeout(function(){r(new Error('timeout'))},ms)})}
+var HOSTS=['https://api.binance.com','https://data-api.binance.vision'];
+function klines(interval,limit){
+  var i=0;
+  function next(){
+    if(i>=HOSTS.length)return Promise.reject(new Error('sin datos'));
+    var u=HOSTS[i++]+'/api/v3/klines?symbol=BTCUSDT&interval='+interval+'&limit='+limit;
+    return Promise.race([fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}),timeout(12000)]).catch(next);
+  }
+  return next().then(function(k){
+    if(!k||k.length<30)throw new Error('pocos datos');
+    var now=Date.now();
+    if(k[k.length-1][6]>now&&interval!=='1d'&&interval!=='1M'){k=k.slice(0,-1)}
+    return k.map(function(x){return{t:+x[0],h:+x[2],l:+x[3],c:+x[4]}});
+  });
+}
+function loadNow(){
+  var i=0;function next(){
+    if(i>=HOSTS.length)return Promise.resolve(null);
+    return Promise.race([fetch(HOSTS[i++]+'/api/v3/ticker/price?symbol=BTCUSDT').then(function(r){return r.json()}),timeout(8000)]).then(function(j){return +j.price}).catch(next);
+  }return next();
+}
+function showPrice(){loadNow().then(function(p){if(p)$('price').textContent='$'+Math.round(p).toLocaleString('es-ES')})}
+showPrice();setInterval(showPrice,30000);
+var usd=function(v){return'$'+Math.round(v).toLocaleString('es-ES')};
+function sizeCanvas(c,wOverride){
+  var r=c.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2.5),w=wOverride||r.width;
+  c.width=Math.round(w*d);c.height=Math.round(r.height*d);
+  var x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);return{x:x,w:w,h:r.height};
+}
+function rsi14(c){
+  var g=0,l=0,a=1/14,r=[];
+  for(var i=1;i<c.length;i++){var d=c[i]-c[i-1],up=Math.max(d,0),dn=Math.max(-d,0);
+    if(i===1){g=up;l=dn}else{g=a*up+(1-a)*g;l=a*dn+(1-a)*l}}
+  var rs=g/(l||1e-10);return 100-100/(1+rs);
+}
+
+var D=function(s){return Date.parse(s)};
+var hoy=Date.now(),bearActivo=hoy<=D('2026-09-13');
+var FASES=[
+['2012-11-01','2013-12-31','bull','Bull 12m'],['2014-01-01','2015-01-31','bear','Bear 13m'],['2015-02-01','2016-07-01','rec','Recovery 17m'],
+['2016-07-01','2017-12-31','bull','Bull 18m'],['2018-01-01','2019-02-28','bear','Bear 14m'],['2019-03-01','2020-05-01','rec','Recovery 14m'],
+['2020-05-01','2021-11-30','bull','Bull 19m'],['2021-12-01','2022-11-30','bear','Bear 12m'],['2022-12-01','2024-04-01','rec','Recovery 16m'],
+['2024-04-01','2025-10-06','bull','Bull 18m (real)'],['2025-10-07','2026-09-13','bear',bearActivo?'Bear ← AHORA':'Bear 11m'],
+['2026-09-13','2027-06-30','rec',bearActivo?'Recovery (proy.)':'Recovery ← AHORA'],['2027-07-01','2029-06-30','bull','Bull (proy. 2028-29)']];
+var FILL={bull:'rgba(0,204,68,.16)',bear:'rgba(255,51,51,.16)',rec:'rgba(68,136,255,.16)'},TXT={bull:'#00cc44',bear:'#ff4444',rec:'#5a96ff'};
+var HALV=[['2012-11-28','1º nov 2012'],['2016-07-09','2º jul 2016'],['2020-05-11','3º may 2020'],['2024-04-19','4º abr 2024'],['2028-03-15','5º mar 2028']];
+var R=null;
+function draw(){
+  if(!R)return;
+  var scr=$('scr'),cv=$('cv'),W=Math.max(scr.clientWidth,980);cv.style.width=W+'px';
+  var A=sizeCanvas(cv,W),x=A.x,h=A.h,P={l:8,r:52,t:30,b:22};
+  var t0=D('2012-01-01'),t1=D('2030-06-01'),lo=1.6,hi=5.55;
+  var X=function(t){return P.l+(t-t0)/(t1-t0)*(W-P.l-P.r)},Y=function(v){return P.t+(1-(Math.log10(v)-lo)/(hi-lo))*(h-P.t-P.b)};
+  var dim=css('--dim'),grid=css('--grid'),strong=css('--strong');
+  FASES.forEach(function(f){x.fillStyle=FILL[f[2]];x.fillRect(X(D(f[0])),P.t,X(D(f[1]))-X(D(f[0])),h-P.t-P.b)});
+  x.font='10px -apple-system,Segoe UI,sans-serif';x.textAlign='left';x.lineWidth=1;
+  [100,1000,5000,20000,50000,100000,200000,500000].forEach(function(v){var y=Y(v);x.strokeStyle=grid;x.beginPath();x.moveTo(P.l,y);x.lineTo(W-P.r,y);x.stroke();x.fillStyle=dim;x.fillText('$'+(v>=1000?(v/1000)+'K':v),W-P.r+4,y+3)});
+  for(var yr=2012;yr<=2030;yr++){var xx=X(D(yr+'-01-01'));x.strokeStyle=grid;x.beginPath();x.moveTo(xx,P.t);x.lineTo(xx,h-P.b);x.stroke();x.fillStyle=dim;x.textAlign='center';x.fillText(yr,xx,h-7)}
+  /* zona suelo y objetivo */
+  x.fillStyle='rgba(0,204,68,.12)';x.fillRect(X(D('2017-01-01')),Y(78000),W-P.r-X(D('2017-01-01')),Y(58000)-Y(78000));
+  x.fillStyle='#00cc44';x.textAlign='left';x.font='bold 9px -apple-system,Segoe UI,sans-serif';x.fillText('ZONA SUELO $58K-$78K',X(D('2023-02-01')),Y(66000)+3);
+  x.fillStyle='rgba(255,215,0,.2)';x.fillRect(X(D('2028-03-01')),Y(295000),X(D('2029-06-01'))-X(D('2028-03-01')),Y(200000)-Y(295000));
+  /* fases */
+  x.textAlign='center';x.font='bold 9px -apple-system,Segoe UI,sans-serif';
+  FASES.forEach(function(f){var a=X(D(f[0])),b=X(D(f[1])),m=(a+b)/2,tw=x.measureText(f[3]).width;if(b-a<tw+4)return;x.fillStyle=TXT[f[2]];x.fillText(f[3],m,P.t-8)});
+  /* halvings */
+  x.setLineDash([5,4]);HALV.forEach(function(q){var xx=X(D(q[0]));x.strokeStyle='#9966ff';x.lineWidth=1.5;x.beginPath();x.moveTo(xx,P.t);x.lineTo(xx,h-P.b);x.stroke();
+    x.save();x.translate(xx-4,h-P.b-6);x.rotate(-Math.PI/2);x.textAlign='left';x.fillStyle='#b99bff';x.font='bold 9px -apple-system,Segoe UI,sans-serif';x.fillText(q[1],0,0);x.restore()});
+  x.setLineDash([]);
+  /* precio */
+  x.strokeStyle=strong;x.lineWidth=2;x.lineJoin='round';x.beginPath();R.k.forEach(function(p,i){var xx=X(p.t),yy=Y(p.c);i?x.lineTo(xx,yy):x.moveTo(xx,yy)});x.stroke();
+  var last=R.k[R.k.length-1],lx=X(Date.now()),ly=Y(R.price);
+  /* máximo */
+  var ax=X(D('2025-10-06')),ay=Y(126080);x.fillStyle='#ffd700';x.beginPath();x.arc(ax,ay,5,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=1.2;x.stroke();
+  x.fillStyle='#ffd700';x.font='bold 9px -apple-system,Segoe UI,sans-serif';x.textAlign='right';x.fillText('MÁX $126.080',ax-8,ay-4);
+  /* objetivo */
+  x.fillStyle='#ffd700';x.textAlign='center';x.fillText('OBJETIVO $200K-$295K',(X(D('2028-03-01'))+X(D('2029-06-01')))/2,Y(200000)+13);
+  /* ahora */
+  x.fillStyle='#00e5ff';x.beginPath();x.arc(lx,ly,6,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=2;x.stroke();
+  var lab='AHORA '+usd(R.price),bw=x.measureText(lab).width+14;x.fillStyle=css('--panel');x.strokeStyle='#00e5ff';x.lineWidth=1.5;
+  var bx=lx-bw/2,by=ly+14;x.beginPath();x.roundRect?x.roundRect(bx,by,bw,18,5):x.rect(bx,by,bw,18);x.fill();x.stroke();
+  x.fillStyle='#00e5ff';x.fillText(lab,lx,by+12.5);
+  scr.scrollLeft=Math.max(0,lx-scr.clientWidth*0.62);
+}
+klines('1M',200).then(function(k){
+  var now=Date.now();R={k:k,price:k[k.length-1].c};
+  return loadNow().then(function(p){if(p)R.price=p;
+    var meses=Math.floor((now-Date.UTC(2024,3,19))/864e5/30);
+    $('sP').textContent=usd(R.price);$('sM').textContent=meses;$('sD').textContent='-'+Math.max(0,Math.round((1-R.price/126080)*100))+'%';
+    draw();});
+}).catch(function(){$('err').hidden=false;$('err').textContent='No se pudo cargar el precio de BTC. Reintenta en un momento.'});
+var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(draw,150)});
+
+})();
+</script>
+<script src="telegram.js" defer></script>
+</body>
+</html>
