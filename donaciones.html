@@ -1,84 +1,182 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e1117">
-<title>Donaciones · Hub Financiero</title>
-<style>
-:root{--bg:#0e1117;--panel:#131722;--p2:#1a1e29;--border:#2a2e39;--ink:#d1d4dc;--strong:#f0f3fa;--dim:#787b86;--accent:#26a69a;color-scheme:dark}
-@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--p2:#eef1f7;--border:#dde1ea;--ink:#363a45;--strong:#0e1117;--dim:#6b6f7c;--accent:#119085;color-scheme:light}}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:520px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px))}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.top a{color:var(--dim);text-decoration:none;font-size:13px}
-.hero{text-align:center;padding:18px 10px 8px}
-.hero .ic{font-size:40px}
-h1{font-size:22px;margin:6px 0 8px;color:var(--strong)}
-.hero p{margin:0 auto;max-width:380px;font-size:14px;line-height:1.5;color:var(--dim)}
-.m{background:var(--panel);border:1px solid var(--border);border-radius:12px;margin-top:10px;overflow:hidden}
-.h{width:100%;display:flex;align-items:center;gap:12px;background:none;border:0;color:var(--strong);padding:14px;font:inherit;cursor:pointer;text-align:left}
-.h .i{width:36px;height:36px;border-radius:10px;background:var(--p2);display:grid;place-items:center;font-size:18px;flex:none}
-.h .t{flex:1;min-width:0}.h .n{font-weight:600;font-size:15px}.h .r{font-size:11px;color:var(--dim);margin-top:2px}
-.h .c{color:var(--dim);transition:transform .2s}.m.open .c{transform:rotate(90deg)}
-.b{display:none;padding:0 14px 14px}.m.open .b{display:block}
-.addr{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;word-break:break-all;background:var(--p2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--strong)}
-.btn{display:inline-block;margin-top:10px;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;font-weight:600;font-size:14px;text-decoration:none;cursor:pointer}
-.qr{display:flex;justify-content:center;margin-top:12px}
-.qr>div{background:#fff;padding:8px;border-radius:8px;line-height:0}
-.warn{font-size:11px;color:var(--dim);margin-top:10px;line-height:1.45}
-.foot{font-size:10px;color:var(--dim);line-height:1.5;margin:20px 4px 0;text-align:center}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub Financiero - Donaciones</title>
+    <!-- SDK Oficial de Telegram Mini Apps -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #38bdf8;
+            --telegram-blue: #229ED9;
+            --star-color: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .donation-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .donation-info h3 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            color: var(--text-color);
+        }
+
+        .donation-info span {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .btn-star {
+            background-color: var(--star-color);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-star:hover {
+            opacity: 0.9;
+        }
+
+        .btn-telegram {
+            display: block;
+            width: 100%;
+            background-color: var(--telegram-blue);
+            color: white;
+            text-align: center;
+            padding: 14px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 12px rgba(34, 158, 217, 0.3);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 16px;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top"><a href="index.html">← Hub</a></div>
-  <div class="hero">
-    <div class="ic">💚</div>
-    <h1>Apoya el proyecto</h1>
-    <p id="intro"></p>
-  </div>
-  <div id="lista"></div>
-  <p class="foot">Las donaciones son voluntarias y no dan derecho a ningún servicio ni garantía. No son reembolsables ni deducibles. Nada de lo que publico es asesoramiento financiero.</p>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script>
-(function(){
-'use strict';
-const INTRO='Este hub es gratuito y lo mantengo en mi tiempo libre. Si te resulta útil, puedes apoyar el proyecto con criptomonedas. ¡Muchas gracias!';
-const METODOS=[
- {n:'Bitcoin',i:'₿',red:'Red Bitcoin (BTC)',uri:'bitcoin:',v:'bc1qm3fu5qh9mxd92rk2w40ruca5w4r5zdytleft50'},
- {n:'Ethereum',i:'Ξ',red:'Red Ethereum / EVM (ERC20)',v:'0x70827cBDA16dFB924766e9c9c0C366eDD5879Ca2'},
- {n:'Solana',i:'◎',red:'Red Solana (SOL)',v:'65hwhm512pozPfvCVgW6uEmLw9eGpfvG5wnQt3f1zDLC'}
-];
+    <div class="container">
+        <h1>🌟 Apoya el Hub Financiero</h1>
+        <p>Mantén el proyecto activo y en constante evolución colaborando con Estrellas de Telegram (XTR).</p>
 
-const $=id=>document.getElementById(id);
-$('intro').textContent=INTRO;
-const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+        <!-- Opción 1: Donación Pequeña -->
+        <div class="donation-card">
+            <div class="donation-info">
+                <h3>Café para el Creador</h3>
+                <span>⭐ 50 Telegram Stars</span>
+            </div>
+            <button class="btn-star" onclick="supportStars(50)">Donar 50</button>
+        </div>
 
-async function copiar(t,btn){
-  try{await navigator.clipboard.writeText(t)}
-  catch(e){const a=document.createElement('textarea');a.value=t;document.body.append(a);a.select();try{document.execCommand('copy')}catch(_){}a.remove()}
-  btn.textContent='¡Copiado!';setTimeout(()=>{btn.textContent='Copiar dirección'},1600);
-}
+        <!-- Opción 2: Donación Moderada -->
+        <div class="donation-card">
+            <div class="donation-info">
+                <h3>impulso Pro</h3>
+                <span>⭐ 150 Telegram Stars</span>
+            </div>
+            <button class="btn-star" onclick="supportStars(150)">Donar 150</button>
+        </div>
 
-METODOS.forEach(m=>{
-  const card=el('div','m'),h=el('button','h');h.type='button';
-  const t=el('div','t');t.append(el('div','n',m.n),el('div','r',m.red));
-  h.append(el('div','i',m.i),t,el('span','c','›'));
-  const b=el('div','b');
-  b.append(el('div','addr',m.v));
-  const c=el('button','btn','Copiar dirección');c.type='button';c.onclick=()=>copiar(m.v,c);b.append(c);
-  const q=el('div','qr'),qi=el('div');q.append(qi);b.append(q);
-  b.append(el('div','warn','Envía solo por la red indicada. Si usas otra red, los fondos pueden perderse.'));
-  m._q=()=>{if(!m._d&&window.QRCode){m._d=1;try{new QRCode(qi,{text:(m.uri||'')+m.v,width:160,height:160,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}catch(e){q.remove()}}else if(!window.QRCode)q.remove()};
-  
-  h.onclick=()=>{card.classList.toggle('open');if(m._q&&card.classList.contains('open'))m._q()};
-  card.append(h,b);$('lista').append(card);
-});
-})();
-</script>
+        <!-- Opción 3: Gran Apoyo -->
+        <div class="donation-card">
+            <div class="donation-info">
+                <h3>Socio Fundador</h3>
+                <span>⭐ 500 Telegram Stars</span>
+            </div>
+            <button class="btn-star" onclick="supportStars(500)">Donar 500</button>
+        </div>
+
+        <!-- Enlace directo oficial para abrir en Telegram -->
+        <a href="https://t.me/anafra_bot/hubfinanciero" target="_blank" class="btn-telegram">
+            📱 Abrir Hub en Telegram
+        </a>
+
+        <a href="index.html" class="back-link">← Volver al Panel Principal</a>
+    </div>
+
+    <script>
+        // Inicializar Telegram WebApp si está disponible
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        function supportStars(amount) {
+            // Aquí puedes conectar la lógica con tu backend en Railway para generar la factura XTR
+            if (tg && tg.openInvoice) {
+                // Si el bot te devuelve una URL de factura (invoice link) generada desde Railway, la abres aquí:
+                // tg.openInvoice(invoiceUrl, function(status) { ... });
+                alert("Redirigiendo al sistema de pago seguro con " + amount + " Estrellas en Telegram...");
+            } else {
+                alert("Por favor, abre esta página como Mini App dentro de Telegram para donar con Estrellas.");
+            }
+        }
+    </script>
 </body>
 </html>
