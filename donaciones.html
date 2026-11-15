@@ -1,182 +1,84 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hub Financiero - Donaciones</title>
-    <!-- SDK Oficial de Telegram Mini Apps -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-color: #38bdf8;
-            --telegram-blue: #229ED9;
-            --star-color: #f59e0b;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 480px;
-            background-color: var(--card-bg);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-            box-sizing: border-box;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 24px;
-            margin-bottom: 8px;
-            color: var(--text-color);
-        }
-
-        p {
-            color: var(--text-muted);
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 24px;
-        }
-
-        .donation-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .donation-info h3 {
-            margin: 0 0 4px 0;
-            font-size: 16px;
-            color: var(--text-color);
-        }
-
-        .donation-info span {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .btn-star {
-            background-color: var(--star-color);
-            color: #000;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-            transition: opacity 0.2s;
-        }
-
-        .btn-star:hover {
-            opacity: 0.9;
-        }
-
-        .btn-telegram {
-            display: block;
-            width: 100%;
-            background-color: var(--telegram-blue);
-            color: white;
-            text-align: center;
-            padding: 14px;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 20px;
-            box-sizing: border-box;
-            box-shadow: 0 4px 12px rgba(34, 158, 217, 0.3);
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 16px;
-            color: var(--accent-color);
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hub Financiero - Donaciones</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--text:#f8fafc;--muted:#94a3b8;--accent:#38bdf8;--tg:#229ED9;--star:#f59e0b}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:20px;padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;align-items:center;min-height:100vh}
+.container{width:100%;max-width:480px;background:var(--card);border-radius:16px;padding:24px;box-shadow:0 10px 25px -5px rgba(0,0,0,.3);text-align:center}
+h1{font-size:24px;margin:0 0 8px}
+p{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 24px}
+.card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;margin-bottom:16px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card h3{margin:0 0 4px;font-size:16px}
+.card span{font-size:13px;color:var(--muted)}
+.btn-star{background:var(--star);color:#000;border:0;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;flex:none}
+.btn-star:disabled{opacity:.45;cursor:default}
+.btn-tg{display:block;width:100%;background:var(--tg);color:#fff;text-align:center;padding:14px;border-radius:12px;text-decoration:none;font-weight:700;font-size:16px;margin-top:20px;box-shadow:0 4px 12px rgba(34,158,217,.3)}
+.msg{display:none;margin-top:14px;padding:12px;border-radius:10px;background:rgba(255,255,255,.06);font-size:14px}
+.msg.ok{background:rgba(38,166,154,.18);color:#7ee2d6}
+.back{display:inline-block;margin-top:16px;color:var(--accent);text-decoration:none;font-size:14px}
+.nota{font-size:11px;color:var(--muted);margin:18px 0 0;line-height:1.5}
+</style>
+<script src="telegram.js" defer></script>
 </head>
 <body>
+<div class="container">
+  <h1>🌟 Apoya el Hub Financiero</h1>
+  <p>Mantén el proyecto activo y en constante evolución colaborando con Estrellas de Telegram (XTR).</p>
 
-    <div class="container">
-        <h1>🌟 Apoya el Hub Financiero</h1>
-        <p>Mantén el proyecto activo y en constante evolución colaborando con Estrellas de Telegram (XTR).</p>
+  <div class="card"><div><h3>Café para el Creador</h3><span>⭐ 50 Telegram Stars</span></div><button class="btn-star" data-n="50">Donar 50</button></div>
+  <div class="card"><div><h3>Impulso Pro</h3><span>⭐ 150 Telegram Stars</span></div><button class="btn-star" data-n="150">Donar 150</button></div>
+  <div class="card"><div><h3>Socio Fundador</h3><span>⭐ 500 Telegram Stars</span></div><button class="btn-star" data-n="500">Donar 500</button></div>
 
-        <!-- Opción 1: Donación Pequeña -->
-        <div class="donation-card">
-            <div class="donation-info">
-                <h3>Café para el Creador</h3>
-                <span>⭐ 50 Telegram Stars</span>
-            </div>
-            <button class="btn-star" onclick="supportStars(50)">Donar 50</button>
-        </div>
+  <div id="msg" class="msg"></div>
 
-        <!-- Opción 2: Donación Moderada -->
-        <div class="donation-card">
-            <div class="donation-info">
-                <h3>impulso Pro</h3>
-                <span>⭐ 150 Telegram Stars</span>
-            </div>
-            <button class="btn-star" onclick="supportStars(150)">Donar 150</button>
-        </div>
+  <a id="abrir" href="https://t.me/anafra_bot/hubfinanciero" class="btn-tg">📱 Abrir Hub en Telegram</a>
+  <a href="index.html" class="back">← Volver al Panel Principal</a>
+  <p class="nota">Las donaciones son voluntarias, no son reembolsables y no dan derecho a ningún servicio ni garantía. Los nombres de los niveles son simbólicos. Nada de lo publicado es asesoramiento financiero.</p>
+</div>
 
-        <!-- Opción 3: Gran Apoyo -->
-        <div class="donation-card">
-            <div class="donation-info">
-                <h3>Socio Fundador</h3>
-                <span>⭐ 500 Telegram Stars</span>
-            </div>
-            <button class="btn-star" onclick="supportStars(500)">Donar 500</button>
-        </div>
+<script>
+(function(){
+'use strict';
+/* ====== EDITA SOLO ESTO ======
+   Pega aquí los 3 enlaces de pago que te da tu bot con el comando /enlaces. */
+var LINKS={50:'https://t.me/$AMnQGact0FN1BAAAQ2MLjZ_cvuY',150:'https://t.me/$O9jB8qct0FN2BAAAdVfepgt5sT8',500:'https://t.me/$6aJ8xKct0FN3BAAAGkwj3NjybBM'};
+/* ====== FIN ====== */
 
-        <!-- Enlace directo oficial para abrir en Telegram -->
-        <a href="https://t.me/anafra_bot/hubfinanciero" target="_blank" class="btn-telegram">
-            📱 Abrir Hub en Telegram
-        </a>
+var $=function(id){return document.getElementById(id)};
+var valido=function(u){return /^https:\/\/t\.me\/(\$|invoice\/)/.test(u||'')};
+function msg(t,ok){var m=$('msg');m.textContent=t;m.className='msg'+(ok?' ok':'');m.style.display='block'}
 
-        <a href="index.html" class="back-link">← Volver al Panel Principal</a>
-    </div>
+document.querySelectorAll('[data-n]').forEach(function(b){
+  var n=b.getAttribute('data-n');
+  if(!valido(LINKS[n])){b.disabled=true;b.textContent='Próximamente';return}
+  b.addEventListener('click',function(){donar(n,b)});
+});
 
-    <script>
-        // Inicializar Telegram WebApp si está disponible
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+function donar(n,b){
+  var tg=window.Telegram&&window.Telegram.WebApp;
+  if(!tg||!tg.initData||!tg.openInvoice){msg('Para donar con Estrellas, abre el hub dentro de Telegram con el botón de abajo.');return}
+  b.disabled=true;
+  try{
+    tg.openInvoice(LINKS[n],function(s){
+      b.disabled=false;
+      if(s==='paid'){msg('¡Gracias por tu donación de '+n+' ⭐! 💚',true);try{tg.HapticFeedback.notificationOccurred('success')}catch(e){}}
+      else if(s==='cancelled')msg('Donación cancelada.');
+      else if(s==='pending')msg('Pago pendiente. Telegram te avisará cuando se complete.');
+      else msg('No se pudo completar el pago. Inténtalo de nuevo más tarde.');
+    });
+  }catch(e){b.disabled=false;msg('No se pudo abrir el pago. Actualiza Telegram e inténtalo otra vez.')}
+}
 
-        function supportStars(amount) {
-            // Aquí puedes conectar la lógica con tu backend en Railway para generar la factura XTR
-            if (tg && tg.openInvoice) {
-                // Si el bot te devuelve una URL de factura (invoice link) generada desde Railway, la abres aquí:
-                // tg.openInvoice(invoiceUrl, function(status) { ... });
-                alert("Redirigiendo al sistema de pago seguro con " + amount + " Estrellas en Telegram...");
-            } else {
-                alert("Por favor, abre esta página como Mini App dentro de Telegram para donar con Estrellas.");
-            }
-        }
-    </script>
+// dentro de Telegram ya estás en el hub: se oculta el botón de "Abrir en Telegram"
+window.addEventListener('load',function(){
+  var tg=window.Telegram&&window.Telegram.WebApp;
+  if(tg&&tg.initData)$('abrir').style.display='none';
+});
+})();
+</script>
 </body>
 </html>
