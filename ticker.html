@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Resumen de Mercados - Hub Financiero</title>
+<style>
+:root{--bg:#0d1117;--panel:#131722;--panel2:#1a1e29;--border:#2a2e39;--ink:#d1d4dc;--strong:#f0f3fa;--dim:#787b86;--up:#00cc44;--down:#ff3333;--warn:#ffb84d;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--panel2:#eef1f7;--border:#dde1ea;--ink:#363a45;--strong:#0e1117;--dim:#6b6f7c;--up:#0aa63a;--down:#e02b2b;--warn:#b86e00;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(28px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.btn{font:inherit;cursor:pointer;border:1px solid var(--border);background:var(--panel2);color:var(--strong);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:active{transform:scale(.97)}
+.btn.on{background:#2962ff;border-color:#2962ff;color:#fff}
+h1{font-size:17px;margin:0 0 3px;color:var(--strong);letter-spacing:.2px}
+.sub{font-size:12px;color:var(--dim)}
+.nota{font-size:12px;color:var(--warn);margin-top:3px}
+.estado{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.dot.on{background:var(--up);box-shadow:0 0 6px var(--up)}
+.dot.off{background:var(--down)}
+.tools{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:6px 12px 10px}
+.grp{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin:12px 0 2px;padding-top:10px;border-top:1px solid var(--border)}
+.grp:first-child{border-top:none;padding-top:4px;margin-top:6px}
+.row{display:grid;grid-template-columns:minmax(80px,30%) 1fr auto;align-items:center;gap:8px;padding:6px 0}
+.nm{font-weight:700;font-size:13.5px;color:var(--strong);line-height:1.2}
+.nm small{display:block;font-weight:500;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.track{height:16px;position:relative}
+.bar{height:100%;border-radius:3px;min-width:3px;transition:width .5s}
+.bar.u{background:var(--up)}.bar.d{background:var(--down)}
+.pc{font-weight:800;font-size:13px;font-variant-numeric:tabular-nums;text-align:right;min-width:78px}
+.pc.u{color:var(--up)}.pc.d{color:var(--down)}.pc.n{color:var(--dim);font-weight:500}
+.row.nd .track{background:repeating-linear-gradient(90deg,var(--border) 0 4px,transparent 4px 8px);height:2px;opacity:.7}
+.falta{font-size:11px;color:var(--dim);margin-top:10px}
+.foot{font-size:11px;color:var(--dim);text-align:center;margin-top:16px;line-height:1.5}
+.flash{animation:fl .8s}
+@keyframes fl{0%{background:color-mix(in srgb,var(--strong) 18%,transparent)}100%{background:transparent}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="btn" href="index.html">← Hub</a>
+  <div class="estado"><span class="dot" id="dot"></span><span id="est">conectando…</span></div>
+</header>
+<h1 id="tit">RESUMEN DE MERCADOS</h1>
+<div class="sub">Variación del día, con precio. Se actualiza solo.</div>
+<div class="nota" id="nota"></div>
+<div class="tools">
+  <button class="btn on" id="ordGrupo">Por grupos</button>
+  <button class="btn" id="ordPct">Mayor movimiento</button>
+  <button class="btn" id="ref">↻ Actualizar</button>
+</div>
+<div class="card" id="lista"></div>
+<div class="falta" id="falta"></div>
+<div class="foot">Cripto: Binance (y CoinGecko para HYPE). Acciones, índices y oro: Yahoo Finance. Algunos datos pueden llevar retraso. Solo informativo, no es asesoramiento financiero.</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* mismos activos y orden que el resumen del bot */
+var CRIPTO=[['Bitcoin','BTCUSDT'],['Ethereum','ETHUSDT'],['Solana','SOLUSDT'],['BNB','BNBUSDT'],['XRP','XRPUSDT'],['Cardano','ADAUSDT'],['Dogecoin','DOGEUSDT'],['Avalanche','AVAXUSDT'],['Chainlink','LINKUSDT'],['Polkadot','DOTUSDT'],['Hedera','HBARUSDT'],['Sui','SUIUSDT']];
+var GRUPOS=[
+ {id:'cri',n:'🪙 Cripto',items:CRIPTO.map(function(c){return {n:c[0],s:c[1],t:'bin',cur:'$'}}).concat([{n:'Hyperliquid',s:'hyperliquid',t:'cg',cur:'$'}])},
+ {id:'acc',n:'📈 Acciones',items:[['Apple','AAPL'],['Microsoft','MSFT'],['Nvidia','NVDA'],['Amazon','AMZN'],['Google','GOOGL'],['Meta','META'],['Tesla','TSLA'],['JPMorgan','JPM'],['Netflix','NFLX'],['SpaceX','SPCX'],['Strategy (Saylor)','MSTR'],['Walmart','WMT'],['Coca-Cola','KO'],['PURR (Hyperliquid Strategies)','PURR']].map(function(c){return {n:c[0],s:c[1],t:'yh',cur:'$'}})},
+ {id:'ind',n:'🌍 Índices',items:[['S&P 500','^GSPC'],['Nasdaq','^IXIC'],['IBEX 35','^IBEX'],['DAX','^GDAXI'],['CAC 40','^FCHI']].map(function(c){return {n:c[0],s:c[1],t:'yh',cur:''}})},
+ {id:'mat',n:'🥇 Materias primas',items:[{n:'Oro',s:'GC=F',t:'yh',cur:'$'}]}
+];
+var TODOS=[];GRUPOS.forEach(function(g){g.items.forEach(function(i){i.g=g.id;i.v=null;TODOS.push(i)})});
+var $=function(i){return document.getElementById(i)};
+var modo='grupo';
+try{modo=localStorage.getItem('tk.modo')||'grupo'}catch(e){}
+
+function ft(url,ms){var c=new AbortController(),t=setTimeout(function(){c.abort()},ms||8000);
+  return fetch(url,{signal:c.signal,cache:'no-store'}).then(function(r){clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})}
+
+/* ---------- cripto: Binance ---------- */
+function cargarBinance(){
+  var syms=TODOS.filter(function(i){return i.t==='bin'}).map(function(i){return i.s});
+  var q='?symbols='+encodeURIComponent(JSON.stringify(syms));
+  return ft('https://api.binance.com/api/v3/ticker/24hr'+q).catch(function(){return ft('https://data-api.binance.vision/api/v3/ticker/24hr'+q)}).then(function(a){
+    a.forEach(function(x){TODOS.forEach(function(i){if(i.s===x.symbol)i.v={p:parseFloat(x.lastPrice),c:parseFloat(x.priceChangePercent)}})});
+  }).catch(function(){});
+}
+function cargarCG(){
+  return ft('https://api.coingecko.com/api/v3/simple/price?ids=hyperliquid&vs_currencies=usd&include_24hr_change=true').then(function(j){
+    var d=j.hyperliquid;TODOS.forEach(function(i){if(i.t==='cg'&&d)i.v={p:d.usd,c:d.usd_24h_change||0}})}).catch(function(){});
+}
+/* ---------- Yahoo (acciones, índices, oro) ---------- */
+var PROXIES=[
+ function(u){return u},
+ function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u)},
+ function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u)}
+];
+var proxyOk=0;
+function yahoo(sym){
+  var path='/v8/finance/chart/'+encodeURIComponent(sym)+'?range=1d&interval=1d';
+  var hosts=['query1','query2'],intentos=[];
+  for(var k=0;k<PROXIES.length;k++){hosts.forEach(function(h){intentos.push([k,'https://'+h+'.finance.yahoo.com'+path])})}
+  // empieza por el método que funcionó la última vez
+  intentos.sort(function(a,b){return (a[0]===proxyOk?0:1)-(b[0]===proxyOk?0:1)});
+  var n=0;
+  function probar(){
+    if(n>=intentos.length)return Promise.reject(new Error('sin datos'));
+    var it=intentos[n++];
+    return ft(PROXIES[it[0]](it[1]),9000).then(function(j){
+      var m=j.chart.result[0].meta,p=m.regularMarketPrice,prev=m.chartPreviousClose;
+      if(!p||!prev)throw new Error('incompleto');
+      proxyOk=it[0];return {p:p,c:(p-prev)/prev*100};
+    }).catch(probar);
+  }
+  return probar();
+}
+function cargarYahoo(){
+  var its=TODOS.filter(function(i){return i.t==='yh'});
+  var idx=0;
+  function worker(){
+    if(idx>=its.length)return Promise.resolve();
+    var i=its[idx++];
+    return yahoo(i.s).then(function(v){i.v=v}).catch(function(){}).then(worker);
+  }
+  return Promise.all([worker(),worker(),worker(),worker()]);
+}
+
+/* ---------- pintar ---------- */
+function eeuuAbierta(){
+  try{var f=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',minute:'numeric',hour12:false}).formatToParts(new Date()),o={};
+    f.forEach(function(p){o[p.type]=p.value});var h=+o.hour%24,m=+o.minute,mins=h*60+m;
+    return ['Sat','Sun'].indexOf(o.weekday)<0&&mins>=570&&mins<960}catch(e){return true}
+}
+function fp(p,cur){var d=p>=1000?2:p>=100?2:p>=1?2:p>=0.01?4:6;return cur+p.toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function fc(c){return (c>=0?'▲ +':'▼ ')+c.toFixed(2).replace('.',',')+'%'}
+function fecha(){var d=new Date(),z=function(n){return ('0'+n).slice(-2)};return z(d.getDate())+'/'+z(d.getMonth()+1)+' '+z(d.getHours())+':'+z(d.getMinutes())}
+var prev={},listo=false;
+function fila(i,max){
+  if(!i.v)return '<div class="row nd"><div class="nm">'+i.n+'</div><div class="track"></div><div class="pc n">'+(listo?'sin datos':'…')+'</div></div>';
+  var u=i.v.c>=0,w=Math.max(1,Math.abs(i.v.c)/max*100);
+  var fl=prev[i.s]!==undefined&&prev[i.s]!==i.v.p?' flash':'';
+  prev[i.s]=i.v.p;
+  return '<div class="row'+fl+'"><div class="nm">'+i.n+'<small>'+fp(i.v.p,i.cur)+'</small></div><div class="track"><div class="bar '+(u?'u':'d')+'" style="width:'+w+'%"></div></div><div class="pc '+(u?'u':'d')+'">'+fc(i.v.c)+'</div></div>';
+}
+function pintar(){
+  var con=TODOS.filter(function(i){return i.v});
+  var max=Math.max.apply(null,con.map(function(i){return Math.abs(i.v.c)}).concat([0.5]));
+  var h='';
+  if(modo==='pct'){
+    var s=con.slice().sort(function(a,b){return Math.abs(b.v.c)-Math.abs(a.v.c)});
+    s.forEach(function(i){h+=fila(i,max)});
+    TODOS.filter(function(i){return !i.v}).forEach(function(i){h+=fila(i,max)});
+  }else{
+    GRUPOS.forEach(function(g){h+='<div class="grp">'+g.n+'</div>';g.items.forEach(function(i){h+=fila(i,max)})});
+  }
+  $('lista').innerHTML=h;
+  var f=TODOS.filter(function(i){return !i.v}).map(function(i){return i.n});
+  $('falta').textContent=f.length&&listo?'Sin datos ahora: '+f.join(', '):'';
+  $('tit').textContent='RESUMEN DE MERCADOS — '+fecha();
+  $('nota').textContent=eeuuAbierta()?'':'Acciones de EEUU, S&P 500 y Nasdaq: variación de la última sesión (bolsa de EEUU cerrada)';
+  $('ordGrupo').classList.toggle('on',modo!=='pct');$('ordPct').classList.toggle('on',modo==='pct');
+  var ok=con.length;$('dot').className='dot '+(ok?'on':'off');
+  $('est').textContent=ok?(ok+'/'+TODOS.length+' activos'):'sin conexión';
+}
+var cargando=false;
+function cargar(solo){
+  if(cargando)return;cargando=true;$('est').textContent='actualizando…';
+  var ps=[cargarBinance(),cargarCG()];
+  if(!solo)ps.push(cargarYahoo());
+  return Promise.all(ps).then(function(){listo=true;pintar()}).then(function(){cargando=false},function(){cargando=false});
+}
+$('ordGrupo').onclick=function(){modo='grupo';try{localStorage.setItem('tk.modo',modo)}catch(e){}pintar()};
+$('ordPct').onclick=function(){modo='pct';try{localStorage.setItem('tk.modo',modo)}catch(e){}pintar()};
+$('ref').onclick=function(){cargar(false)};
+pintar();cargar(false);
+setInterval(function(){if(!document.hidden)cargar(true)},60000);          // cripto cada minuto
+setInterval(function(){if(!document.hidden)cargar(false)},5*60000);       // todo cada 5 min
+document.addEventListener('visibilitychange',function(){if(!document.hidden)cargar(false)});
+})();
+</script>
+<script src="telegram.js" defer></script>
+</body>
+</html>
