@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Alerta BTC - Hub Financiero</title>
+<style>
+:root{--bg:#0d1117;--panel:#131722;--panel2:#1a1e29;--border:#2a2e39;--ink:#d1d4dc;--strong:#f0f3fa;--dim:#787b86;--up:#26c281;--down:#ef5350;--acc:#2962ff;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--panel2:#eef1f7;--border:#dde1ea;--ink:#363a45;--strong:#0e1117;--dim:#6b6f7c;--up:#0aa63a;--down:#e02b2b;--acc:#2f6df0;color-scheme:light}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px)) 14px calc(28px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.btn{font:inherit;cursor:pointer;border:1px solid var(--border);background:var(--panel2);color:var(--strong);border-radius:9px;padding:7px 13px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:active{transform:scale(.97)}
+.btn.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.estado{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--dim)}.dot.on{background:var(--up);box-shadow:0 0 6px var(--up)}.dot.off{background:var(--down)}
+h1{font-size:18px;margin:0 0 2px;color:var(--strong)}
+.sub{font-size:12px;color:var(--dim);margin-bottom:14px;line-height:1.45}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+.precio{font-size:38px;font-weight:800;color:var(--strong);font-variant-numeric:tabular-nums;letter-spacing:-.5px;line-height:1.1}
+.precio.sube{animation:fu .6s}.precio.baja{animation:fd .6s}
+@keyframes fu{0%{color:var(--up)}100%{color:var(--strong)}}
+@keyframes fd{0%{color:var(--down)}100%{color:var(--strong)}}
+.dif{font-size:15px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.dif.u{color:var(--up)}.dif.d{color:var(--down)}
+.meter{position:relative;height:14px;background:var(--panel2);border-radius:99px;margin:16px 0 6px;overflow:hidden}
+.meter i{position:absolute;top:0;bottom:0;border-radius:99px;transition:all .3s}
+.meter .mid{position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--dim);opacity:.6}
+.lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.sec{font-size:12px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:0 0 4px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;font-size:14px}
+.sw{width:44px;height:26px;border-radius:99px;background:var(--panel2);border:1px solid var(--border);position:relative;cursor:pointer;flex:0 0 auto}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--dim);transition:all .2s}
+.sw.on{background:var(--acc);border-color:var(--acc)}.sw.on::after{left:20px;background:#fff}
+canvas{width:100%;height:120px;display:block;margin-top:10px}
+.hist .it{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid var(--border);font-size:13.5px}
+.hist .it:first-child{border-top:none}
+.hist small{color:var(--dim);display:block;font-size:11px}
+.u{color:var(--up)}.d{color:var(--down)}
+.banner{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top,0px));z-index:50;border-radius:14px;padding:14px 16px;font-weight:800;font-size:18px;color:#fff;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.45);animation:ban 5s forwards}
+.banner small{display:block;font-weight:500;font-size:13px;margin-top:3px;opacity:.95}
+.banner.u{background:var(--up)}.banner.d{background:var(--down)}
+@keyframes ban{0%{transform:translateY(-120%)}8%{transform:translateY(0)}88%{transform:translateY(0);opacity:1}100%{transform:translateY(-120%);opacity:0}}
+.nota{font-size:11.5px;color:var(--dim);line-height:1.5;margin-top:6px}
+input[type=number]{font:inherit;width:96px;background:var(--panel2);color:var(--strong);border:1px solid var(--border);border-radius:9px;padding:7px 9px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="btn" href="index.html">← Hub</a>
+  <div class="estado"><span class="dot" id="dot"></span><span id="est">conectando…</span></div>
+</header>
+<h1>🔔 Alerta BTC</h1>
+<div class="sub">Te avisa cada vez que Bitcoin sube o baja el paso que elijas desde el último aviso. Funciona mientras tengas esta página abierta.</div>
+
+<div class="card">
+  <div class="precio" id="precio">—</div>
+  <div class="dif" id="dif">&nbsp;</div>
+  <div class="meter"><div class="mid"></div><i id="mBar"></i></div>
+  <div class="lbl"><span id="lDown">—</span><span id="lRef">Referencia: —</span><span id="lUp">—</span></div>
+  <canvas id="cv"></canvas>
+</div>
+
+<div class="card">
+  <p class="sec">Avisar cada</p>
+  <div class="chips" id="pasos"></div>
+  <div class="row" style="margin-top:6px"><span>Otro importe ($)</span><span><input type="number" id="otro" min="10" step="10" placeholder="ej. 750"> <button class="btn" id="otroOk">OK</button></span></div>
+  <div class="row"><span>Alertas activas</span><div class="sw" id="swOn"></div></div>
+  <div class="row"><span>Sonido</span><div class="sw" id="swSnd"></div></div>
+  <div class="row"><span>Vibración</span><div class="sw" id="swVib"></div></div>
+  <div class="row"><span>Mantener pantalla encendida</span><div class="sw" id="swWake"></div></div>
+  <div class="row"><span>Aviso del sistema (con la web en segundo plano)</span><div class="sw" id="swNot"></div></div>
+  <div class="row"><span></span><span><button class="btn" id="test">Probar aviso</button> <button class="btn" id="reset">Reiniciar referencia</button></span></div>
+  <div class="nota">Al reiniciar, la referencia pasa a ser el precio de ahora. Si cierras la página, no hay avisos: al volver verás cuánto se ha movido BTC desde la última referencia.</div>
+</div>
+
+<div class="card hist">
+  <p class="sec">Últimos avisos</p>
+  <div id="hist"><div class="nota">Aún no hay avisos.</div></div>
+  <div class="row"><span></span><button class="btn" id="borrar">Borrar historial</button></div>
+</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var KEY='alertabtc.v1';
+var S={paso:1000,ref:null,on:true,snd:true,vib:true,wake:false,not:false,hist:[]};
+try{var g=JSON.parse(localStorage.getItem(KEY)||'null');if(g)Object.keys(g).forEach(function(k){S[k]=g[k]})}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var tg=window.Telegram&&Telegram.WebApp;
+var precio=null,serie=[],ultimo=null,ws=null,wakeLock=null,pollT=null;
+
+function fm(n,d){return n.toLocaleString('es-ES',{minimumFractionDigits:d||0,maximumFractionDigits:d||0})}
+function hora(t){var d=new Date(t),z=function(n){return ('0'+n).slice(-2)};return z(d.getDate())+'/'+z(d.getMonth()+1)+' '+z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds())}
+
+/* ---------- avisos ---------- */
+var ac;
+function beep(f,d,t){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(ac.destination);o.start(t||0);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+(t||0)+d);o.stop(ac.currentTime+(t||0)+d)}catch(e){}}
+function sonido(sube){if(!S.snd)return;if(sube){beep(660,.18);setTimeout(function(){beep(880,.22)},170)}else{beep(520,.18);setTimeout(function(){beep(330,.28)},170)}}
+function vibrar(sube){if(!S.vib)return;try{if(tg&&tg.HapticFeedback){tg.HapticFeedback.notificationOccurred(sube?'success':'warning');return}}catch(e){}try{navigator.vibrate&&navigator.vibrate(sube?[120]:[120,80,120])}catch(e){}}
+function banner(sube,t1,t2){var b=document.createElement('div');b.className='banner '+(sube?'u':'d');b.innerHTML=t1+'<small>'+t2+'</small>';document.body.appendChild(b);setTimeout(function(){b.remove()},5200)}
+function sistema(t1,t2){if(!S.not||!('Notification' in window)||Notification.permission!=='granted')return;try{new Notification(t1,{body:t2})}catch(e){}}
+
+function disparar(sube,dif,antes,ahora,silencioso){
+  var t1=(sube?'📈 BTC sube $':'📉 BTC baja $')+fm(Math.abs(dif));
+  var t2='Ahora $'+fm(ahora)+' · antes $'+fm(antes)+' ('+(dif>0?'+':'')+(dif/antes*100).toFixed(2).replace('.',',')+'%)';
+  S.hist.unshift({t:Date.now(),s:sube,d:dif,a:antes,n:ahora});S.hist=S.hist.slice(0,40);save();pintarHist();
+  if(silencioso)return;
+  banner(sube,t1,t2);sonido(sube);vibrar(sube);sistema(t1,t2);
+  try{document.title=(sube?'▲ ':'▼ ')+'BTC $'+fm(ahora)}catch(e){}
+}
+function evaluar(p){
+  if(S.ref==null){S.ref=p;save();return}
+  if(!S.on)return;
+  var dif=p-S.ref;
+  if(Math.abs(dif)>=S.paso){var antes=S.ref;S.ref=p;save();disparar(dif>0,dif,antes,p)}
+}
+
+/* ---------- datos: WebSocket de Binance con respaldo REST ---------- */
+function setEst(ok,t){$('dot').className='dot '+(ok?'on':'off');$('est').textContent=t}
+function nuevoPrecio(p){
+  if(!isFinite(p))return;
+  var prev=precio;precio=p;
+  var now=Date.now();if(!ultimo||now-ultimo>=2000){serie.push([now,p]);if(serie.length>300)serie.shift();ultimo=now}
+  if(prev!=null&&prev!==p){var e=$('precio');e.classList.remove('sube','baja');void e.offsetWidth;e.classList.add(p>prev?'sube':'baja')}
+  evaluar(p);pintar();
+}
+function conectar(){
+  try{ws=new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@miniTicker')}catch(e){return polling()}
+  ws.onopen=function(){setEst(true,'en directo (Binance)');clearInterval(pollT)};
+  ws.onmessage=function(ev){try{nuevoPrecio(parseFloat(JSON.parse(ev.data).c))}catch(e){}};
+  ws.onclose=function(){setEst(false,'reconectando…');polling();setTimeout(conectar,3000)};
+  ws.onerror=function(){try{ws.close()}catch(e){}};
+}
+function polling(){
+  clearInterval(pollT);
+  var f=function(){fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT').catch(function(){return fetch('https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT')}).then(function(r){return r.json()}).then(function(j){nuevoPrecio(parseFloat(j.price));setEst(true,'en directo (REST)')}).catch(function(){setEst(false,'sin conexión')})};
+  f();pollT=setInterval(f,5000);
+}
+
+/* ---------- pintar ---------- */
+function pintar(){
+  if(precio==null)return;
+  $('precio').textContent='$'+fm(precio,precio<1000?2:0);
+  var ref=S.ref!=null?S.ref:precio,dif=precio-ref;
+  var e=$('dif');e.className='dif '+(dif>=0?'u':'d');
+  e.textContent=(dif>=0?'▲ +':'▼ −')+'$'+fm(Math.abs(dif))+' desde la referencia';
+  var fr=Math.max(-1,Math.min(1,dif/S.paso)),b=$('mBar');
+  b.style.background=dif>=0?'var(--up)':'var(--down)';
+  if(dif>=0){b.style.left='50%';b.style.width=(fr*50)+'%'}else{b.style.left=(50+fr*50)+'%';b.style.width=(-fr*50)+'%'}
+  $('lDown').textContent='$'+fm(ref-S.paso);$('lRef').textContent='Referencia: $'+fm(ref);$('lUp').textContent='$'+fm(ref+S.paso);
+  dibujar();
+}
+function dibujar(){
+  var c=$('cv'),r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  if(!r.width)return;c.width=r.width*dpr;c.height=r.height*dpr;
+  var x=c.getContext('2d');x.scale(dpr,dpr);var W=r.width,H=r.height;x.clearRect(0,0,W,H);
+  if(serie.length<2){x.fillStyle=getComputedStyle(document.body).color;x.globalAlpha=.4;x.font='12px sans-serif';x.fillText('Recogiendo precios…',8,H/2);return}
+  var ref=S.ref!=null?S.ref:precio;
+  var ps=serie.map(function(s){return s[1]});
+  var mx=Math.max.apply(null,ps.concat([ref+S.paso*.15])),mn=Math.min.apply(null,ps.concat([ref-S.paso*.15]));
+  var pad=(mx-mn)*.08||1;mx+=pad;mn-=pad;
+  var Y=function(v){return H-(v-mn)/(mx-mn)*H},t0=serie[0][0],t1=serie[serie.length-1][0]||t0+1,X=function(t){return (t-t0)/Math.max(1,t1-t0)*W};
+  var cs=getComputedStyle(document.documentElement);
+  [[ref+S.paso,cs.getPropertyValue('--up')],[ref-S.paso,cs.getPropertyValue('--down')],[ref,cs.getPropertyValue('--dim')]].forEach(function(l){
+    if(l[0]<mn||l[0]>mx)return;x.strokeStyle=l[1].trim();x.globalAlpha=.7;x.setLineDash([5,4]);x.beginPath();x.moveTo(0,Y(l[0]));x.lineTo(W,Y(l[0]));x.stroke()});
+  x.setLineDash([]);x.globalAlpha=1;x.lineWidth=2;x.lineJoin='round';
+  x.strokeStyle=(precio>=ref?cs.getPropertyValue('--up'):cs.getPropertyValue('--down')).trim();
+  x.beginPath();serie.forEach(function(s,i){var px=X(s[0]),py=Y(s[1]);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();
+}
+function pintarHist(){
+  var h=$('hist');
+  if(!S.hist.length){h.innerHTML='<div class="nota">Aún no hay avisos.</div>';return}
+  h.innerHTML=S.hist.map(function(a){return '<div class="it"><div><b class="'+(a.s?'u':'d')+'">'+(a.s?'▲ Sube $':'▼ Baja $')+fm(Math.abs(a.d))+'</b><small>'+hora(a.t)+'</small></div><div style="text-align:right">$'+fm(a.n)+'<small>antes $'+fm(a.a)+'</small></div></div>'}).join('');
+}
+function pintarCtl(){
+  var P=[250,500,1000,2000,5000];if(P.indexOf(S.paso)<0)P.push(S.paso);P.sort(function(a,b){return a-b});
+  $('pasos').innerHTML=P.map(function(p){return '<button class="btn'+(p===S.paso?' on':'')+'" data-p="'+p+'">$'+fm(p)+'</button>'}).join('');
+  Array.prototype.forEach.call($('pasos').children,function(b){b.onclick=function(){S.paso=+b.getAttribute('data-p');S.ref=precio;save();pintarCtl();pintar()}});
+  [['swOn','on'],['swSnd','snd'],['swVib','vib'],['swWake','wake'],['swNot','not']].forEach(function(x){$(x[0]).classList.toggle('on',!!S[x[1]])});
+}
+
+/* ---------- controles ---------- */
+function toggle(id,k,fn){$(id).onclick=function(){S[k]=!S[k];save();pintarCtl();if(fn)fn()}}
+toggle('swOn','on',function(){if(S.on){S.ref=precio;save();pintar()}});
+toggle('swSnd','snd',function(){if(S.snd)sonido(true)});
+toggle('swVib','vib',function(){if(S.vib)vibrar(true)});
+toggle('swWake','wake',wake);
+$('swNot').onclick=function(){
+  if(S.not){S.not=false;save();pintarCtl();return}
+  if(!('Notification' in window)){alert('Este navegador no permite avisos del sistema.');return}
+  Notification.requestPermission().then(function(p){S.not=(p==='granted');save();pintarCtl()})};
+function wake(){
+  try{
+    if(S.wake&&navigator.wakeLock){navigator.wakeLock.request('screen').then(function(l){wakeLock=l}).catch(function(){S.wake=false;save();pintarCtl()})}
+    else if(!S.wake&&wakeLock){wakeLock.release();wakeLock=null}
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&S.wake)wake()});
+$('otroOk').onclick=function(){var v=parseInt($('otro').value,10);if(v>=10){S.paso=v;S.ref=precio;save();$('otro').value='';pintarCtl();pintar()}};
+$('reset').onclick=function(){S.ref=precio;save();pintar()};
+$('test').onclick=function(){disparar(true,S.paso,(precio||0)-S.paso,precio||0,false)};
+$('borrar').onclick=function(){S.hist=[];save();pintarHist()};
+window.addEventListener('resize',dibujar);
+
+pintarCtl();pintarHist();conectar();
+if(S.wake)wake();
+if(tg){try{tg.ready();tg.expand()}catch(e){}}
+// al abrir: si BTC se movió mientras la página estaba cerrada, lo anotamos sin sonar
+var primera=true,_ev=evaluar;
+evaluar=function(p){
+  if(primera){primera=false;
+    if(S.ref!=null&&S.on&&Math.abs(p-S.ref)>=S.paso){var antes=S.ref;S.ref=p;save();disparar(p>antes,p-antes,antes,p,false);return}
+  }
+  _ev(p)};
+})();
+</script>
+<script src="telegram.js" defer></script>
+</body>
+</html>
