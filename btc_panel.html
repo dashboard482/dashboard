@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Panel Bitcoin - Hub Financiero</title>
+<style>
+:root{--bg:#050608;--panel:#0b0d12;--border:#232834;--ink:#c9ced8;--strong:#fff;--dim:#8a93a6;--up:#2ecc8f;--down:#ff5a4f;--or:#ff7a1a;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--border:#dde1ea;--ink:#363a45;--strong:#0e1117;--dim:#6b6f7c;--up:#0aa63a;--down:#d93a37;--or:#e0620a;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px)) 14px calc(28px + env(safe-area-inset-bottom,0px))}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:16px}
+.btn{font:inherit;cursor:pointer;border:1px solid var(--border);background:var(--panel);color:var(--strong);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;text-decoration:none;justify-self:start}
+h1{margin:0;font-size:20px;color:var(--strong);text-align:center}
+.est{justify-self:end;font-size:11px;color:var(--dim);display:flex;align-items:center;gap:6px;text-align:right}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--dim)}.dot.on{background:var(--up);box-shadow:0 0 6px var(--up)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:720px){.grid{grid-template-columns:repeat(4,1fr);gap:12px}}
+.t{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:11px 12px 10px;min-height:86px;display:flex;flex-direction:column;justify-content:space-between}
+.t.hl{border:2px solid var(--or);padding:10px 11px 9px}
+.t small.l{font-size:11px;color:var(--dim);font-weight:600;line-height:1.25}
+.t b.v{display:block;font-size:24px;font-weight:700;color:var(--strong);font-variant-numeric:tabular-nums;letter-spacing:-.3px;margin:4px 0 2px;line-height:1.1}
+.t b.v.u{color:var(--up)}.t b.v.d{color:var(--down)}
+.t .s{font-size:10.5px;color:var(--dim);line-height:1.3;font-variant-numeric:tabular-nums}
+.t .s.d{color:var(--down)}.t .s.u{color:var(--up)}
+.t.ld b.v{opacity:.35}
+.foot{margin-top:18px;font-size:11px;color:var(--dim);line-height:1.55;text-align:center}
+.foot b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="btn" href="index.html">← Hub</a>
+  <h1>Bitcoin</h1>
+  <div class="est"><span class="dot" id="dot"></span><span id="est">cargando…</span></div>
+</header>
+<div class="grid" id="grid"></div>
+<div class="foot">
+  Datos en vivo de <b>Binance</b>, <b>mempool.space</b>, <b>Alternative.me</b>, <b>CoinGecko</b>, <b>Deribit</b> y <b>Blockchain.com</b>. Volumen e interés abierto son solo de Binance, no del mercado total.
+  Los ETF de Bitcoin no tienen una fuente gratuita en directo, por eso no aparecen. Solo informativo, no es asesoramiento financiero.
+</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var TILES=[
+ ['price','Precio de Bitcoin'],['mcap','Capitalización ($B)'],['ma200w','Media móvil 200 semanas'],['prem','Prima sobre la media de 200 semanas',1],
+ ['r1y','Retorno 1 año'],['r4y','Retorno 4 años (anual.)'],['r10y','Retorno 10 años (anual.)'],['dd','Caída desde el máximo histórico'],
+ ['vol','Volumen 24h ($M, Binance)'],['vol30','Volumen medio 30D ($M, Binance)'],['oi','Interés abierto ($M, Binance fut.)'],['newsup','Nueva oferta diaria ($M)'],
+ ['hv30','Volatilidad histórica (30D)'],['hv1y','Volatilidad histórica (1A)'],['iv','Volatilidad implícita (DVOL)'],['fng','Índice Miedo/Codicia',1],
+ ['dom','Dominancia de Bitcoin',1],['hash','Hashrate (EH/s)'],['fund','Funding perpetuo (8h)'],['ls','Ratio largos/cortos (cuentas)'],
+ ['halv','Próximo halving'],['rsi','RSI 14 diario'],['cross','Medias 50/200 diarias'],['fees','Comisión rápida (sat/vB)']
+];
+var grid=$('grid');
+TILES.forEach(function(t){var d=document.createElement('div');d.className='t ld'+(t[2]?' hl':'');d.id='t_'+t[0];d.innerHTML='<small class="l">'+t[1]+'</small><b class="v">—</b><span class="s">&nbsp;</span>';grid.appendChild(d)});
+function set(id,val,sub,cls,scls){var e=$('t_'+id);if(!e)return;e.classList.remove('ld');var v=e.querySelector('.v'),s=e.querySelector('.s');v.textContent=val;v.className='v'+(cls?' '+cls:'');s.innerHTML=sub||'&nbsp;';s.className='s'+(scls?' '+scls:'')}
+function na(id){var e=$('t_'+id);if(e&&e.classList.contains('ld')){e.classList.remove('ld');e.querySelector('.v').textContent='n/d'}}
+
+/* formato */
+function n(x,d){return x.toLocaleString('de-DE',{minimumFractionDigits:d||0,maximumFractionDigits:d||0})}
+function usd(x,d){return '$'+n(x,d)}
+function pct(x,d){d=d==null?1:d;var s=n(Math.abs(x),d)+'%';return x<0?'('+s+')':s}
+function cl(x){return x>0?'u':x<0?'d':''}
+function ft(url,ms){var c=new AbortController(),t=setTimeout(function(){c.abort()},ms||10000);return fetch(url,{signal:c.signal}).then(function(r){clearTimeout(t);if(!r.ok)throw new Error(r.status);return r.json()})}
+var BIN=['https://api.binance.com','https://data-api.binance.vision'];
+function bin(path){return ft(BIN[0]+path).catch(function(){return ft(BIN[1]+path)})}
+
+/* suministro exacto según la altura de bloque */
+function supply(h){var r=50e8,t=0;while(h>0){var b=Math.min(h,210000);t+=b*r;h-=b;r=Math.floor(r/2)}return t/1e8}
+function subsidy(h){return 50/Math.pow(2,Math.floor(h/210000))}
+
+var D={price:null,closes:null,highs:null,ath:null,height:null};
+function sd(a){var m=a.reduce(function(x,y){return x+y},0)/a.length;return Math.sqrt(a.reduce(function(x,y){return x+(y-m)*(y-m)},0)/(a.length-1))}
+function sma(a,k){return a.slice(-k).reduce(function(x,y){return x+y},0)/k}
+function rsi(c,k){var g=0,l=0;for(var i=1;i<=k;i++){var d=c[i]-c[i-1];d>0?g+=d:l-=d}g/=k;l/=k;for(var j=k+1;j<c.length;j++){var dd=c[j]-c[j-1];g=(g*(k-1)+Math.max(dd,0))/k;l=(l*(k-1)+Math.max(-dd,0))/k}return l===0?100:100-100/(1+g/l)}
+
+function pintarPrecio(){
+  if(D.price==null)return;
+  var sub='';
+  if(D.closes){var above=D.closes.filter(function(c){return c>D.price}).length/D.closes.length*100;sub=n(above,1)+'% del tiempo por encima · desde 2017'}
+  set('price',usd(D.price,0),sub);
+  if(D.height!=null){var sp=supply(D.height);set('mcap',usd(D.price*sp/1e9,0),n(sp/1e6,2)+' M BTC · '+n(sp/21e6*100,1)+'% emitido');set('newsup',usd(144*subsidy(D.height)*D.price/1e6,1),n(144*subsidy(D.height),0)+' BTC al día')}
+  if(D.ath){set('dd',pct((D.price/D.ath-1)*100),'Máximo '+usd(D.ath,0),'d','')}
+  if(D.ma200w){var pr=(D.price/D.ma200w-1)*100;set('prem',pct(pr),D.above200!=null?n(D.above200,1)+'% del tiempo por encima (desde 2020)':'',cl(pr))}
+  if(D.closes&&D.closes.length>366){var r=(D.price/D.closes[D.closes.length-366]-1)*100;set('r1y',pct(r),'',cl(r))}
+}
+
+/* 1) Precio en vivo + volumen */
+function cargarTicker(){
+  return bin('/api/v3/ticker/24hr?symbol=BTCUSDT').then(function(t){
+    D.price=parseFloat(t.lastPrice);set('vol',usd(parseFloat(t.quoteVolume)/1e6,0),'Variación 24h '+pct(parseFloat(t.priceChangePercent),2));pintarPrecio();
+    $('dot').className='dot on';$('est').textContent='en directo · '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  }).catch(function(){$('est').textContent='sin conexión con Binance'});
+}
+/* 2) Histórico diario y semanal */
+function klines(interval,start){
+  var out=[];
+  function pagina(s){return bin('/api/v3/klines?symbol=BTCUSDT&interval='+interval+'&limit=1000&startTime='+s).then(function(k){
+    out=out.concat(k);if(k.length===1000)return pagina(k[k.length-1][0]+1);return out})}
+  return pagina(start);
+}
+function cargarHistorico(){
+  var cache=null;try{cache=JSON.parse(localStorage.getItem('btcpanel.h')||'null')}catch(e){}
+  var fresh=cache&&Date.now()-cache.t<3*3600e3;
+  var p=fresh?Promise.resolve(cache):Promise.all([klines('1d',1502928000000),klines('1w',1502928000000)]).then(function(r){
+    var o={t:Date.now(),d:r[0].map(function(k){return [+k[2],+k[4],+k[7]]}),w:r[1].map(function(k){return +k[4]})};
+    try{localStorage.setItem('btcpanel.h',JSON.stringify(o))}catch(e){}return o});
+  return p.then(function(h){
+    var closes=h.d.map(function(x){return x[1]}),highs=h.d.map(function(x){return x[0]}),qv=h.d.map(function(x){return x[2]});
+    D.closes=closes;D.ath=Math.max.apply(null,highs);
+    var lr=[];for(var i=1;i<closes.length;i++)lr.push(Math.log(closes[i]/closes[i-1]));
+    var f=Math.sqrt(365)*100;
+    set('hv30',n(sd(lr.slice(-30))*f,1)+'%');set('hv1y',n(sd(lr.slice(-365))*f,1)+'%');
+    set('vol30',usd(qv.slice(-30).reduce(function(x,y){return x+y},0)/30/1e6,0));
+    set('rsi',n(rsi(closes,14),1),rsi(closes,14)>=70?'Sobrecompra':rsi(closes,14)<=30?'Sobreventa':'Zona neutra');
+    var s50=sma(closes,50),s200=sma(closes,200);set('cross',s50>s200?'Alcista':'Bajista',(s50>s200?'Cruz dorada · ':'Cruz de la muerte · ')+usd(s50,0)+' / '+usd(s200,0),s50>s200?'u':'d');
+    var w=h.w;if(w.length>=200){D.ma200w=sma(w,200);var up=0,tot=0;for(var j=199;j<w.length;j++){var m=0;for(var q=j-199;q<=j;q++)m+=w[q];m/=200;tot++;if(w[j]>m)up++}D.above200=up/tot*100;set('ma200w',usd(D.ma200w,0),'Precio '+(D.price?(D.price>D.ma200w?'por encima':'por debajo'):''))}
+    pintarPrecio();
+  }).catch(function(){['hv30','hv1y','vol30','rsi','cross','ma200w','prem','dd','r1y'].forEach(na)});
+}
+/* 3) Retornos largos (Blockchain.com, desde 2010) */
+function cargarLargo(){
+  return ft('https://api.blockchain.info/charts/market-price?timespan=all&sampled=true&metadata=false&cors=true&format=json',15000).then(function(j){
+    var v=j.values;function en(yrs){var t=Date.now()/1000-yrs*365.25*86400,b=null;for(var i=0;i<v.length;i++){if(v[i].x>=t){b=v[i];break}}return b}
+    function ann(yrs,id){var b=en(yrs),p=D.price||v[v.length-1].y;if(!b||!b.y){na(id);return}var r=(Math.pow(p/b.y,1/yrs)-1)*100;set(id,pct(r),'Desde '+usd(b.y,0),cl(r))}
+    var go=function(){ann(4,'r4y');ann(10,'r10y')};
+    if(D.price==null)setTimeout(go,1500);else go();
+  }).catch(function(){na('r4y');na('r10y')});
+}
+/* 4) Red Bitcoin */
+function cargarRed(){
+  return Promise.all([
+    ft('https://mempool.space/api/blocks/tip/height').then(function(h){D.height=+h;pintarPrecio();
+      var next=(Math.floor(D.height/210000)+1)*210000,rest=next-D.height,dias=rest*10/1440;
+      set('halv',n(dias,0)+' días',n(rest,0)+' bloques · ~'+new Date(Date.now()+dias*86400e3).toLocaleDateString('es-ES',{month:'short',year:'numeric'}))}).catch(function(){['mcap','newsup','halv'].forEach(na)}),
+    ft('https://mempool.space/api/v1/mining/hashrate/3d').then(function(j){set('hash',n(j.currentHashrate/1e18,0),'Dificultad '+n(j.currentDifficulty/1e12,1)+' T')}).catch(function(){na('hash')}),
+    ft('https://mempool.space/api/v1/fees/recommended').then(function(j){set('fees',n(j.fastestFee,0),'Media '+n(j.halfHourFee,0)+' · Económica '+n(j.economyFee,0))}).catch(function(){na('fees')})
+  ]);
+}
+/* 5) Mercado */
+function cargarMercado(){
+  return Promise.all([
+    ft('https://api.alternative.me/fng/?limit=1').then(function(j){var v=+j.data[0].value,c=j.data[0].value_classification;
+      var es={'Extreme Fear':'Miedo extremo','Fear':'Miedo','Neutral':'Neutral','Greed':'Codicia','Extreme Greed':'Codicia extrema'}[c]||c;
+      set('fng',String(v),es,'',v<=45?'d':v>=55?'u':'')}).catch(function(){na('fng')}),
+    ft('https://api.coingecko.com/api/v3/global').then(function(j){set('dom',n(j.data.market_cap_percentage.btc,1)+'%','Ethereum '+n(j.data.market_cap_percentage.eth,1)+'%')}).catch(function(){na('dom')}),
+    ft('https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT').then(function(j){var oi=parseFloat(j.openInterest),go=function(){set('oi',usd(oi*(D.price||0)/1e6,0),n(oi,0)+' BTC')};D.price?go():setTimeout(go,1500)}).catch(function(){na('oi')}),
+    ft('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT').then(function(j){var f=parseFloat(j.lastFundingRate)*100;set('fund',(f>=0?'+':'−')+n(Math.abs(f),4)+'%','Anualizado '+pct(f*3*365,1),cl(f))}).catch(function(){na('fund')}),
+    ft('https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1h&limit=1').then(function(j){var r=parseFloat(j[0].longShortRatio);set('ls',n(r,2),n(parseFloat(j[0].longAccount)*100,1)+'% largos · '+n(parseFloat(j[0].shortAccount)*100,1)+'% cortos')}).catch(function(){na('ls')}),
+    ft('https://www.deribit.com/api/v2/public/get_volatility_index_data?currency=BTC&resolution=3600&start_timestamp='+(Date.now()-6*3600e3)+'&end_timestamp='+Date.now()).then(function(j){var d=j.result.data;set('iv',n(d[d.length-1][4],1)+'%','Índice DVOL de Deribit')}).catch(function(){na('iv')})
+  ]);
+}
+function todo(){return cargarTicker().then(function(){return Promise.all([cargarHistorico(),cargarLargo(),cargarRed(),cargarMercado()])})}
+todo();
+setInterval(function(){if(!document.hidden)cargarTicker()},15000);
+setInterval(function(){if(!document.hidden){cargarRed();cargarMercado()}},5*60000);
+})();
+</script>
+<script src="telegram.js" defer></script>
+</body>
+</html>
