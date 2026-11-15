@@ -57,7 +57,7 @@ h1{font-size:17px;margin:0 0 3px;color:var(--strong);letter-spacing:.2px}
 </div>
 <div class="card" id="lista"></div>
 <div class="falta" id="falta"></div>
-<div class="foot">Cripto: Binance (y CoinGecko para HYPE). Acciones, índices y oro: Yahoo Finance. Algunos datos pueden llevar retraso. Solo informativo, no es asesoramiento financiero.</div>
+<div class="foot">Cripto: Binance (y CoinGecko para HYPE). Acciones, índices y oro: los publica tu bot cada hora (o Yahoo Finance si está disponible). Algunos datos pueden llevar retraso. Solo informativo, no es asesoramiento financiero.</div>
 </div>
 
 <script>
@@ -116,13 +116,22 @@ function yahoo(sym){
   }
   return probar();
 }
+var botT=0;
+function cargarBot(){
+  return ft('mercados.json?t='+Date.now(),6000).then(function(j){
+    if(!j||!j.d)return;botT=j.t||0;
+    TODOS.forEach(function(i){if(i.t==='yh'||i.t==='cg'){var x=j.d[i.n];if(x&&x.p!=null&&!i.v)i.v={p:x.p,c:x.c}}});
+  }).catch(function(){});
+}
+var yahooMuerto=false;
 function cargarYahoo(){
-  var its=TODOS.filter(function(i){return i.t==='yh'});
-  var idx=0;
+  var its=TODOS.filter(function(i){return i.t==='yh'&&!i.v});
+  var idx=0,fallos=0,oks=0;
+  if(yahooMuerto&&!its.length)return Promise.resolve();
   function worker(){
-    if(idx>=its.length)return Promise.resolve();
+    if(idx>=its.length||(fallos>=4&&!oks))return Promise.resolve();
     var i=its[idx++];
-    return yahoo(i.s).then(function(v){i.v=v}).catch(function(){}).then(worker);
+    return yahoo(i.s).then(function(v){i.v=v;oks++}).catch(function(){fallos++}).then(worker);
   }
   return Promise.all([worker(),worker(),worker(),worker()]);
 }
@@ -161,14 +170,17 @@ function pintar(){
   $('tit').textContent='RESUMEN DE MERCADOS — '+fecha();
   $('nota').textContent=eeuuAbierta()?'':'Acciones de EEUU, S&P 500 y Nasdaq: variación de la última sesión (bolsa de EEUU cerrada)';
   $('ordGrupo').classList.toggle('on',modo!=='pct');$('ordPct').classList.toggle('on',modo==='pct');
+  if(botT){var d=new Date(botT*1000),z=function(n){return ('0'+n).slice(-2)};var ed=Math.round((Date.now()-d)/60000);
+    $('falta').textContent=($('falta').textContent?$('falta').textContent+' · ':'')+'Acciones, índices y oro: datos del bot de las '+z(d.getHours())+':'+z(d.getMinutes())+(ed>180?' (desactualizados)':'')}
   var ok=con.length;$('dot').className='dot '+(ok?'on':'off');
   $('est').textContent=ok?(ok+'/'+TODOS.length+' activos'):'sin conexión';
 }
 var cargando=false;
 function cargar(solo){
   if(cargando)return;cargando=true;$('est').textContent='actualizando…';
+  if(!solo)TODOS.forEach(function(i){if(i.t==='yh')i.v=null});
   var ps=[cargarBinance(),cargarCG()];
-  if(!solo)ps.push(cargarYahoo());
+  if(!solo)ps.push(cargarBot().then(function(){pintar();return cargarYahoo()}));
   return Promise.all(ps).then(function(){listo=true;pintar()}).then(function(){cargando=false},function(){cargando=false});
 }
 $('ordGrupo').onclick=function(){modo='grupo';try{localStorage.setItem('tk.modo',modo)}catch(e){}pintar()};
