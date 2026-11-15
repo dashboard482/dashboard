@@ -4,7 +4,7 @@
   'use strict';
   if (window.top !== window) return; // no actuar dentro de iframes (p. ej. el indicador oculto del hub)
 
-  var MAP = { noticias: 'noticias.html', btc: 'caro_barato_btc.html', donar: 'donaciones.html', guerra: 'guerra_liquidez.html' };
+  var MAP = { noticias: 'noticias.html', btc: 'caro_barato_btc.html', donar: 'donaciones.html', guerra: 'guerra_liquidez.html', dominancia: 'dominancia.html' };
   var hub = new URL('index.html', location.href).href;
   var isHub = /\/(index\.html)?$/.test(location.pathname);
 
