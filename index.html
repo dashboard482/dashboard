@@ -113,34 +113,43 @@ const KEY='hub.v1';
 const CATS=[
 {id:'fav',name:'Favoritos',color:'#f7a600',links:[]},
 {id:'top',name:'Más usados',color:'#2962ff',links:[]},
-{id:'mias',name:'Mis herramientas',color:'#e91e63',links:[
-['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚'],
-['Noticias del día','Titulares de cripto, mercados y España, se actualiza solo','noticias.html','📰'],
+{id:'btc',name:'Bitcoin y ciclos',color:'#f7a600',links:[
 ['BTC ¿Caro o barato?','Índice 0–100 con datos en vivo','caro_barato_btc.html','⚖️'],
+['Panel Bitcoin','24 métricas clave en vivo: precio, media 200 semanas, volatilidad, miedo/codicia, dominancia, funding…','btc_panel.html','🟠'],
 ['Dominancia: compra / venta BTC','Miedo y codicia con zonas históricas de compra y venta','dominancia.html','🎯'],
 ['Ciclo de mercado BTC','En qué fase del ciclo está BTC: pico, suelo, expansión…','ciclo.html','🔄'],
 ['Halvings BTC','Ciclo de 4 años con fases, halvings y proyección','halvingbtc.html','⛏️'],
 ['Compresión BTC','Lo estrecho que está el rango de precio de los últimos 30 días','compresion.html','🗜️'],
-['Alerta BTC','Te avisa cada vez que BTC sube o baja $1.000 (o el importe que elijas)','alerta_btc.html','🔔'],
-['Ticker de mercados','Resumen del bot: cripto, acciones, índices y oro con precio y variación del día','ticker.html','📊'],
-['Liquidaciones en directo','Liquidaciones del mercado en tiempo real','liquidaciones_directo.html','💥'],
-['Presión en directo','Presión de compra y venta en tiempo real','presion_directo.html','⚖️'],
 ['M2 global vs BTC (10 sem)','M2 de 21 bancos centrales adelantado 10 semanas (BGeometrics)','m2_btc_directo.html','💧'],
+['Alerta BTC','Te avisa cada vez que BTC sube o baja $1.000 (o el importe que elijas)','alerta_btc.html','🔔']
+]},
+{id:'vivo',name:'Mercados en directo',color:'#26a69a',links:[
+['Ticker de mercados','Resumen del bot: cripto, acciones, índices y oro con precio y variación del día','ticker.html','📊'],
 ['Ticker cripto','Precios cripto en vivo','ticker_cripto.html','🪙'],
 ['Cinta de bolsa','Cinta de cotizaciones de bolsa','cinta_bolsa.html','🎞️'],
+['Liquidaciones en directo','Liquidaciones del mercado en tiempo real','liquidaciones_directo.html','💥'],
+['Presión en directo','Presión de compra y venta en tiempo real','presion_directo.html','⚖️'],
+['Guerra de Liquidez en Directo','Batalla visual de muros de compra y venta de BTC en tiempo real','guerra_liquidez.html','⚔️'],
+['Gráficos de muros','Muros de órdenes en el libro','graficos_muros.html','🧱']
+]},
+{id:'bolsa',name:'Bolsa y macro',color:'#2962ff',links:[
 ['Hub de Bolsa y Cartera','Cotizaciones de bolsa, ETFs, innovación y materias primas','hub_bolsa.html','📈'],
-['Calendario Macroeconómico','Eventos clave, IPC, Fed y BCE en vivo','calendario_macro.html','📅'],
 ['Señales de Mercado','Análisis técnico en vivo y resumen de activos','senales.html','📊'],
-['Gráficos de calor','Mapas de calor del mercado','graficos_calor.html','🌡️'],
-['Gráficos de muros','Muros de órdenes en el libro','graficos_muros.html','🧱'],
+['Calendario Macroeconómico','Eventos clave, IPC, Fed y BCE en vivo','calendario_macro.html','📅'],
+['Calendario Económico Directo','Agenda de eventos macro de alto impacto','calendario.html','📅'],
 ['Bono 30 años','Rendimiento del bono a 30 años','bono_30y.html','📉'],
+['Noticias del día','Titulares de cripto, mercados y España, se actualiza solo','noticias.html','📰']
+]},
+{id:'mapas',name:'Mapas y análisis',color:'#7e57c2',links:[
 ['Mapas de Mercado Global','Mapas interactivos de bolsa y cripto','mercados.html','🗺️'],
+['Mapa de Calor Cripto','Mapa global de criptomonedas en vivo','crypto_heatmap.html','🪙'],
+['Gráficos de calor','Mapas de calor del mercado','graficos_calor.html','🌡️'],
+['Screener de Criptomonedas','Escáner avanzado de activos cripto','screener.html','🔍']
+]},
+{id:'juegos',name:'Juegos y proyecto',color:'#e91e63',links:[
 ['Street Rush 3D','Carreras infinitas en 3D: esquiva tráfico, combos, power-ups y nitro','street_rush_3d.html','🏎️'],
 ['Wall Street Trivia','Pon a prueba tus conocimientos sobre grandes inversores, trading y macroeconomía','trivia.html','🧠'],
-['Guerra de Liquidez en Directo','Batalla visual de muros de compra y venta de BTC en tiempo real','guerra_liquidez.html','⚔️'],
-['Mapa de Calor Cripto','Mapa global de criptomonedas en vivo','crypto_heatmap.html','🪙'],
-['Screener de Criptomonedas','Escáner avanzado de activos cripto','screener.html','🔍'],
-['Calendario Económico Directo','Agenda de eventos macro de alto impacto','calendario.html','📅']
+['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚']
 ]},
 {id:'es',name:'Inversor en España',color:'#ef5350',links:[
 ['Trade Republic','Tu broker: cartera y órdenes','https://traderepublic.com/es-es','🟣'],
