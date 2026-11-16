@@ -129,6 +129,13 @@ function yahoo(sym){
   return viaYahoo('/v8/finance/chart/'+encodeURIComponent(sym)+'?range=1d&interval=1d',function(j){
     var v=meta2v(j.chart.result[0].meta);if(!v)throw new Error('incompleto');return v},6000);
 }
+var jsonT=0;
+function cargarJson(){
+  return ft('cotizaciones.json?t='+Date.now(),6000).then(function(j){
+    if(!j||!j.d)return;jsonT=j.t||0;
+    TODOS.forEach(function(i){if(i.t==='yh'){var x=j.d[i.s];if(x&&x.p!=null){i.v={p:x.p,c:x.c};i.f=true}}});
+  }).catch(function(){});
+}
 var botT=0;
 function cargarBot(){
   return ft('mercados.json?t='+Date.now(),5000).then(function(j){
@@ -192,8 +199,8 @@ function pintar(){
   $('tit').textContent='RESUMEN DE MERCADOS — '+fecha();
   $('nota').textContent=eeuuAbierta()?'':'Acciones de EEUU, S&P 500 y Nasdaq: variación de la última sesión (bolsa de EEUU cerrada)';
   $('ordGrupo').classList.toggle('on',modo!=='pct');$('ordPct').classList.toggle('on',modo==='pct');
-  if(botT){var d=new Date(botT*1000),z=function(n){return ('0'+n).slice(-2)};var ed=Math.round((Date.now()-d)/60000);
-    $('falta').textContent=($('falta').textContent?$('falta').textContent+' · ':'')+'Acciones, índices y oro: datos del bot de las '+z(d.getHours())+':'+z(d.getMinutes())+(ed>180?' (desactualizados)':'')}
+  var bt=jsonT||botT;if(bt){var d=new Date(bt*1000),z=function(n){return ('0'+n).slice(-2)};var ed=Math.round((Date.now()-d)/60000);
+    $('falta').textContent=($('falta').textContent?$('falta').textContent+' · ':'')+'Acciones, índices, divisas y materias primas: datos de las '+z(d.getHours())+':'+z(d.getMinutes())+(ed>180?' (desactualizados)':'')}
   var ok=con.length;$('dot').className='dot '+(ok?'on':'off');
   var fr=TODOS.filter(function(i){return i.f}).length;
   $('est').textContent=ok?(ok+'/'+TODOS.length+' activos'+(cargando&&fr<ok?' · actualizando…':'')):(listo?'sin conexión':'cargando…');
@@ -206,7 +213,7 @@ function leerCache(){try{var c=JSON.parse(localStorage.getItem('tk.c')||'null');
 function cargar(solo){
   if(cargando)return;cargando=true;$('est').textContent='actualizando…';
   var ps=[cargarBinance().then(pintarYa),cargarCG().then(pintarYa)];
-  if(!solo)ps.push(cargarBot().then(function(){pintarYa();return cargarYahoo()}));
+  if(!solo)ps.push(Promise.all([cargarJson(),cargarBot()]).then(function(){pintarYa();return cargarYahoo()}));
   return Promise.all(ps).then(function(){listo=true;guardar();pintar()}).then(function(){cargando=false},function(){cargando=false});
 }
 $('ordGrupo').onclick=function(){modo='grupo';try{localStorage.setItem('tk.modo',modo)}catch(e){}pintar()};
