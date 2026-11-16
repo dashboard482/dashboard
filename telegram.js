@@ -22,6 +22,17 @@
 
     try { tg.ready(); tg.expand(); } catch (e) {}
 
+    // pantalla completa de Telegram: dejar sitio arriba para la hora/batería y los botones de Telegram
+    function margenSuperior() {
+      try {
+        var t = ((tg.safeAreaInset && tg.safeAreaInset.top) || 0) + ((tg.contentSafeAreaInset && tg.contentSafeAreaInset.top) || 0);
+        if (tg.isFullscreen && t < 60) t = 100;
+        document.documentElement.style.setProperty('--tgtop', t + 'px');
+      } catch (e) {}
+    }
+    margenSuperior();
+    try { ['safeAreaChanged', 'contentSafeAreaChanged', 'fullscreenChanged', 'viewportChanged'].forEach(function (ev) { tg.onEvent(ev, margenSuperior); }); } catch (e) {}
+
     // barra de Telegram a juego con el fondo de la página
     try {
       var c = (getComputedStyle(document.documentElement).getPropertyValue('--bg') || '').trim();
