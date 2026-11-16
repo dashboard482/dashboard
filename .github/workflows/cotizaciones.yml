@@ -2,6 +2,7 @@ name: Cotizaciones
 on:
   schedule:
     - cron: "*/10 * * * 1-5"
+    - cron: "0 * * * 0,6"
   workflow_dispatch:
 permissions:
   contents: write
@@ -36,9 +37,96 @@ jobs:
           if d:
               json.dump({"t": int(time.time()), "d": d}, open("cotizaciones.json", "w"))
           PY
+      - name: Imagen del resumen (para la tarjeta de X)
+        run: |
+          pip install --quiet pillow
+          if [ ! -f resumen.png ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] || [ "$(date +%M)" -lt 10 ]; then
+          python3 - <<'PY'
+          import json, os, time, urllib.request, urllib.parse
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          from PIL import Image, ImageDraw, ImageFont
+
+          W, H = 1200, 630
+          FB = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+          FR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          def font(p, s):
+              try: return ImageFont.truetype(p, s)
+              except Exception: return ImageFont.load_default()
+
+          # ---- datos
+          yh = {}
+          try: yh = json.load(open("cotizaciones.json"))["d"]
+          except Exception: pass
+          cr = {}
+          SIMB = {"Bitcoin": "BTCUSDT", "Ethereum": "ETHUSDT", "Solana": "SOLUSDT", "XRP": "XRPUSDT", "Dogecoin": "DOGEUSDT"}
+          if os.environ.get("SAMPLE"):
+              cr = {k: {"p": p, "c": c} for k, p, c in [("Bitcoin", 64837.33, .35), ("Ethereum", 1817.96, .14), ("Solana", 71.13, -.61), ("XRP", .9553, .47), ("Dogecoin", .0592, .71)]}
+          else:
+              for host in ("data-api.binance.vision", "api.binance.com"):
+                  try:
+                      q = json.dumps(list(SIMB.values()), separators=(",", ":"))
+                      u = "https://%s/api/v3/ticker/24hr?symbols=%s" % (host, urllib.parse.quote(q))
+                      arr = json.load(urllib.request.urlopen(u, timeout=15))
+                      by = {a["symbol"]: a for a in arr}
+                      cr = {n: {"p": float(by[s]["lastPrice"]), "c": float(by[s]["priceChangePercent"])} for n, s in SIMB.items() if s in by}
+                      break
+                  except Exception as e:
+                      print("binance fallo", host, e)
+
+          COLS = [
+              ("CRIPTO", [(n, cr.get(n), "$") for n in SIMB]),
+              ("ACCIONES", [(n, yh.get(s), "$") for n, s in [("Apple", "AAPL"), ("Nvidia", "NVDA"), ("Tesla", "TSLA"), ("Microsoft", "MSFT"), ("Strategy", "MSTR")]]),
+              ("MERCADOS", [(n, yh.get(s), c) for n, s, c in [("S&P 500", "^GSPC", ""), ("Nasdaq", "^IXIC", ""), ("IBEX 35", "^IBEX", ""), ("Oro", "GC=F", "$"), ("Petróleo", "CL=F", "$")]]),
+          ]
+
+          def fp(p, cur):
+              d = 2 if p >= 1 else 4
+              s = f"{p:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+              return cur + s
+          def fc(c): return ("▲ +" if c >= 0 else "▼ ") + f"{c:.2f}".replace(".", ",") + "%"
+
+          UP, DN = (0, 209, 85), (255, 64, 64)
+          img = Image.new("RGB", (W, H), (13, 17, 23))
+          d = ImageDraw.Draw(img)
+          for y in range(H):  # degradado
+              t = y / H
+              d.line([(0, y), (W, y)], fill=(int(13 + 3 * t), int(17 + 9 * t), int(23 + 23 * t)))
+          d.rectangle([0, 0, W, 8], fill=(41, 98, 255))
+          now = datetime.now(ZoneInfo("Europe/Madrid"))
+          d.text((50, 30), "RESUMEN DE MERCADOS", font=font(FB, 44), fill=(240, 243, 250))
+          d.text((50, 86), "Variación del día · " + now.strftime("%d/%m %H:%M") + " (Madrid)", font=font(FR, 22), fill=(120, 123, 134))
+          cw = (W - 100 - 2 * 30) // 3
+          for i, (tit, rows) in enumerate(COLS):
+              x0 = 50 + i * (cw + 30)
+              d.rounded_rectangle([x0, 135, x0 + cw, 520], 16, fill=(19, 23, 34))
+              d.text((x0 + 20, 150), tit, font=font(FB, 20), fill=(120, 123, 134))
+              y = 190
+              for n, v, cur in rows:
+                  d.text((x0 + 20, y), n, font=font(FB, 25), fill=(240, 243, 250))
+                  if v:
+                      col = UP if v["c"] >= 0 else DN
+                      d.text((x0 + 20, y + 31), fp(v["p"], cur), font=font(FR, 18), fill=(120, 123, 134))
+                      txt = fc(v["c"]); f = font(FB, 24)
+                      d.text((x0 + cw - 20 - d.textlength(txt, font=f), y + 8), txt, font=f, fill=col)
+                  else:
+                      d.text((x0 + cw - 40, y + 8), "–", font=font(FB, 24), fill=(120, 123, 134))
+                  y += 64
+          d.rounded_rectangle([50, 540, W - 50, 605], 14, fill=(19, 23, 34))
+          d.text((70, 550), "HUB FINANCIERO", font=font(FB, 30), fill=(41, 98, 255))
+          d.text((70, 584), "Mercados, cripto y herramientas gratis", font=font(FR, 15), fill=(209, 212, 220))
+          f = font(FB, 22); t1 = "dashboard482.github.io/dashboard"
+          d.text((W - 70 - d.textlength(t1, font=f), 550), t1, font=f, fill=(240, 243, 250))
+          f = font(FB, 18); t2 = "t.me/anafra_bot/hubfinanciero"
+          d.text((W - 70 - d.textlength(t2, font=f), 580), t2, font=f, fill=(138, 180, 255))
+          img = img.quantize(colors=96, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+          img.save("resumen.png", optimize=True)
+          print("imagen ok", os.path.getsize("resumen.png"))
+          PY
+          fi
       - name: Guardar
         run: |
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
-          git add cotizaciones.json
+          git add cotizaciones.json resumen.png
           git diff --cached --quiet || (git commit -m "cotizaciones" && git push)
