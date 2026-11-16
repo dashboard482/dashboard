@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Coste de minar 1 BTC</title>
+<style>
+:root{--bg:#0b0e14;--card:#151a23;--tx:#eef1f6;--mu:#8b95a7;--bd:#252c3a;--g:#22c55e;--r:#ef4444;--o:#f7931a}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--card:#fff;--tx:#10151f;--mu:#667085;--bd:#dde2ea}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:max(16px,env(safe-area-inset-top,0px),var(--tgtop,0px)) 16px 40px}
+h1{font-size:20px;margin:6px 0 2px}.sub{color:var(--mu);font-size:13px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:12px}
+.lbl{color:var(--mu);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.big{font-size:38px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.row{display:flex;gap:12px}.row>.card{flex:1;margin-bottom:12px}
+.btc{color:var(--o)}.g{color:var(--g)}.r{color:var(--r)}
+.bar{height:14px;border-radius:7px;background:var(--bd);overflow:hidden;margin:12px 0 6px;position:relative}
+.bar i{display:block;height:100%;background:var(--o);width:50%;transition:width .5s}
+.verd{font-size:15px;font-weight:700;margin-top:8px}
+label{display:flex;justify-content:space-between;font-size:14px;margin:12px 0 4px}
+input[type=range]{width:100%;accent-color:var(--o)}
+.s{display:flex;justify-content:space-between;font-size:14px;padding:7px 0;border-top:1px solid var(--bd)}.s:first-of-type{border:0}
+.s b{font-variant-numeric:tabular-nums}.n{color:var(--mu);font-size:12px;line-height:1.5}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--g);margin-right:6px;animation:p 1.5s infinite}@keyframes p{50%{opacity:.3}}
+</style></head><body><div class="wrap">
+<h1>⚡ Coste de minar 1 BTC</h1>
+<div class="sub"><span class="dot"></span><span id="st">cargando…</span></div>
+
+<div class="row">
+ <div class="card"><div class="lbl">Precio BTC</div><div class="big btc" id="pr" style="font-size:26px">—</div></div>
+ <div class="card"><div class="lbl">Coste eléctrico</div><div class="big" id="co" style="font-size:26px">—</div></div>
+</div>
+
+<div class="card">
+ <div class="lbl">Margen de un minero (solo luz)</div>
+ <div class="big" id="mg">—</div>
+ <div class="bar"><i id="br"></i></div>
+ <div class="n" id="bn">Barra: parte del precio que se va en electricidad</div>
+ <div class="verd" id="vd"></div>
+</div>
+
+<div class="card">
+ <div class="lbl">Ajusta tu caso</div>
+ <label><span>Precio de la luz</span><b id="vl">0,07 $/kWh</b></label>
+ <input type="range" id="luz" min="0.02" max="0.20" step="0.005" value="0.07">
+ <label><span>Eficiencia de las máquinas</span><b id="ve">25 J/TH</b></label>
+ <input type="range" id="ef" min="10" max="50" step="1" value="25">
+ <div class="n">0,07 $/kWh y 25 J/TH son valores típicos del sector. Cambia y mira el coste al momento.</div>
+</div>
+
+<div class="card">
+ <div class="s"><span>Hashrate de la red</span><b id="hr">—</b></div>
+ <div class="s"><span>Dificultad</span><b id="df">—</b></div>
+ <div class="s"><span>Recompensa por bloque</span><b>3,125 BTC</b></div>
+ <div class="s"><span>BTC minados al día</span><b>≈ 450</b></div>
+ <div class="s"><span>Potencia estimada de la red</span><b id="pw">—</b></div>
+ <div class="s"><span>Energía por 1 BTC</span><b id="kw">—</b></div>
+</div>
+<div class="n">Estimación orientativa: no incluye máquinas, personal ni comisiones de la red. La eficiencia real varía mucho entre mineros. Fuentes: Binance (precio) y mempool.space (hashrate).</div>
+</div>
+<script src="telegram.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const S={p:null,h:null,d:null};
+const f=(n,d=0)=>n.toLocaleString('es-ES',{maximumFractionDigits:d,minimumFractionDigits:d});
+const usd=n=>'$'+f(n);
+function calc(){
+ const luz=+$('luz').value,ef=+$('ef').value;
+ $('vl').textContent=f(luz,3)+' $/kWh';$('ve').textContent=ef+' J/TH';
+ if(!S.h)return;
+ const thps=S.h/1e12;                 // TH/s
+ const kW=thps*ef/1000;               // kW de la red
+ const kwhBtc=kW*24/450;              // kWh por BTC
+ const coste=kwhBtc*luz;
+ $('pw').textContent=f(kW/1e6,1)+' GW';
+ $('kw').textContent=f(kwhBtc/1000,0)+' MWh';
+ $('co').textContent=usd(coste);
+ if(S.p){
+  const m=S.p-coste,pc=m/S.p*100;
+  $('mg').textContent=(m>=0?'+':'−')+usd(Math.abs(m));$('mg').className='big '+(m>=0?'g':'r');
+  const u=Math.min(100,coste/S.p*100);$('br').style.width=u+'%';$('br').style.background=m>=0?'var(--g)':'var(--r)';
+  $('bn').textContent='La luz se come el '+f(u,0)+'% del precio';
+  $('vd').innerHTML=m>=0?'Minar sale rentable (solo luz): ganas '+f(pc,0)+'% por BTC':'Minar da pérdidas: BTC vale menos que su coste eléctrico';
+  $('vd').className='verd '+(m>=0?'g':'r');
+ }
+}
+async function precio(){
+ try{const r=await fetch('https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT');S.p=+(await r.json()).price;}
+ catch(e){try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');S.p=(await r.json()).bitcoin.usd;}catch(e){}}
+ if(S.p){$('pr').textContent=usd(S.p);$('st').textContent='en directo · '+new Date().toLocaleTimeString('es-ES');}
+ calc();
+}
+async function red(){
+ try{const r=await fetch('https://mempool.space/api/v1/mining/hashrate/3d');const j=await r.json();
+  S.h=j.currentHashrate;S.d=j.currentDifficulty;
+  $('hr').textContent=f(S.h/1e18,0)+' EH/s';$('df').textContent=f(S.d/1e12,1)+' T';}catch(e){$('st').textContent='sin datos de red';}
+ calc();
+}
+$('luz').oninput=$('ef').oninput=calc;
+precio();red();setInterval(precio,4000);setInterval(red,120000);
+</script></body></html>
