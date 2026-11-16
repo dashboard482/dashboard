@@ -10,7 +10,7 @@
     --dim:#787b86; --dim2:#5d606b; --accent:#2962ff; --up:#26a69a; --down:#ef5350; --amber:#f7a600; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; margin:0; background:var(--bg); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:var(--ink); overflow:hidden; -webkit-font-smoothing:antialiased; }
-  #stage { position:fixed; inset:0; height:100dvh; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+  #stage { position:fixed; inset:0; height:100dvh; display:flex; flex-direction:column; padding-top:calc(env(safe-area-inset-top,0px) + var(--tgtop,0px)); padding-bottom:env(safe-area-inset-bottom,0px); }
   header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--panel); border-bottom:1px solid var(--border); flex:0 0 auto; }
   .brand { font-size:12px; color:var(--dim); display:flex; align-items:center; gap:7px; min-width:0; }
   .brand .sym { color:var(--ink-strong); font-weight:600; }
@@ -48,7 +48,7 @@
   .legend { display:flex; justify-content:center; gap:5px; flex-wrap:wrap; padding:7px 10px 3px; font-size:10px; color:var(--dim); flex:0 0 auto; }
   .legend span { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:10px; background:var(--panel-2); border:1px solid var(--border); }
   .sw { width:8px; height:8px; border-radius:2px; display:inline-block; }
-  footer { padding:3px 16px 6px; text-align:center; font-size:9px; color:var(--dim2); flex:0 0 auto; }
+  footer { padding:3px 16px calc(6px + 6px); text-align:center; font-size:9px; color:var(--dim2); flex:0 0 auto; }
   #ov { position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:50; display:none; flex-direction:column; align-items:center; gap:10px; padding:calc(12px + env(safe-area-inset-top,0px)) 12px 16px; overflow:auto; }
   #ov.on { display:flex; }
   #ov img { width:100%; max-width:420px; border-radius:10px; }
