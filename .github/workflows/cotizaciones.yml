@@ -1,0 +1,44 @@
+name: Cotizaciones
+on:
+  schedule:
+    - cron: "*/10 * * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  cotizaciones:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar cotizaciones de Yahoo
+        run: |
+          python3 - <<'PY'
+          import json, time, urllib.request, urllib.parse
+          from concurrent.futures import ThreadPoolExecutor
+          SYMS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "JPM", "NFLX", "SPCX", "MSTR", "WMT", "KO", "PURR", "AVGO", "AMD", "INTC", "PLTR", "COIN", "HOOD", "V", "MA", "BRK-B", "LLY", "ORCL", "DIS", "UBER", "ABNB", "PYPL", "NKE", "MCD", "PEP", "XOM", "BA", "PFE", "F", "MARA", "CRCL", "SPY", "QQQ", "IBIT", "ETHA", "GLD", "SLV", "TLT", "SMH", "XLE", "EEM", "^GSPC", "^IXIC", "^DJI", "^RUT", "^IBEX", "^GDAXI", "^FCHI", "^FTSE", "^STOXX50E", "^N225", "^HSI", "^VIX", "SAN.MC", "BBVA.MC", "ITX.MC", "IBE.MC", "TEF.MC", "REP.MC", "CABK.MC", "ELE.MC", "AMS.MC", "NTGY.MC", "GC=F", "SI=F", "CL=F", "BZ=F", "NG=F", "HG=F", "EURUSD=X", "GBPUSD=X", "JPY=X", "DX-Y.NYB", "^TNX"]
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
+          def get(sym):
+              for host in ("query1", "query2", "query1", "query2"):
+                  try:
+                      u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?range=1d&interval=1d" % (host, urllib.parse.quote(sym))
+                      r = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=15)
+                      m = json.load(r)["chart"]["result"][0]["meta"]
+                      p = m.get("regularMarketPrice"); pv = m.get("chartPreviousClose") or m.get("previousClose")
+                      if p and pv:
+                          return sym, {"p": p, "c": round((p - pv) / pv * 100, 4)}
+                  except Exception as e:
+                      time.sleep(1.5)
+              return sym, None
+          with ThreadPoolExecutor(6) as ex:
+              res = list(ex.map(get, SYMS))
+          d = {s: v for s, v in res if v}
+          print("ok", len(d), "de", len(SYMS), "faltan", [s for s, v in res if not v])
+          if d:
+              json.dump({"t": int(time.time()), "d": d}, open("cotizaciones.json", "w"))
+          PY
+      - name: Guardar
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add cotizaciones.json
+          git diff --cached --quiet || (git commit -m "cotizaciones" && git push)
