@@ -3,130 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
 <title>Liquidaciones en directo</title>
 <style>
-  :root {
-    --bg: #0e1117; --panel: #131722; --panel-2: #1a1e29;
-    --border: #2a2e39; --border-2: #363a45;
-    --ink: #d1d4dc; --ink-strong: #f0f3fa;
-    --dim: #787b86; --dim2: #5d606b;
-    --accent: #2962ff; --accent-h: #1e53e5;
-    --up: #26a69a; --down: #ef5350; --amber: #f7a600;
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; background: var(--bg);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--ink); overflow: hidden; -webkit-font-smoothing: antialiased; }
-  #stage { position: fixed; inset: 0; height: 100dvh; display: flex; flex-direction: column;
-    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--border); flex: 0 0 auto; }
-  .brand { font-size: 12px; color: var(--dim); display: flex; align-items: center; gap: 8px; }
-  .brand .sym { color: var(--ink-strong); font-weight: 600; }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim2); display: inline-block; }
-  .status-dot.live { background: var(--up); box-shadow: 0 0 8px rgba(38,166,154,0.6); }
-  .status-dot.err  { background: var(--down); box-shadow: 0 0 8px rgba(239,83,80,0.6); }
-  .status-dot.busy { background: var(--amber); animation: pulse 1.2s ease-in-out infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
-  .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-  select, button.ctl { background: var(--panel-2); border: 1px solid var(--border); color: var(--ink-strong);
-    font-family: inherit; font-size: 12px; padding: 6px 10px; border-radius: 4px; cursor: pointer; outline: none; }
-  select { padding-right: 24px; appearance: none; -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23787b86' d='M0 0l5 6 5-6z'/></svg>");
-    background-repeat: no-repeat; background-position: right 8px center; }
-  select:hover, button.ctl:hover { background: #222630; }
-  button.ctl.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .countdown { font-size: 11px; color: var(--dim); min-width: 60px; text-align: right; font-variant-numeric: tabular-nums; }
-  .titles { padding: 10px 16px 4px; flex: 0 0 auto; }
-  .t1 { font-size: 14px; font-weight: 600; color: var(--ink-strong); line-height: 1.2; }
-  .t1 .tag { font-size: 10px; font-weight: 600; color: var(--amber); background: rgba(247,166,0,0.12); padding: 2px 6px; border-radius: 3px; margin-right: 8px; }
-  .t2 { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; margin-top: 1px; }
-  .ohlc { padding: 2px 16px; font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; flex: 0 0 auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .ohlc .sep { color: var(--dim2); } .ohlc b { color: var(--ink-strong); font-weight: 500; }
-  .summary { display: flex; gap: 8px; padding: 4px 16px 8px; flex-wrap: wrap; flex: 0 0 auto; }
-  .summary > div { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 4px;
-    font-variant-numeric: tabular-nums; border: 1px solid transparent; }
-  .summary .cortos { color: #ff9b9b; background: rgba(239,83,80,0.10); border-color: rgba(239,83,80,0.20); }
-  .summary .largos { color: #8fe6b4; background: rgba(38,166,154,0.10); border-color: rgba(38,166,154,0.20); }
-  #chartWrap { flex: 1 1 auto; min-height: 100px; margin: 0 8px; border-radius: 6px;
-    border: 1px solid var(--border); background: var(--panel); overflow: hidden; position: relative; }
-  canvas#chart { width: 100%; height: 100%; display: block; }
-  #loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    background: rgba(14,17,23,0.88); font-size: 12px; color: var(--dim); text-align: center; padding: 20px; }
-  #loading b { color: var(--amber); font-weight: 600; display: block; margin-bottom: 6px; font-size: 13px; }
-  #loading.hidden { display: none; }
-  .legend { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 8px 12px 4px;
-    font-size: 10px; color: var(--dim); flex: 0 0 auto; }
-  .legend span { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
-    border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); }
-  .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
-  footer { padding: 4px 16px calc(6px + env(safe-area-inset-bottom, 0px)); text-align: center;
-    font-size: 9px; color: var(--dim2); flex: 0 0 auto; }
-  @media (max-width: 640px) {
-    header { padding: 6px 10px; gap: 8px; }
-    .brand { font-size: 11px; }
-    select, button.ctl { font-size: 11px; padding: 5px 8px; }
-    .titles { padding: 8px 12px 2px; }
-    .t1 { font-size: 12.5px; }
-    .ohlc { font-size: 10px; padding: 2px 12px; }
-    .summary { padding: 4px 12px 6px; gap: 6px; }
-    .summary > div { font-size: 10px; padding: 3px 8px; }
-    .legend { font-size: 9px; gap: 4px; padding: 6px 8px 2px; }
-    #chartWrap { margin: 0 6px; }
-  }
+  :root { --bg:#0e1117; --panel:#131722; --panel-2:#1a1e29; --border:#2a2e39; --ink:#d1d4dc; --ink-strong:#f0f3fa;
+    --dim:#787b86; --dim2:#5d606b; --accent:#2962ff; --up:#26a69a; --down:#ef5350; --amber:#f7a600; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; margin:0; background:var(--bg); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:var(--ink); overflow:hidden; -webkit-font-smoothing:antialiased; }
+  #stage { position:fixed; inset:0; height:100dvh; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+  header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--panel); border-bottom:1px solid var(--border); flex:0 0 auto; }
+  .brand { font-size:12px; color:var(--dim); display:flex; align-items:center; gap:7px; min-width:0; }
+  .brand .sym { color:var(--ink-strong); font-weight:600; }
+  #statusText { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+  .status-dot { width:7px; height:7px; border-radius:50%; background:var(--dim2); display:inline-block; flex:0 0 auto; }
+  .status-dot.live { background:var(--up); box-shadow:0 0 8px rgba(38,166,154,.6); }
+  .status-dot.err { background:var(--down); box-shadow:0 0 8px rgba(239,83,80,.6); }
+  .status-dot.busy { background:var(--amber); animation:pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .controls { display:flex; gap:5px; align-items:center; }
+  select, .ctl { background:var(--panel-2); border:1px solid var(--border); color:var(--ink-strong); font-family:inherit; font-size:12px; padding:6px 9px; border-radius:6px; cursor:pointer; outline:none; text-decoration:none; display:inline-flex; align-items:center; }
+  select { padding-right:22px; appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23787b86' d='M0 0l5 6 5-6z'/></svg>"); background-repeat:no-repeat; background-position:right 7px center; }
+  .ctl:active { transform:scale(.96); }
+  .ctl.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .countdown { font-size:11px; color:var(--dim); min-width:34px; text-align:right; font-variant-numeric:tabular-nums; }
+  .titles { padding:8px 14px 2px; flex:0 0 auto; }
+  .t1 { font-size:14px; font-weight:600; color:var(--ink-strong); line-height:1.2; }
+  .t1 .tag { font-size:10px; font-weight:600; color:var(--amber); background:rgba(247,166,0,.12); padding:2px 6px; border-radius:3px; margin-right:8px; }
+  .t2 { font-size:11px; color:var(--dim); margin-top:1px; }
+  .ohlc { padding:2px 14px; font-size:11px; color:var(--dim); font-variant-numeric:tabular-nums; flex:0 0 auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-height:20px; }
+  .ohlc .sep { color:var(--dim2); } .ohlc b { color:var(--ink-strong); font-weight:500; }
+  .summary { display:flex; gap:6px; padding:3px 14px 7px; flex-wrap:wrap; flex:0 0 auto; }
+  .summary > div { font-size:11px; font-weight:500; padding:4px 9px; border-radius:5px; font-variant-numeric:tabular-nums; border:1px solid transparent; }
+  .summary .cortos { color:#ff9b9b; background:rgba(239,83,80,.10); border-color:rgba(239,83,80,.20); }
+  .summary .largos { color:#8fe6b4; background:rgba(38,166,154,.10); border-color:rgba(38,166,154,.20); }
+  #chartWrap { flex:1 1 auto; min-height:100px; margin:0 6px; border-radius:8px; border:1px solid var(--border); background:var(--panel); overflow:hidden; position:relative; }
+  canvas#chart { width:100%; height:100%; display:block; touch-action:none; cursor:crosshair; }
+  .zoom { position:absolute; left:8px; top:8px; display:flex; flex-direction:column; gap:5px; z-index:2; }
+  .zoom button { width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:rgba(26,30,41,.88); color:var(--ink-strong); font-size:18px; line-height:1; cursor:pointer; }
+  .zoom button:active { transform:scale(.94); }
+  #loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(14,17,23,.88); font-size:12px; color:var(--dim); text-align:center; padding:20px; z-index:3; }
+  #loading b { color:var(--amber); font-weight:600; display:block; margin-bottom:6px; font-size:13px; }
+  #loading.hidden { display:none; }
+  .legend { display:flex; justify-content:center; gap:5px; flex-wrap:wrap; padding:7px 10px 3px; font-size:10px; color:var(--dim); flex:0 0 auto; }
+  .legend span { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:10px; background:var(--panel-2); border:1px solid var(--border); }
+  .sw { width:8px; height:8px; border-radius:2px; display:inline-block; }
+  footer { padding:3px 16px 6px; text-align:center; font-size:9px; color:var(--dim2); flex:0 0 auto; }
+  #ov { position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:50; display:none; flex-direction:column; align-items:center; gap:10px; padding:calc(12px + env(safe-area-inset-top,0px)) 12px 16px; overflow:auto; }
+  #ov.on { display:flex; }
+  #ov img { width:100%; max-width:420px; border-radius:10px; }
+  #ov .fila { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  #ov p { color:#c9ccd6; font-size:12px; margin:0; text-align:center; max-width:420px; }
+  @media (max-width:640px) { .titles{padding:6px 12px 2px} .t1{font-size:12.5px} .ohlc{font-size:10px;padding:2px 12px} .summary{padding:3px 12px 6px} .summary>div{font-size:10px;padding:3px 8px} .legend{font-size:9px;gap:4px} }
 </style>
 </head>
 <body>
 <div id="stage">
   <header>
     <div class="brand">
+      <a class="ctl" href="index.html">←</a>
       <span id="statusDot" class="status-dot"></span>
       <span class="sym" id="brandSym">—</span>
       <span id="statusText">cargando…</span>
     </div>
     <div class="controls">
-      <select id="symbolSelect">
-        <option value="BTC">BTC</option><option value="ETH">ETH</option>
-        <option value="SOL">SOL</option><option value="HYPE">HYPE</option>
-        <option value="XRP">XRP</option>
-      </select>
-      <button class="ctl primary" id="refreshBtn">Actualizar</button>
+      <select id="symbolSelect"><option value="BTC">BTC</option><option value="ETH">ETH</option><option value="SOL">SOL</option><option value="HYPE">HYPE</option><option value="XRP">XRP</option></select>
+      <button class="ctl primary" id="refreshBtn">↻</button>
+      <button class="ctl" id="shareBtn">📤</button>
       <span class="countdown" id="countdown">–</span>
     </div>
   </header>
-
-  <div class="titles">
-    <div class="t1"><span class="tag">LIQ</span><span id="titleLine">Liquidaciones estimadas</span></div>
-    <div class="t2" id="subLine">cargando…</div>
-  </div>
-
+  <div class="titles"><div class="t1"><span class="tag">LIQ</span><span id="titleLine">Liquidaciones estimadas</span></div><div class="t2" id="subLine">cargando…</div></div>
   <div class="ohlc" id="ohlcLine">&nbsp;</div>
-  <div class="summary">
-    <div class="cortos" id="cortosLine">&nbsp;</div>
-    <div class="largos" id="largosLine">&nbsp;</div>
-  </div>
-
+  <div class="summary"><div class="cortos" id="cortosLine">&nbsp;</div><div class="largos" id="largosLine">&nbsp;</div></div>
   <div id="chartWrap">
     <canvas id="chart"></canvas>
+    <div class="zoom"><button id="zIn" aria-label="Acercar">+</button><button id="zOut" aria-label="Alejar">−</button><button id="zReset" aria-label="Volver a ahora">⟲</button></div>
     <div id="loading"><div><b>Calculando el mapa de liquidaciones…</b>Interés abierto de Binance · puede tardar unos segundos</div></div>
   </div>
-
   <div class="legend">
-    <span><i class="sw" style="background:#1f6f7a"></i>baja</span>
-    <span><i class="sw" style="background:#2f9a2f"></i>media</span>
-    <span><i class="sw" style="background:#a9a92a"></i>alta</span>
-    <span><i class="sw" style="background:#e07a25"></i>muy alta</span>
-    <span><i class="sw" style="background:#c62828"></i>máxima</span>
-    <span><i class="sw" style="background:#555c6b"></i>previa</span>
+    <span><i class="sw" style="background:#1f6f7a"></i>baja</span><span><i class="sw" style="background:#2f9a2f"></i>media</span><span><i class="sw" style="background:#a9a92a"></i>alta</span><span><i class="sw" style="background:#e07a25"></i>muy alta</span><span><i class="sw" style="background:#c62828"></i>máxima</span><span><i class="sw" style="background:#555c6b"></i>previa</span>
   </div>
-
-  <footer>Basado en nuestro modelo de cálculo. DYOR.</footer>
+  <footer>Arrastra para moverte · pellizca para zoom · arrastra el eje de precios para escalar · doble toque = volver a ahora · Basado en nuestro modelo de cálculo. DYOR.</footer>
 </div>
-
+<div id="ov"><img id="ovimg" alt="Mapa de liquidaciones"><div class="fila"><button class="ctl" id="ovsh">📤 Compartir imagen</button><button class="ctl" id="ovdl">⬇ Descargar</button><button class="ctl primary" id="ovx">𝕏 Publicar en X</button><button class="ctl" id="ovcl">Cerrar</button></div><p>Si no se comparte directamente: mantén pulsada la imagen para guardarla y adjúntala al post de X.</p></div>
 <script>
 (function () {
   'use strict';
-
   const SYMBOLS = { BTC: 'BTCUSDT', ETH: 'ETHUSDT', SOL: 'SOLUSDT', HYPE: 'HYPEUSDT', XRP: 'XRPUSDT' };
   const TIERS_DEFAULT = { 5: 0.10, 10: 0.25, 25: 0.30, 50: 0.20, 100: 0.15 };
   const TIERS_HYPE = { 5: 0.10, 10: 0.25, 25: 0.30, 50: 0.25, 75: 0.10 };
@@ -142,26 +105,17 @@
   const PCTS = [60, 78, 90, 96, 99];
   const COL = { 1: '#1f6f7a', 2: '#2f9a2f', 3: '#a9a92a', 4: '#e07a25', 5: '#c62828' };
   const GRIS = '#555c6b';
+  COL[6] = GRIS;
 
   // 5 picos por lado, separación 0.8%
   const PICOS_POR_LADO = 5;
   const SEPARACION_PICOS = 0.008;
 
-  const statusDot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
-  const brandSym = document.getElementById('brandSym');
-  const symbolSelect = document.getElementById('symbolSelect');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const countdownEl = document.getElementById('countdown');
-  const titleLine = document.getElementById('titleLine');
-  const subLine = document.getElementById('subLine');
-  const ohlcLine = document.getElementById('ohlcLine');
-  const cortosLine = document.getElementById('cortosLine');
-  const largosLine = document.getElementById('largosLine');
-  const canvas = document.getElementById('chart');
-  const ctx = canvas.getContext('2d');
-  const loadingEl = document.getElementById('loading');
-
+  const $ = (i) => document.getElementById(i);
+  const statusDot = $('statusDot'), statusText = $('statusText'), brandSym = $('brandSym'), symbolSelect = $('symbolSelect'),
+    refreshBtn = $('refreshBtn'), countdownEl = $('countdown'), titleLine = $('titleLine'), subLine = $('subLine'),
+    ohlcLine = $('ohlcLine'), cortosLine = $('cortosLine'), largosLine = $('largosLine'), loadingEl = $('loading');
+  const canvas = $('chart'), ctx = canvas.getContext('2d');
   let refreshTimer = null, countdownTimer = null, nextRefreshAt = 0;
   let lastResult = null;
   let liveWs = null, liveReconnectTimer = null, liveBackoff = 1500, liveSymbol = null;
@@ -420,7 +374,10 @@
   }
 
   async function calcular(moneda) {
+    statusText.textContent = 'descargando datos…';
     const d = await buildLiqData(moneda);
+    statusText.textContent = 'calculando mapa…';
+    await new Promise(r => setTimeout(r, 30));
     const precio = d.c[d.c.length - 1];
     const binMin = precio * 0.85, binMax = precio * 1.15;
     const model = modeloLiquidaciones(d, binMin, binMax, NBINS);
@@ -442,193 +399,313 @@
     const picosCortos = picos(cortosMask, centros, PICOS_POR_LADO, SEPARACION_PICOS);
     const picosLargos = picos(largosMask, centros, PICOS_POR_LADO, SEPARACION_PICOS);
 
-    return { d, model, centros, precio, cortos5, largos5, picosCortos, picosLargos, moneda };
-  }
-
-  function draw(res) {
-    const { d, model, centros, precio, moneda } = res;
-    const n = d.oi.length;
-    const paso = PASO_MIN;
-    const nc = Math.min(n, Math.floor(HORAS_ZOOM * 60 / paso));
-    const off = n - nc;
-
-    const o = d.o.slice(off), h = d.h.slice(off), l = d.l.slice(off), c = d.c.slice(off), t = d.t.slice(off);
-    const p = precio;
-    const pad = PAD_PCT * p;
-    let ylo = Math.min(...l) - pad, yhi = Math.max(...h) + pad;
-
-    const bi = [];
-    for (let i = 0; i < centros.length; i++) if (centros[i] >= ylo && centros[i] <= yhi) bi.push(i);
-    const cenV = bi.map(i => centros[i]);
-
-    const M = [], PM = [];
-    for (let j = 0; j < nc; j++) {
-      const idxFull = off + j;
-      const Lrow = model.Lm[idxFull], Srow = model.Sm[idxFull], Prow = model.Pm[idxFull];
-      const row = new Float64Array(bi.length), prow = new Float64Array(bi.length);
-      for (let k = 0; k < bi.length; k++) { row[k] = Lrow[bi[k]] + Srow[bi[k]]; prow[k] = Prow[bi[k]]; }
-      M.push(row); PM.push(prow);
-    }
-    const N = M.map((row, j) => { const out = new Float64Array(row.length); for (let k = 0; k < row.length; k++) out[k] = Math.max(row[k] - PM[j][k], 0); return out; });
-
+    // rejilla de colores para TODAS las velas (umbrales calculados con las últimas 24 h)
+    const grid = new Uint8Array(n * NBINS);
+    const w0 = Math.max(0, n - HORAS_ZOOM);
+    let lo = Infinity, hi = -Infinity;
+    for (let j = w0; j < n; j++) { if (d.l[j] < lo) lo = d.l[j]; if (d.h[j] > hi) hi = d.h[j]; }
+    lo -= PAD_PCT * precio; hi += PAD_PCT * precio;
     const pos = [];
-    for (const row of N) for (const v of row) if (v > 0) pos.push(v);
-    pos.sort((a, b) => a - b);
-    const umbrales = PCTS.map(pct => percentile(pos, pct));
-
-    const idxGrid = N.map(row => row.map(v => digitize(v, umbrales)));
-    const grisGrid = N.map((row, j) => row.map((v, k) => PM[j][k] >= umbrales[1] && idxGrid[j][k] === 0));
-
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const w = canvas.width = Math.max(1, Math.round(rect.width * dpr));
-    const hpx = canvas.height = Math.max(1, Math.round(rect.height * dpr));
-    ctx.clearRect(0, 0, w, hpx);
-
-    const isSmall = w < 380 * dpr;
-    const padLeft = (isSmall ? 44 : 60) * dpr;
-    const padRight = (isSmall ? 58 : 72) * dpr;
-    const padTop = 8 * dpr, padBottom = 22 * dpr;
-    const plotW = w - padLeft - padRight, plotH = hpx - padTop - padBottom;
-    const totalCols = nc + EXT;
-    const colW = plotW / totalCols;
-
-    function y(price) { return padTop + (1 - (price - ylo) / (yhi - ylo)) * plotH; }
-    function x(j) { return padLeft + j * colW; }
-
-    const step = niceStep(yhi - ylo, 5);
-    const first = Math.ceil(ylo / step) * step;
-    ctx.font = (isSmall ? 9 : 10.5) * dpr + 'px ui-monospace, monospace';
-    ctx.fillStyle = 'rgba(209,212,220,0.4)';
-    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    for (let pr = first; pr <= yhi; pr += step) {
-      const gy = y(pr);
-      ctx.strokeStyle = 'rgba(209,212,220,0.06)'; ctx.lineWidth = 1 * dpr;
-      ctx.beginPath(); ctx.moveTo(padLeft, gy); ctx.lineTo(w - padRight, gy); ctx.stroke();
-      ctx.fillText(fmtAxisNum(pr), padLeft - 6 * dpr, gy);
-    }
-
-    const hbPx = Math.max(1.4 * dpr, (model.binWidth * 0.72) * (plotH / (yhi - ylo)));
-    const blockW = colW * 0.76, blockX0 = colW * 0.12;
-
-    // Bloques por nivel
-    for (let j = 0; j < nc; j++) {
-      for (let k = 0; k < cenV.length; k++) {
-        const isGris = grisGrid[j][k], iv = idxGrid[j][k];
-        if (!isGris && !iv) continue;
-        ctx.fillStyle = isGris ? GRIS : COL[iv];
-        const bx = x(j) + blockX0, by = y(cenV[k]) - hbPx / 2;
-        ctx.fillRect(bx, by, blockW, hbPx);
+    for (let j = w0; j < n; j++) {
+      for (let k = 0; k < NBINS; k++) {
+        if (centros[k] < lo || centros[k] > hi) continue;
+        const v = Math.max(model.Lm[j][k] + model.Sm[j][k] - model.Pm[j][k], 0);
+        if (v > 0) pos.push(v);
       }
     }
-    // Proyección derecha
-    const lastJ = nc - 1;
-    for (let k = 0; k < cenV.length; k++) {
-      const iv = idxGrid[lastJ][k], isGris = grisGrid[lastJ][k];
-      if (!iv && !isGris) continue;
-      ctx.globalAlpha = 0.48;
-      ctx.fillStyle = iv ? COL[iv] : GRIS;
-      const by = y(cenV[k]) - hbPx / 2;
-      for (let jj = nc; jj < nc + EXT; jj++) ctx.fillRect(x(jj) + blockX0, by, blockW, hbPx);
-      ctx.globalAlpha = 1;
+    pos.sort((x, y) => x - y);
+    const umbrales = PCTS.map(pct => percentile(pos, pct));
+    for (let j = 0; j < n; j++) {
+      const L = model.Lm[j], S = model.Sm[j], P = model.Pm[j], base = j * NBINS;
+      for (let k = 0; k < NBINS; k++) {
+        const v = Math.max(L[k] + S[k] - P[k], 0);
+        const iv = digitize(v, umbrales);
+        grid[base + k] = iv > 0 ? iv : (P[k] >= umbrales[1] ? 6 : 0);
+      }
+    }
+    return { d, model, centros, precio, cortos5, largos5, picosCortos, picosLargos, moneda, grid, binMin, umbrales };
+  }
+
+
+  /* ================= gráfico interactivo ================= */
+  const V = { colW: 14, right: 0, auto: true, ylo: 0, yhi: 1, hover: null };
+  let LAY = null, raf = 0;
+
+  function layout() {
+    const r = canvas.getBoundingClientRect();
+    const small = r.width < 380;
+    const padLeft = small ? 44 : 60, padRight = small ? 58 : 72, padTop = 8, padBottom = 22;
+    LAY = { w: r.width, h: r.height, small, padLeft, padRight, padTop, padBottom, plotW: r.width - padLeft - padRight, plotH: r.height - padTop - padBottom };
+    return LAY;
+  }
+  function resetView() {
+    if (!lastResult) return;
+    layout();
+    const n = lastResult.d.t.length;
+    V.colW = Math.max(2, LAY.plotW / (Math.min(n, HORAS_ZOOM) + EXT));
+    V.right = n - 1; V.auto = true; V.hover = null;
+    schedule();
+  }
+  function clampView() {
+    const n = lastResult.d.t.length, L = LAY;
+    const minC = Math.max(1.2, L.plotW / Math.min(n + EXT + 20, 520)), maxC = 70;
+    V.colW = Math.min(maxC, Math.max(minC, V.colW));
+    V.right = Math.min(n - 1 + 25, Math.max(4, V.right));
+  }
+  const xOf = (j) => LAY.padLeft + LAY.plotW - (V.right + EXT - j) * V.colW;
+  const jOf = (x) => (x - (LAY.padLeft + LAY.plotW - (V.right + EXT) * V.colW)) / V.colW;
+  function visRange(n) {
+    return [Math.max(0, Math.floor(jOf(LAY.padLeft)) - 1), Math.min(n - 1, Math.ceil(jOf(LAY.padLeft + LAY.plotW)) + 1)];
+  }
+  function autoY(res) {
+    const d = res.d, n = d.t.length, [a, b] = visRange(n);
+    let lo = Infinity, hi = -Infinity;
+    for (let j = a; j <= b; j++) { if (d.l[j] < lo) lo = d.l[j]; if (d.h[j] > hi) hi = d.h[j]; }
+    if (!isFinite(lo)) { lo = res.precio * 0.95; hi = res.precio * 1.05; }
+    const pad = Math.max((hi - lo) * 0.06, res.precio * 0.004);
+    return [lo - pad, hi + pad];
+  }
+  function schedule() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; if (lastResult) draw(lastResult); }); }
+
+  function draw(res) {
+    const { d, model, centros, precio: p, moneda, grid, binMin } = res;
+    const n = d.t.length, NB = NBINS;
+    const dpr = window.devicePixelRatio || 1;
+    layout(); clampView();
+    const L = LAY;
+    const W = canvas.width = Math.max(1, Math.round(L.w * dpr)), H = canvas.height = Math.max(1, Math.round(L.h * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, L.w, L.h);
+    if (V.auto) { const [a, b] = autoY(res); V.ylo = a; V.yhi = b; }
+    const ylo = V.ylo, yhi = V.yhi, plotL = L.padLeft, plotR = L.padLeft + L.plotW, plotT = L.padTop, plotB = L.padTop + L.plotH;
+    const y = (pr) => plotT + (1 - (pr - ylo) / (yhi - ylo)) * L.plotH;
+    const pxPerPrice = L.plotH / (yhi - ylo);
+    const colW = V.colW, [ja, jb] = visRange(n);
+    const mono = 'ui-monospace, monospace';
+
+    // rejilla de precio + etiquetas
+    const step = niceStep(yhi - ylo, 6), first = Math.ceil(ylo / step) * step;
+    ctx.font = (L.small ? 9 : 10.5) + 'px ' + mono; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let pr = first; pr <= yhi; pr += step) {
+      const gy = y(pr);
+      ctx.strokeStyle = 'rgba(209,212,220,0.06)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(plotL, gy); ctx.lineTo(plotR, gy); ctx.stroke();
+      ctx.fillStyle = 'rgba(209,212,220,0.45)'; ctx.fillText(fmtAxisNum(pr), plotL - 6, gy);
     }
 
-    // Velas
-    const ancho = colW * (nc <= 120 ? 0.64 : 0.72);
-    for (let j = 0; j < nc; j++) {
-      const up = c[j] >= o[j];
-      const col = up ? '#26a69a' : '#ef5350';
-      const cx = x(j) + colW / 2;
-      ctx.strokeStyle = col; ctx.lineWidth = Math.max(1, (nc <= 120 ? 1 : 0.8) * dpr);
-      ctx.beginPath(); ctx.moveTo(cx, y(h[j])); ctx.lineTo(cx, y(l[j])); ctx.stroke();
-      const yO = y(o[j]), yC = y(c[j]);
-      const top = Math.min(yO, yC), bh = Math.max(1.2 * dpr, Math.abs(yC - yO));
-      ctx.fillStyle = col;
-      ctx.fillRect(cx - ancho / 2, top, ancho, bh);
+    ctx.save(); ctx.beginPath(); ctx.rect(plotL, plotT, L.plotW + L.padRight - 2, L.plotH); ctx.clip();
+    const bw = model.binWidth;
+    const kLo = Math.max(0, Math.floor((ylo - binMin) / bw)), kHi = Math.min(NB - 1, Math.ceil((yhi - binMin) / bw));
+    const hb = Math.max(1.2, bw * 0.78 * pxPerPrice);
+    const bwid = colW < 4 ? colW + 0.5 : colW * 0.78, bx0 = colW < 4 ? 0 : colW * 0.11;
+    function col(v) { return v === 6 ? GRIS : COL[v]; }
+    function columna(j, xx, w, alpha) {
+      const base = j * NB;
+      if (alpha) ctx.globalAlpha = alpha;
+      let k = kLo;
+      while (k <= kHi) {
+        const v = grid[base + k];
+        if (!v) { k++; continue; }
+        let k2 = k; while (k2 + 1 <= kHi && grid[base + k2 + 1] === v) k2++;
+        const yTop = y(binMin + (k2 + 0.5) * bw) - hb / 2, yBot = y(binMin + (k + 0.5) * bw) + hb / 2;
+        ctx.fillStyle = col(v); ctx.fillRect(xx, yTop, w, yBot - yTop);
+        k = k2 + 1;
+      }
+      if (alpha) ctx.globalAlpha = 1;
+    }
+    for (let j = ja; j <= jb; j++) columna(j, xOf(j) + bx0, bwid);
+    // proyección hacia la derecha
+    if (jb >= n - 1) { for (let jj = n; jj < n + EXT; jj++) columna(n - 1, xOf(jj) + bx0, bwid, 0.45); }
+
+    // velas
+    const cw = Math.max(1, colW * (colW > 8 ? 0.62 : 0.8));
+    for (let j = ja; j <= jb; j++) {
+      const up = d.c[j] >= d.o[j], cc = up ? '#26a69a' : '#ef5350', cx = xOf(j) + colW / 2;
+      ctx.strokeStyle = cc; ctx.lineWidth = Math.max(1, Math.min(1.4, colW * 0.12));
+      ctx.beginPath(); ctx.moveTo(cx, y(d.h[j])); ctx.lineTo(cx, y(d.l[j])); ctx.stroke();
+      const yO = y(d.o[j]), yC = y(d.c[j]);
+      ctx.fillStyle = cc; ctx.fillRect(cx - cw / 2, Math.min(yO, yC), cw, Math.max(1.2, Math.abs(yC - yO)));
     }
 
-    // Línea AHORA
+    // línea AHORA
     const py = y(p);
-    ctx.setLineDash([4 * dpr, 4 * dpr]);
-    ctx.strokeStyle = 'rgba(38,166,154,0.75)'; ctx.lineWidth = 1 * dpr;
-    ctx.beginPath(); ctx.moveTo(padLeft, py); ctx.lineTo(w - padRight, py); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.textAlign = 'right'; ctx.fillStyle = '#26a69a';
-    ctx.font = 'bold ' + (isSmall ? 9.5 : 10.5) * dpr + 'px ui-monospace, monospace';
-    ctx.fillText('AHORA ' + fmtAxisNum(p), x(nc + EXT) - 4 * dpr, py - 8 * dpr);
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(38,166,154,0.8)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(plotL, py); ctx.lineTo(plotR + L.padRight, py); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
 
-    // Etiquetas de picos (simples, sin anti-solape complicado)
+    // etiqueta precio actual (eje)
+    function etiquetaEje(txt, yy, bg, fg) {
+      ctx.font = 'bold ' + (L.small ? 9.5 : 10.5) + 'px ' + mono;
+      const tw = ctx.measureText(txt).width + 8;
+      ctx.fillStyle = bg; ctx.fillRect(plotR + 2, yy - 8, Math.min(tw, L.padRight - 2), 16);
+      ctx.fillStyle = fg; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(txt, plotR + 5, yy);
+    }
+    if (py > plotT && py < plotB) etiquetaEje(fmtAxisNum(p), py, '#26a69a', '#06130f');
+
+    // picos con importes (columna derecha)
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    const labelX = x(nc + EXT) + 4 * dpr;
-    const fPrecio = (isSmall ? 9 : 10) * dpr, fImporte = (isSmall ? 8 : 8.5) * dpr;
-    function dibujarPico(pk, color) {
+    const fP = L.small ? 9 : 10, fI = L.small ? 8 : 8.5, lx = plotR + 3;
+    function pico(pk, color) {
       if (pk.precio < ylo || pk.precio > yhi) return;
       const ly = y(pk.precio);
-      ctx.fillStyle = color;
-      ctx.font = 'bold ' + fPrecio + 'px ui-monospace, monospace';
-      ctx.fillText(fmtAxisNum(pk.precio), labelX, ly - 1 * dpr);
-      ctx.font = fImporte + 'px ui-monospace, monospace';
-      ctx.fillText(fmtUsd(pk.total), labelX, ly + fImporte + 2 * dpr);
+      if (Math.abs(ly - py) < 12) return;
+      ctx.fillStyle = color; ctx.font = 'bold ' + fP + 'px ' + mono; ctx.fillText(fmtAxisNum(pk.precio), lx, ly - 1);
+      ctx.font = fI + 'px ' + mono; ctx.fillText(fmtUsd(pk.total), lx, ly + fI + 2);
     }
-    for (const pk of res.picosCortos) dibujarPico(pk, '#FF8888');
-    for (const pk of res.picosLargos) dibujarPico(pk, '#77DD99');
+    for (const pk of res.picosCortos) pico(pk, '#FF8888');
+    for (const pk of res.picosLargos) pico(pk, '#77DD99');
 
-    // Eje de horas
-    const anchoEtiqueta = (isSmall ? 54 : 64) * dpr;
-    const maxEtiquetas = Math.max(2, Math.floor(plotW / anchoEtiqueta));
-    const cadaVelas = Math.max(1, Math.ceil(nc / maxEtiquetas));
-    ctx.fillStyle = 'rgba(209,212,220,0.4)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.font = (isSmall ? 8.5 : 9.5) * dpr + 'px ui-monospace, monospace';
-    for (let j = 0; j < nc; j += cadaVelas) {
-      ctx.fillText(madridHM(t[j]), x(j) + colW / 2, hpx - padBottom + 4 * dpr);
+    // eje de tiempo
+    const every = Math.max(1, Math.ceil((L.small ? 56 : 66) / colW));
+    ctx.fillStyle = 'rgba(209,212,220,0.45)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.font = (L.small ? 8.5 : 9.5) + 'px ' + mono;
+    for (let j = Math.max(0, ja); j <= jb; j++) {
+      if (j % every) continue;
+      const x = xOf(j) + colW / 2; if (x < plotL + 14 || x > plotR - 14) continue;
+      const hh = new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', hourCycle: 'h23' }).format(new Date(d.t[j]));
+      const txt = hh === '00' ? new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit' }).format(new Date(d.t[j])) : madridHM(d.t[j]);
+      ctx.fillStyle = hh === '00' ? 'rgba(240,243,250,0.85)' : 'rgba(209,212,220,0.45)';
+      ctx.fillText(txt, x, plotB + 4);
     }
 
-    const chg = c[nc - 1] - (c[nc - 2] != null ? c[nc - 2] : c[nc - 1]);
-    const pct = c[nc - 2] ? (chg / c[nc - 2]) * 100 : 0;
-    ohlcLine.innerHTML = `<span style="color:#787b86">${moneda}/USDT · ${paso}m</span><span class="sep">·</span>` +
-      `O <b>${fmtAxisNum(o[nc - 1])}</b><span class="sep">·</span>` +
-      `H <b>${fmtAxisNum(h[nc - 1])}</b><span class="sep">·</span>` +
-      `L <b>${fmtAxisNum(l[nc - 1])}</b><span class="sep">·</span>` +
-      `C <b>${fmtAxisNum(c[nc - 1])}</b><span class="sep">·</span>` +
-      `<span style="color:${chg >= 0 ? '#26a69a' : '#ef5350'}">${chg >= 0 ? '+' : ''}${pct.toFixed(2)}%</span>`;
+    // cruz
+    let jh = n - 1;
+    if (V.hover && V.hover.x > plotL && V.hover.x < plotR && V.hover.y > plotT && V.hover.y < plotB) {
+      const hx = V.hover.x, hy = V.hover.y;
+      jh = Math.min(n - 1, Math.max(0, Math.floor(jOf(hx))));
+      const cx = xOf(jh) + colW / 2, pr = ylo + (1 - (hy - plotT) / L.plotH) * (yhi - ylo);
+      ctx.save(); ctx.setLineDash([3, 3]); ctx.strokeStyle = 'rgba(209,212,220,0.55)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx, plotT); ctx.lineTo(cx, plotB); ctx.moveTo(plotL, hy); ctx.lineTo(plotR, hy); ctx.stroke(); ctx.restore();
+      etiquetaEje(fmtAxisNum(pr), hy, '#363a45', '#f0f3fa');
+      const tt = madridHora(d.t[jh]); ctx.font = 'bold 10px ' + mono;
+      const tw = ctx.measureText(tt).width + 10;
+      ctx.fillStyle = '#363a45'; ctx.fillRect(Math.min(Math.max(plotL, cx - tw / 2), plotR - tw), plotB + 2, tw, 16);
+      ctx.fillStyle = '#f0f3fa'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(tt, Math.min(Math.max(plotL + tw / 2, cx), plotR - tw / 2), plotB + 10);
+      const k = Math.min(NB - 1, Math.max(0, Math.floor((pr - binMin) / bw)));
+      const liq = model.Lm[jh][k] + model.Sm[jh][k];
+      infoOhlc(res, jh, `<span class="sep">·</span>Nivel <b>${fmtAxisNum(pr)}</b><span class="sep">·</span>Liq. <b>${fmtUsd(liq)}</b>`);
+    } else infoOhlc(res, n - 1, '');
+  }
+
+  function infoOhlc(res, j, extra) {
+    const d = res.d, prev = j > 0 ? d.c[j - 1] : d.o[j];
+    const chg = d.c[j] - prev, pct = prev ? chg / prev * 100 : 0;
+    ohlcLine.innerHTML = `<span>${res.moneda}/USDT · 1h</span><span class="sep">·</span>O <b>${fmtAxisNum(d.o[j])}</b> H <b>${fmtAxisNum(d.h[j])}</b> L <b>${fmtAxisNum(d.l[j])}</b> C <b>${fmtAxisNum(d.c[j])}</b> ` +
+      `<span style="color:${chg >= 0 ? '#26a69a' : '#ef5350'}">${chg >= 0 ? '+' : ''}${pct.toFixed(2)}%</span>${extra}`;
   }
 
   function updateSummaryText(res) {
     cortosLine.textContent = `Cortos por encima (+5%): ${fmtUsd(res.cortos5)}`;
     largosLine.textContent = `Largos por debajo (−5%): ${fmtUsd(res.largos5)}`;
-    brandSym.textContent = res.moneda + '/USDT';
-    titleLine.textContent = `Liquidaciones estimadas · ${HORAS_ZOOM}H · velas ${PASO_MIN}m`;
+    brandSym.textContent = res.moneda;
+    titleLine.textContent = `Liquidaciones estimadas · velas 1h`;
     subLine.textContent = `${madridHora(Date.now())} Madrid · fuentes: ${res.d.fuentes.join(' + ')}`;
   }
 
-  let busy = false;
+  /* ---- gestos: arrastrar, pellizcar, rueda, eje de precios ---- */
+  const ptrs = new Map();
+  let gesto = null;
+  function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function zoomX(factor, ax) {
+    const jAnc = jOf(ax);
+    V.colW *= factor; clampView();
+    V.right = jAnc + (LAY.padLeft + LAY.plotW - ax) / V.colW - EXT; // mantiene el punto bajo el dedo
+    clampView(); schedule();
+  }
+  function zoomY(factor, ay) {
+    if (V.auto) { const [a, b] = autoY(lastResult); V.ylo = a; V.yhi = b; V.auto = false; }
+    const c = V.ylo + (1 - (ay - LAY.padTop) / LAY.plotH) * (V.yhi - V.ylo);
+    V.ylo = c - (c - V.ylo) * factor; V.yhi = c + (V.yhi - c) * factor; schedule();
+  }
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!lastResult) return;
+    canvas.setPointerCapture(e.pointerId);
+    const q = pos(e); ptrs.set(e.pointerId, q);
+    if (ptrs.size === 1) {
+      gesto = { t0: Date.now(), x0: q.x, y0: q.y, lx: q.x, ly: q.y, mode: q.x > LAY.padLeft + LAY.plotW ? 'axis' : null, moved: 0 };
+    } else if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      gesto = { mode: 'pinch', dx: Math.abs(a.x - b.x), dy: Math.abs(a.y - b.y), moved: 99 };
+    }
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!lastResult) return;
+    const q = pos(e);
+    if (!ptrs.has(e.pointerId)) { if (e.pointerType === 'mouse') { V.hover = q; schedule(); } return; }
+    ptrs.set(e.pointerId, q);
+    if (!gesto) return;
+    if (gesto.mode === 'pinch' && ptrs.size >= 2) {
+      const [a, b] = [...ptrs.values()], dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y);
+      if (dy > dx * 1.2) { if (gesto.dy > 8) zoomY(gesto.dy / Math.max(8, dy), (a.y + b.y) / 2); }
+      else if (gesto.dx > 8) zoomX(Math.max(8, dx) / gesto.dx, (a.x + b.x) / 2);
+      gesto.dx = Math.max(8, dx); gesto.dy = Math.max(8, dy); V.hover = null; return;
+    }
+    const mx = q.x - gesto.lx, my = q.y - gesto.ly;
+    gesto.moved += Math.abs(mx) + Math.abs(my);
+    if (gesto.mode === 'axis') { zoomY(Math.exp(my * 0.006), gesto.y0); gesto.lx = q.x; gesto.ly = q.y; return; }
+    if (gesto.moved < 8 && !gesto.mode) return;
+    if (!gesto.mode) gesto.mode = Math.abs(q.x - gesto.x0) >= Math.abs(q.y - gesto.y0) ? 'h' : 'v';
+    V.hover = null;
+    V.right -= mx / V.colW;
+    if (gesto.mode === 'v') {
+      if (V.auto) { const [a, b] = autoY(lastResult); V.ylo = a; V.yhi = b; V.auto = false; }
+      const dp = my * (V.yhi - V.ylo) / LAY.plotH; V.ylo += dp; V.yhi += dp;
+    }
+    gesto.lx = q.x; gesto.ly = q.y; clampView(); schedule();
+  });
+  function fin(e) {
+    if (!ptrs.has(e.pointerId)) return;
+    const q = ptrs.get(e.pointerId); ptrs.delete(e.pointerId);
+    if (gesto && gesto.t0 && ptrs.size === 0) {
+      if (gesto.moved < 8 && Date.now() - gesto.t0 < 350 && gesto.mode !== 'axis') {
+        if (lastTap && Date.now() - lastTap < 320) { resetView(); lastTap = 0; }
+        else { lastTap = Date.now(); V.hover = e.pointerType === 'mouse' ? V.hover : q; schedule(); }
+      }
+    }
+    if (ptrs.size < 2 && gesto && gesto.mode === 'pinch') gesto = null;
+    if (ptrs.size === 0) gesto = null;
+  }
+  let lastTap = 0;
+  canvas.addEventListener('pointerup', fin); canvas.addEventListener('pointercancel', fin);
+  canvas.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { V.hover = null; schedule(); } });
+  canvas.addEventListener('wheel', (e) => {
+    if (!lastResult) return; e.preventDefault();
+    const q = pos(e), f = Math.exp(-e.deltaY * 0.0015);
+    if (q.x > LAY.padLeft + LAY.plotW) zoomY(1 / f, q.y); else zoomX(f, q.x);
+  }, { passive: false });
+  $('zIn').onclick = () => { if (lastResult) zoomX(1.35, LAY.padLeft + LAY.plotW - EXT * V.colW); };
+  $('zOut').onclick = () => { if (lastResult) zoomX(1 / 1.35, LAY.padLeft + LAY.plotW - EXT * V.colW); };
+  $('zReset').onclick = resetView;
+
+  /* ---- carga y refresco ---- */
+  let busy = false, primera = true;
   async function loadAndRender(showLoading) {
     if (busy) return;
     busy = true;
-    statusDot.className = 'status-dot busy';
-    statusText.textContent = 'calculando…';
+    statusDot.className = 'status-dot busy'; statusText.textContent = 'cargando…';
     if (showLoading) loadingEl.classList.remove('hidden');
     try {
       const moneda = symbolSelect.value;
+      const keep = lastResult && lastResult.moneda === moneda ? { c: V.colW, r: V.right, a: V.auto, lo: V.ylo, hi: V.yhi, n: lastResult.d.t.length } : null;
       const res = await calcular(moneda);
       lastResult = res;
       updateSummaryText(res);
+      layout();
+      if (keep) { V.colW = keep.c; V.right = keep.r + (res.d.t.length - keep.n); V.auto = keep.a; V.ylo = keep.lo; V.yhi = keep.hi; V.hover = null; schedule(); }
+      else resetView();
       draw(res);
       connectLive(moneda);
       statusDot.className = 'status-dot live';
-      statusText.textContent = 'actualizado ' + madridHora(Date.now());
+      statusText.textContent = 'actualizado ' + madridHM(Date.now());
       loadingEl.classList.add('hidden');
     } catch (e) {
       statusDot.className = 'status-dot err';
-      statusText.textContent = 'error: ' + (e && e.message ? e.message : 'fallo');
-      loadingEl.innerHTML = '<div><b>No se ha podido calcular.</b>' + (e && e.message ? e.message : '') + '</div>';
+      statusText.textContent = 'error';
+      loadingEl.innerHTML = '<div><b>No se ha podido calcular.</b>' + (e && e.message ? e.message : '') + '<br><br>Pulsa ↻ para reintentar.</div>';
       loadingEl.classList.remove('hidden');
-    } finally {
-      busy = false;
-      scheduleNext();
-    }
+    } finally { busy = false; scheduleNext(); }
   }
-
   function scheduleNext() {
     if (refreshTimer) clearTimeout(refreshTimer);
     if (countdownTimer) clearInterval(countdownTimer);
@@ -636,17 +713,70 @@
     refreshTimer = setTimeout(() => loadAndRender(false), REFRESH_MS);
     countdownTimer = setInterval(() => {
       const rem = Math.max(0, nextRefreshAt - Date.now());
-      const mm = Math.floor(rem / 60000), ss = Math.floor((rem % 60000) / 1000);
-      countdownEl.textContent = mm + ':' + String(ss).padStart(2, '0');
+      countdownEl.textContent = Math.floor(rem / 60000) + ':' + String(Math.floor((rem % 60000) / 1000)).padStart(2, '0');
     }, 1000);
   }
-
-  symbolSelect.addEventListener('change', () => loadAndRender(true));
+  symbolSelect.addEventListener('change', () => { lastResult = null; loadAndRender(true); });
   refreshBtn.addEventListener('click', () => loadAndRender(true));
-  window.addEventListener('resize', () => { if (lastResult) draw(lastResult); });
+  window.addEventListener('resize', () => { if (lastResult) schedule(); });
+
+  /* ---- compartir imagen ---- */
+  const WEB = 'https://dashboard482.github.io/dashboard/', TG = 't.me/anafra_bot/hubfinanciero';
+  let blobCmp = null;
+  function imagenCompartir() {
+    const res = lastResult, cv = document.createElement('canvas'), W = 1080, H = 1440;
+    cv.width = W; cv.height = H; const c = cv.getContext('2d');
+    const f = '-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif';
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0d1117'); g.addColorStop(1, '#101a2e'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#f7a600'; c.fillRect(0, 0, W, 10);
+    c.fillStyle = '#f0f3fa'; c.font = '800 54px ' + f; c.fillText('💥 LIQUIDACIONES ' + res.moneda, 60, 110);
+    c.fillStyle = '#787b86'; c.font = '500 28px ' + f; c.fillText('Mapa estimado · velas 1h · ' + madridHora(Date.now()) + ' (Madrid)', 60, 154);
+    const sv = { colW: V.colW, right: V.right, auto: V.auto, ylo: V.ylo, yhi: V.yhi, hover: V.hover };
+    layout(); V.colW = Math.max(2, LAY.plotW / (Math.min(res.d.t.length, HORAS_ZOOM) + EXT)); V.right = res.d.t.length - 1; V.auto = true; V.hover = null; draw(res);
+    const sw = canvas.width, sh = canvas.height, k = Math.min(960 / sw, 780 / sh), dw = sw * k, dh = sh * k;
+    c.fillStyle = '#131722'; c.fillRect(60 - 8, 190 - 8, 960 + 16, dh + 16);
+    c.drawImage(canvas, 60 + (960 - dw) / 2, 190, dw, dh);
+    Object.assign(V, sv); draw(res);
+    let y = 190 + dh + 50;
+    c.fillStyle = '#f0f3fa'; c.font = '700 34px ' + f; c.fillText(res.moneda + '/USDT · ' + fmtAxisNum(res.precio) + ' $', 60, y);
+    y += 30;
+    function pill(txt, col, bg, x0, w) { c.fillStyle = bg; c.fillRect(x0, y, w, 64); c.fillStyle = col; c.font = '700 28px ' + f; c.textAlign = 'center'; c.fillText(txt, x0 + w / 2, y + 42); c.textAlign = 'left'; }
+    pill('Cortos +5%: ' + fmtUsd(res.cortos5), '#ff9b9b', 'rgba(239,83,80,.16)', 60, 465);
+    pill('Largos −5%: ' + fmtUsd(res.largos5), '#8fe6b4', 'rgba(38,166,154,.16)', 555, 465);
+    const fy = H - 150;
+    c.fillStyle = '#131722'; c.beginPath(); c.roundRect ? c.roundRect(40, fy, W - 80, 110, 18) : c.rect(40, fy, W - 80, 110); c.fill();
+    c.fillStyle = '#2962ff'; c.font = '800 36px ' + f; c.fillText('HUB FINANCIERO', 70, fy + 48);
+    c.fillStyle = '#d1d4dc'; c.font = '500 26px ' + f; c.fillText('Mercados, cripto y herramientas gratis', 70, fy + 84);
+    c.textAlign = 'right'; c.fillStyle = '#f0f3fa'; c.font = '700 24px ' + f; c.fillText('dashboard482.github.io/dashboard', W - 70, fy + 48);
+    c.fillStyle = '#8ab4ff'; c.fillText(TG, W - 70, fy + 84); c.textAlign = 'left';
+    return cv;
+  }
+  function textoPost() {
+    const r = lastResult;
+    return '💥 Mapa de liquidaciones ' + r.moneda + '/USDT\nPrecio ' + fmtAxisNum(r.precio) + ' $\nCortos +5%: ' + fmtUsd(r.cortos5) + ' · Largos −5%: ' + fmtUsd(r.largos5) +
+      '\n\nEn directo y gratis en el Hub Financiero 👇\n#Bitcoin #Liquidaciones #Cripto';
+  }
+  function abrirEnlace(u) { try { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) return Telegram.WebApp.openLink(u); } catch (e) {} window.open(u, '_blank'); }
+  $('shareBtn').onclick = () => {
+    if (!lastResult) return;
+    const cv = imagenCompartir(); $('ovimg').src = cv.toDataURL('image/png'); $('ov').classList.add('on');
+    blobCmp = null; cv.toBlob((b) => { blobCmp = b; }, 'image/png');
+  };
+  $('ovcl').onclick = () => $('ov').classList.remove('on');
+  $('ovdl').onclick = () => { const a = document.createElement('a'); a.href = $('ovimg').src; a.download = 'liquidaciones.png'; document.body.appendChild(a); a.click(); a.remove(); };
+  $('ovsh').onclick = () => {
+    try {
+      if (blobCmp && navigator.canShare) { const fl = [new File([blobCmp], 'liquidaciones.png', { type: 'image/png' })];
+        if (navigator.canShare({ files: fl })) { navigator.share({ files: fl, text: textoPost() + '\n' + WEB }).catch(() => {}); return; } }
+      if (navigator.share) { navigator.share({ text: textoPost(), url: WEB }).catch(() => {}); return; }
+    } catch (e) {}
+    try { navigator.clipboard.writeText(textoPost() + '\n' + WEB); } catch (e) {}
+  };
+  $('ovx').onclick = () => abrirEnlace('https://twitter.com/intent/tweet?text=' + encodeURIComponent(textoPost()) + '&url=' + encodeURIComponent(WEB));
 
   loadAndRender(true);
 })();
 </script>
+<script src="telegram.js" defer></script>
 </body>
 </html>
