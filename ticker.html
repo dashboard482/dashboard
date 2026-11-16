@@ -41,6 +41,12 @@ h1{font-size:17px;margin:0 0 3px;color:var(--strong);letter-spacing:.2px}
 @keyframes fl{0%{background:color-mix(in srgb,var(--strong) 18%,transparent)}100%{background:transparent}}
 
 .row.old{opacity:.6}
+
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:50;display:none;flex-direction:column;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 16px;overflow:auto}
+#ov.on{display:flex}
+#ov img{width:100%;max-width:420px;border-radius:10px}
+#ov .fila{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#ov p{color:#c9ccd6;font-size:12px;margin:0;text-align:center;max-width:420px}
 </style>
 </head>
 <body>
@@ -56,12 +62,14 @@ h1{font-size:17px;margin:0 0 3px;color:var(--strong);letter-spacing:.2px}
   <button class="btn on" id="ordGrupo">Por grupos</button>
   <button class="btn" id="ordPct">Mayor movimiento</button>
   <button class="btn" id="ref">↻ Actualizar</button>
+  <button class="btn" id="cmp">📤 Compartir</button>
 </div>
 <div class="card" id="lista"></div>
 <div class="falta" id="falta"></div>
 <div class="foot">Cripto: Binance (y CoinGecko para HYPE). Acciones, ETFs, índices, divisas y materias primas: Yahoo Finance (o los datos que publica el bot cada hora). Algunos datos pueden llevar retraso. Solo informativo, no es asesoramiento financiero.</div>
 </div>
 
+<div id="ov"><img id="ovimg" alt="Resumen de mercados"><div class="fila"><button class="btn" id="ovsh">📤 Compartir imagen</button><button class="btn" id="ovdl">⬇ Descargar</button><button class="btn on" id="ovx">𝕏 Publicar en X</button><button class="btn" id="ovcl">Cerrar</button></div><p>Si no se comparte directamente: mantén pulsada la imagen para guardarla, y luego adjúntala al post de X.</p></div>
 <script>
 (function(){
 'use strict';
@@ -216,6 +224,71 @@ function cargar(solo){
   if(!solo)ps.push(Promise.all([cargarJson(),cargarBot()]).then(function(){pintarYa();return cargarYahoo()}));
   return Promise.all(ps).then(function(){listo=true;guardar();pintar()}).then(function(){cargando=false},function(){cargando=false});
 }
+
+/* ---------- compartir imagen ---------- */
+var WEB='https://dashboard482.github.io/dashboard/',TG='t.me/anafra_bot/hubfinanciero';
+function pick(n){for(var k=0;k<TODOS.length;k++)if(TODOS[k].n===n)return TODOS[k]}
+function seleccion(){
+  var G=[['🪙 CRIPTO',['Bitcoin','Ethereum','Solana','BNB','XRP']],
+         ['📈 ACCIONES',['Apple','Microsoft','Nvidia','Tesla','Strategy (Saylor)']],
+         ['🌍 ÍNDICES',['S&P 500','Nasdaq','IBEX 35']],
+         ['🥇 MATERIAS PRIMAS',['Oro']]];
+  return G.map(function(g){return {t:g[0],r:g[1].map(pick).filter(function(i){return i&&i.v})}}).filter(function(g){return g.r.length});
+}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function dibujar(){
+  var G=seleccion(),W=1080,H=1440,cv=document.createElement('canvas');cv.width=W;cv.height=H;var c=cv.getContext('2d');
+  var f='-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif',UP='#00d155',DN='#ff4040';
+  var g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0d1117');g.addColorStop(1,'#101a2e');c.fillStyle=g;c.fillRect(0,0,W,H);
+  c.fillStyle='#2962ff';c.fillRect(0,0,W,10);
+  c.fillStyle='#f0f3fa';c.font='800 54px '+f;c.textBaseline='alphabetic';c.fillText('RESUMEN DE MERCADOS',60,110);
+  c.fillStyle='#787b86';c.font='500 28px '+f;c.fillText('Variación del día · '+fecha(),60,154);
+  var y=200,mx=0;G.forEach(function(gr){gr.r.forEach(function(i){mx=Math.max(mx,Math.abs(i.v.c))})});mx=Math.max(mx,0.5);
+  G.forEach(function(gr){
+    c.fillStyle='#787b86';c.font='700 24px '+f;c.fillText(gr.t,60,y+28);
+    c.fillStyle='#2a2e39';c.fillRect(60,y+38,W-120,2);y+=50;
+    gr.r.forEach(function(i){
+      var u=i.v.c>=0,col=u?UP:DN;
+      c.fillStyle='#f0f3fa';c.font='700 30px '+f;c.textAlign='left';c.fillText(i.n.replace(' (Saylor)',''),60,y+30);
+      c.fillStyle='#787b86';c.font='500 23px '+f;c.fillText(fp(i.v.p,i.cur),60,y+56);
+      var bw=Math.max(8,Math.abs(i.v.c)/mx*240);c.fillStyle=col;rr(c,520,y+14,bw,24,6);c.fill();
+      c.fillStyle=col;c.font='800 32px '+f;c.textAlign='right';c.fillText(fc(i.v.c),W-60,y+42);c.textAlign='left';
+      y+=60;
+    });
+    y+=6;
+  });
+  var fy=H-150;c.fillStyle='#131722';rr(c,40,fy,W-80,110,18);c.fill();
+  c.fillStyle='#2962ff';c.font='800 36px '+f;c.fillText('HUB FINANCIERO',70,fy+48);
+  c.fillStyle='#d1d4dc';c.font='500 26px '+f;c.fillText('Mercados, cripto y herramientas gratis',70,fy+84);
+  c.textAlign='right';c.fillStyle='#f0f3fa';c.font='700 24px '+f;c.fillText('dashboard482.github.io/dashboard',W-70,fy+48);
+  c.fillStyle='#8ab4ff';c.fillText(TG,W-70,fy+84);c.textAlign='left';
+  return cv;
+}
+function textoPost(){
+  var G=seleccion(),l=['📊 Resumen de mercados '+fecha().split(' ')[0]];
+  var st={};G.forEach(function(g){g.r.forEach(function(i){st[i.n]=i})});
+  ['Bitcoin','Ethereum','Nvidia','S&P 500','Oro'].forEach(function(n){var i=st[n];if(i)l.push((n==='Bitcoin'?'BTC':n==='Ethereum'?'ETH':n)+' '+fp(i.v.p,i.cur)+' ('+fc(i.v.c).replace('▲ ','').replace('▼ ','')+')')});
+  l.push('','Todo en vivo y gratis en el Hub Financiero 👇','#Bitcoin #Bolsa #Cripto');
+  return l.join('\n');
+}
+var blobCmp=null;
+function abrirEnlace(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+$('cmp').onclick=function(){
+  if(!TODOS.some(function(i){return i.v})){return}
+  var cv=dibujar();$('ovimg').src=cv.toDataURL('image/png');$('ov').classList.add('on');
+  blobCmp=null;cv.toBlob(function(b){blobCmp=b},'image/png');
+};
+$('ovcl').onclick=function(){$('ov').classList.remove('on')};
+$('ovdl').onclick=function(){var a=document.createElement('a');a.href=$('ovimg').src;a.download='resumen-mercados.png';document.body.appendChild(a);a.click();a.remove()};
+$('ovsh').onclick=function(){
+  try{
+    if(blobCmp&&navigator.canShare){var fl=[new File([blobCmp],'resumen-mercados.png',{type:'image/png'})];
+      if(navigator.canShare({files:fl})){navigator.share({files:fl,text:textoPost()+'\n'+WEB}).catch(function(){});return}}
+    if(navigator.share){navigator.share({text:textoPost(),url:WEB}).catch(function(){});return}
+  }catch(e){}
+  try{navigator.clipboard.writeText(textoPost()+'\n'+WEB)}catch(e){}
+};
+$('ovx').onclick=function(){abrirEnlace('https://twitter.com/intent/tweet?text='+encodeURIComponent(textoPost())+'&url='+encodeURIComponent(WEB))};
 $('ordGrupo').onclick=function(){modo='grupo';try{localStorage.setItem('tk.modo',modo)}catch(e){}pintar()};
 $('ordPct').onclick=function(){modo='pct';try{localStorage.setItem('tk.modo',modo)}catch(e){}pintar()};
 $('ref').onclick=function(){cargar(false)};
