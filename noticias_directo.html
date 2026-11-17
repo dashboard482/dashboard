@@ -15,6 +15,7 @@ h1{font-size:16px;margin:0;color:var(--st);display:flex;align-items:center;gap:7
 .live{width:8px;height:8px;border-radius:50%;background:#ef4444;animation:p 1.4s infinite}@keyframes p{50%{opacity:.25}}
 .chips{display:flex;gap:6px;margin-top:8px;overflow-x:auto}
 .chip{flex:none;background:var(--p2);border:1px solid var(--bd);color:var(--ink);border-radius:14px;padding:6px 12px;font:inherit;font-size:13px}
+.sep{flex:none;align-self:center;font-size:15px;margin:0 2px 0 6px}
 .chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
 main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-inset-bottom,0px))}
 .vid{position:relative;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden}
@@ -77,7 +78,7 @@ main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-i
   <div class="fila"><button class="btn" id="ad">Añadir</button><button class="btn" id="bo" style="display:none">🗑 Quitar este</button></div>
   <div class="err" id="er"></div>
  </div>
- <div class="note">Los directos son de los canales oficiales en YouTube; las radios se escuchan en sus propias emisiones. Si un directo no se ve aquí dentro, pulsa «Abrir en YouTube». Algunos canales, como NBC News NOW, crean un enlace nuevo cada día y pueden dejar de verse: en ese caso añade el enlace de hoy. Informativo, no es consejo financiero.</div>
+ <div class="note">Los directos son de los canales oficiales en YouTube; las radios se escuchan en sus propias emisiones. Si un directo no se ve aquí dentro, pulsa «Abrir en YouTube». Canales como NBC, ABC, Negocios TV o tastylive crean un enlace nuevo cada día: no los dejo fijos, pero puedes añadir el de hoy abajo. Informativo, no es consejo financiero.</div>
 </main>
 <script src="telegram.js"></script>
 <script>
@@ -86,10 +87,12 @@ main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-i
 const $=id=>document.getElementById(id);
 const WEB='https://dashboard482.github.io/dashboard/';
 const BASE=[
- {id:'QB5BNdBFujE',n:'Bloomberg Business News Live',d:'Bolsa, economía y empresas en inglés, 24 h. Canal Bloomberg Television.'},
- {id:'KQp-e_XQnDE',n:'Yahoo Finance 24/7',d:'Cobertura diaria de mercados en inglés. Canal oficial Yahoo Finance.'},
- {id:'O9mOtdZ-nSk',n:'Euronews en español',d:'Noticias de última hora en español, 24 h.'},
- {id:'GQXZIzMiXow',n:'NBC News NOW',d:'Noticias generales de EE. UU. en inglés.',w:'Su enlace cambia cada día'}
+ {id:'QB5BNdBFujE',n:'Bloomberg',g:'fin',d:'Bloomberg Business News Live: bolsa, economía y empresas en inglés, 24 h.'},
+ {id:'Sj1NLE3MRI8',n:'Schwab Network',g:'fin',d:'Mercados y bolsa en inglés, con «Opening Bell» y «Market on Close».',w:'Solo en horario de mercado de EE. UU. (en España, más o menos de 14:00 a 23:00)'},
+ {id:'KQp-e_XQnDE',n:'Yahoo Finance',g:'fin',d:'Cobertura diaria de mercados en inglés. Canal oficial Yahoo Finance, 24/7.'},
+ {id:'O9mOtdZ-nSk',n:'Euronews ES',g:'news',d:'Euronews en español: noticias de última hora, 24 h.'},
+ {id:'b4tE5aKhtlg',n:'RTVE Noticias',g:'news',d:'Canal 24 h de Televisión Española: actualidad nacional e internacional.'},
+ {id:'zTv0hCakAhg',n:'France 24 ES',g:'news',d:'FRANCE 24 en español: información internacional, 24 h.'}
 ];
 let custom=[];try{custom=JSON.parse(localStorage.getItem('tv.c')||'[]')}catch(e){}
 let sel=0;try{sel=+localStorage.getItem('tv.s')||0}catch(e){}
@@ -105,7 +108,11 @@ function idDe(u){
 function render(){
   const L=all();if(sel>=L.length||sel<0)sel=0;const c=L[sel];
   const ch=$('chips');ch.textContent='';
-  L.forEach((x,i)=>{const b=el('button','chip'+(i===sel?' on':''),x.n);b.onclick=()=>{sel=i;save();render()};ch.append(b)});
+  let prev='';
+  L.forEach((x,i)=>{
+    const g=x.g||(x.c?'mine':'');
+    if(g!==prev){if(g==='fin')ch.append(el('span','sep','💹'));else if(g==='news')ch.append(el('span','sep','📰'));else if(g==='mine')ch.append(el('span','sep','⭐'));prev=g}
+    const b=el('button','chip'+(i===sel?' on':''),x.n);b.onclick=()=>{sel=i;save();render()};ch.append(b)});
   const v=$('vid');v.textContent='';
   const f=document.createElement('iframe');
   f.src='https://www.youtube.com/embed/'+c.id+'?autoplay=1&playsinline=1&rel=0';
