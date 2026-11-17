@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0e14">
+<title>TV y radio en directo · Hub Financiero</title>
+<style>
+:root{--bg:#0b0e14;--pn:#141a24;--p2:#1c2431;--bd:#2a3342;--ink:#cfd5e1;--st:#f2f5fa;--dim:#8590a3;--ac:#2962ff;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f2f4f8;--pn:#fff;--p2:#eceff5;--bd:#dce1ea;--ink:#394150;--st:#0e1420;--dim:#6a7385;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:5;background:var(--pn);border-bottom:1px solid var(--bd);padding:10px 14px;padding-top:calc(10px + max(env(safe-area-inset-top,0px),var(--tgtop,0px)))}
+.r1{display:flex;align-items:center;justify-content:space-between}
+.r1 a{color:var(--dim);text-decoration:none;font-size:13px}
+h1{font-size:16px;margin:0;color:var(--st);display:flex;align-items:center;gap:7px}
+.live{width:8px;height:8px;border-radius:50%;background:#ef4444;animation:p 1.4s infinite}@keyframes p{50%{opacity:.25}}
+.chips{display:flex;gap:6px;margin-top:8px;overflow-x:auto}
+.chip{flex:none;background:var(--p2);border:1px solid var(--bd);color:var(--ink);border-radius:14px;padding:6px 12px;font:inherit;font-size:13px}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-inset-bottom,0px))}
+.vid{position:relative;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden}
+.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.nm{font-size:18px;font-weight:800;color:var(--st);margin:12px 0 2px}
+.ds{font-size:13px;color:var(--dim);line-height:1.4}
+.bt{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{flex:1;min-width:130px;background:var(--p2);border:1px solid var(--bd);color:var(--st);border-radius:10px;padding:11px;font:inherit;font-size:14px;font-weight:700;text-align:center;text-decoration:none}
+.btn.x{background:#000;border-color:#000;color:#fff}
+.add{margin-top:22px;background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:14px}
+.add b{color:var(--st);font-size:14px}
+.add p{font-size:12px;color:var(--dim);margin:4px 0 10px;line-height:1.4}
+.add input{width:100%;background:var(--p2);border:1px solid var(--bd);color:var(--st);border-radius:8px;padding:10px;font:inherit;font-size:16px;outline:0}
+.add .fila{display:flex;gap:8px;margin-top:8px}
+.add input+input{margin-top:8px}
+.rad{margin-top:22px;background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:14px}
+.rad b{color:var(--st);font-size:16px}
+.rad audio{width:100%;margin-top:10px}
+.rad .bt{margin-top:10px}
+.err{color:#ef4444;font-size:12px;margin-top:6px;min-height:14px}
+.note{font-size:11px;color:var(--dim);line-height:1.5;margin-top:14px}
+.warn{display:inline-block;font-size:11px;color:#f59e0b;margin-left:6px}
+</style></head><body>
+<header>
+ <div class="r1"><a href="index.html">← Hub</a><h1><span class="live"></span>TV y radio en directo</h1><span style="width:34px"></span></div>
+ <div class="chips" id="chips"></div>
+</header>
+<main>
+ <div class="vid" id="vid"></div>
+ <div class="nm" id="nm"></div>
+ <div class="ds" id="ds"></div>
+ <div class="bt">
+  <a class="btn" id="yt" target="_blank" rel="noopener noreferrer">▶ Abrir en YouTube</a>
+  <button class="btn x" id="sx">𝕏 Compartir</button>
+ </div>
+ <div class="rad">
+  <div class="lbl" style="font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">📻 Radio en directo</div>
+  <b>Radio Intereconomía</b>
+  <div class="ds">Economía, bolsa y actualidad en español. Pulsa play para escuchar.</div>
+  <audio id="au" controls preload="none" src="https://intereconomia.emitironline.com/"></audio>
+  <div class="err" id="aer"></div>
+  <div class="bt">
+   <a class="btn" href="https://intereconomia.emitironline.com/" target="_blank" rel="noopener noreferrer">▶ Abrir el audio</a>
+   <button class="btn x" id="rsx">𝕏 Compartir</button>
+  </div>
+ </div>
+ <div class="add">
+  <b>➕ Añadir otro canal</b>
+  <p>Pega el enlace de un directo de YouTube (de la forma youtube.com/live/… o youtu.be/…). Se guarda en este móvil.</p>
+  <input id="u" placeholder="https://www.youtube.com/live/…" inputmode="url">
+  <input id="nn" placeholder="Nombre (opcional)">
+  <div class="fila"><button class="btn" id="ad">Añadir</button><button class="btn" id="bo" style="display:none">🗑 Quitar este</button></div>
+  <div class="err" id="er"></div>
+ </div>
+ <div class="note">Los directos son de los canales oficiales en YouTube. Si un directo no se ve aquí dentro, pulsa «Abrir en YouTube». Algunos canales, como NBC News NOW, crean un enlace nuevo cada día y pueden dejar de verse: en ese caso añade el enlace de hoy. Informativo, no es consejo financiero.</div>
+</main>
+<script src="telegram.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const WEB='https://dashboard482.github.io/dashboard/';
+const BASE=[
+ {id:'QB5BNdBFujE',n:'Bloomberg Business News Live',d:'Bolsa, economía y empresas en inglés, 24 h. Canal Bloomberg Television.'},
+ {id:'KQp-e_XQnDE',n:'Yahoo Finance 24/7',d:'Cobertura diaria de mercados en inglés. Canal oficial Yahoo Finance.'},
+ {id:'O9mOtdZ-nSk',n:'Euronews en español',d:'Noticias de última hora en español, 24 h.'},
+ {id:'GQXZIzMiXow',n:'NBC News NOW',d:'Noticias generales de EE. UU. en inglés.',w:'Su enlace cambia cada día'}
+];
+let custom=[];try{custom=JSON.parse(localStorage.getItem('tv.c')||'[]')}catch(e){}
+let sel=0;try{sel=+localStorage.getItem('tv.s')||0}catch(e){}
+const all=()=>BASE.concat(custom.map(c=>Object.assign({c:1},c)));
+const save=()=>{try{localStorage.setItem('tv.c',JSON.stringify(custom));localStorage.setItem('tv.s',sel)}catch(e){}};
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+function idDe(u){
+  u=String(u||'').trim();
+  let m=/(?:youtube\.com\/(?:live|embed|shorts)\/|youtu\.be\/|[?&]v=)([A-Za-z0-9_-]{11})/.exec(u);
+  return m?m[1]:'';
+}
+function render(){
+  const L=all();if(sel>=L.length||sel<0)sel=0;const c=L[sel];
+  const ch=$('chips');ch.textContent='';
+  L.forEach((x,i)=>{const b=el('button','chip'+(i===sel?' on':''),x.n);b.onclick=()=>{sel=i;save();render()};ch.append(b)});
+  const v=$('vid');v.textContent='';
+  const f=document.createElement('iframe');
+  f.src='https://www.youtube.com/embed/'+c.id+'?autoplay=1&playsinline=1&rel=0';
+  f.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';f.allowFullscreen=true;f.title=c.n;
+  v.append(f);
+  $('nm').textContent=c.n;
+  $('ds').textContent=c.d||'Canal añadido por ti.';
+  if(c.w){const w=el('span','warn','⚠ '+c.w);$('ds').append(w)}
+  $('yt').href='https://www.youtube.com/watch?v='+c.id;
+  $('bo').style.display=c.c?'block':'none';
+}
+$('sx').onclick=()=>{
+  const c=all()[sel];
+  abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('📺 Ahora en directo: '+c.n+'\nVíalo gratis en el Hub Financiero 👉 '+WEB)+'&url='+encodeURIComponent('https://www.youtube.com/watch?v='+c.id));
+};
+$('au').addEventListener('error',()=>{$('aer').textContent='No suena aquí dentro. Pulsa «Abrir el audio».'});
+$('rsx').onclick=()=>abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('📻 Escuchando Radio Intereconomía en directo\nGratis en el Hub Financiero 👉 '+WEB)+'&url='+encodeURIComponent(WEB));
+$('ad').onclick=()=>{
+  const id=idDe($('u').value);
+  if(!id){$('er').textContent='No reconozco ese enlace. Pega el enlace completo del directo de YouTube.';return}
+  if(all().some(x=>x.id===id)){$('er').textContent='Ese canal ya está en la lista.';return}
+  custom.push({id:id,n:$('nn').value.trim()||('Canal '+(custom.length+1))});
+  sel=all().length-1;save();$('u').value='';$('nn').value='';$('er').textContent='';render();
+};
+$('bo').onclick=()=>{
+  const c=all()[sel];if(!c.c)return;
+  custom=custom.filter(x=>x.id!==c.id);sel=0;save();render();
+};
+render();
+})();
+</script></body></html>
