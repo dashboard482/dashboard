@@ -8,7 +8,7 @@
 @media(prefers-color-scheme:light){:root{--bg:#f2f4f8;--pn:#fff;--p2:#eceff5;--bd:#dce1ea;--ink:#394150;--st:#0e1420;--dim:#6a7385;color-scheme:light}}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-header{position:sticky;top:0;z-index:5;background:var(--pn);border-bottom:1px solid var(--bd);padding:10px 14px 8px;padding-top:calc(10px + max(env(safe-area-inset-top,0px),var(--tgtop,0px)))}
+header{position:sticky;top:0;z-index:5;background:var(--pn);border-bottom:1px solid var(--bd);padding:10px 14px 0;padding-top:calc(10px + max(env(safe-area-inset-top,0px),var(--tgtop,0px)))}
 .r1{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .r1 a{color:var(--dim);text-decoration:none;font-size:13px}
 h1{font-size:16px;margin:0;color:var(--st);display:flex;align-items:center;gap:7px}
@@ -19,7 +19,7 @@ h1{font-size:16px;margin:0;color:var(--st);display:flex;align-items:center;gap:7
 .chip{flex:none;background:var(--p2);border:1px solid var(--bd);color:var(--ink);border-radius:14px;padding:5px 12px;font:inherit;font-size:12px}
 .chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
 /* cinta */
-.cinta{overflow:hidden;background:#0d1320;border-bottom:1px solid var(--bd);white-space:nowrap;height:52px;display:flex;align-items:center}
+.cinta{overflow:hidden;background:#0d1320;margin:8px -14px 0;white-space:nowrap;height:52px;display:flex;align-items:center}
 .cinta .tr{display:inline-block;padding-left:100%;animation:mv 120s linear infinite}
 .cinta:active .tr{animation-play-state:paused}
 @keyframes mv{to{transform:translateX(-100%)}}
@@ -39,6 +39,7 @@ main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-i
 @media(min-width:560px){.grid{grid-template-columns:1fr 1fr}}
 .mt{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--dim);margin-bottom:5px}
 .mt b{color:var(--c);text-transform:uppercase;letter-spacing:.03em}
+.sx{margin-left:auto;background:var(--p2);border:1px solid var(--bd);color:var(--st);border-radius:8px;padding:3px 9px;font:inherit;font-size:12px;font-weight:700}
 .nw{background:#ef4444;color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:700}
 .tt{font-weight:700;color:var(--st);line-height:1.3;font-size:15px}
 .ds{font-size:13px;color:var(--dim);margin-top:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
@@ -49,8 +50,8 @@ main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-i
  <div class="r1"><a href="index.html">← Hub</a><h1><span class="live"></span>Noticias en directo</h1><button class="btn" id="rf">↻</button></div>
  <div id="st">cargando…</div>
  <div class="chips" id="chips"></div>
+ <div class="cinta"><div class="tr" id="tr"></div></div>
 </header>
-<div class="cinta"><div class="tr" id="tr"></div></div>
 <main>
  <div id="hero"></div>
  <div class="grid" id="grid"></div>
@@ -123,9 +124,18 @@ function enlace(x,cls){
   const a=el('a',cls);a.href=x.u;a.target='_blank';a.rel='noopener noreferrer';a.style.setProperty('--c',COL[x.c]||'#2962ff');
   return a;
 }
+const WEB='https://dashboard482.github.io/dashboard/';
+function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+function compartirX(x){
+  const t=x.t.length>200?x.t.slice(0,197)+'…':x.t;
+  abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('📰 '+t+' ('+x.s+')\nVía Hub Financiero 👉 '+WEB)+'&url='+encodeURIComponent(x.u));
+}
 function meta(x){
   const m=el('div','mt');m.append(el('b',null,x.s),el('span',null,ago(x.d)));
   if(x.d>S.seen&&S.seen)m.append(el('span','nw','NUEVO'));
+  const b=el('button','sx','𝕏 Compartir');b.type='button';
+  b.onclick=e=>{e.preventDefault();e.stopPropagation();compartirX(x)};
+  m.append(b);
   return m;
 }
 function render(){
