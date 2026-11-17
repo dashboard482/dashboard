@@ -55,6 +55,7 @@ input[type=range]{width:100%;accent-color:var(--o)}
  <div class="s"><span>Potencia estimada de la red</span><b id="pw">—</b></div>
  <div class="s"><span>Energía por 1 BTC</span><b id="kw">—</b></div>
 </div>
+<button class="btn" id="sx" style="width:100%;padding:12px;font-size:15px;font-weight:700;margin-bottom:12px;background:var(--o);color:#fff;border:0;border-radius:12px">𝕏 Compartir en X</button>
 <div class="n">Estimación orientativa: no incluye máquinas, personal ni comisiones de la red. La eficiencia real varía mucho entre mineros. Fuentes: Binance (precio) y mempool.space (hashrate).</div>
 </div>
 <script src="telegram.js"></script>
@@ -96,5 +97,12 @@ async function red(){
  calc();
 }
 $('luz').oninput=$('ef').oninput=calc;
+const WEB='https://dashboard482.github.io/dashboard/';
+$('sx').onclick=function(){
+ const kW=S.h?S.h/1e12*(+$('ef').value)/1000:0,co=kW*24/450*(+$('luz').value);
+ const t='⚡ Minar 1 BTC cuesta ahora ≈ '+usd(co)+' en electricidad'+(S.p?' y BTC cotiza a '+usd(S.p):'')+' (luz '+f(+$('luz').value,3)+' $/kWh, '+$('ef').value+' J/TH).\nEn directo en el Hub Financiero 👉 '+WEB;
+ const u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(WEB+'compartir.html?v='+Math.floor(Date.now()/3600000));
+ try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank');
+};
 precio();red();setInterval(precio,4000);setInterval(red,120000);
 </script></body></html>
