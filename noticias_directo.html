@@ -2,187 +2,141 @@
 <html lang="es"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0e14">
-<title>Noticias · Hub Financiero</title>
+<title>TV y radio en directo · Hub Financiero</title>
 <style>
 :root{--bg:#0b0e14;--pn:#141a24;--p2:#1c2431;--bd:#2a3342;--ink:#cfd5e1;--st:#f2f5fa;--dim:#8590a3;--ac:#2962ff;color-scheme:dark}
 @media(prefers-color-scheme:light){:root{--bg:#f2f4f8;--pn:#fff;--p2:#eceff5;--bd:#dce1ea;--ink:#394150;--st:#0e1420;--dim:#6a7385;color-scheme:light}}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-header{position:sticky;top:0;z-index:5;background:var(--pn);border-bottom:1px solid var(--bd);padding:10px 14px 0;padding-top:calc(10px + max(env(safe-area-inset-top,0px),var(--tgtop,0px)))}
-.r1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+header{position:sticky;top:0;z-index:5;background:var(--pn);border-bottom:1px solid var(--bd);padding:10px 14px;padding-top:calc(10px + max(env(safe-area-inset-top,0px),var(--tgtop,0px)))}
+.r1{display:flex;align-items:center;justify-content:space-between}
 .r1 a{color:var(--dim);text-decoration:none;font-size:13px}
 h1{font-size:16px;margin:0;color:var(--st);display:flex;align-items:center;gap:7px}
 .live{width:8px;height:8px;border-radius:50%;background:#ef4444;animation:p 1.4s infinite}@keyframes p{50%{opacity:.25}}
-.btn{background:var(--p2);border:1px solid var(--bd);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:12px}
-#st{font-size:11px;color:var(--dim);margin-top:5px}
 .chips{display:flex;gap:6px;margin-top:8px;overflow-x:auto}
-.chip{flex:none;background:var(--p2);border:1px solid var(--bd);color:var(--ink);border-radius:14px;padding:5px 12px;font:inherit;font-size:12px}
+.chip{flex:none;background:var(--p2);border:1px solid var(--bd);color:var(--ink);border-radius:14px;padding:6px 12px;font:inherit;font-size:13px}
 .chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
-/* cinta */
-.cinta{overflow:hidden;background:#0d1320;margin:8px -14px 0;white-space:nowrap;height:52px;display:flex;align-items:center}
-.cinta .tr{display:inline-block;padding-left:100%;animation:mv 120s linear infinite}
-.cinta:active .tr{animation-play-state:paused}
-@keyframes mv{to{transform:translateX(-100%)}}
-.cinta a{color:#dbe2f0;text-decoration:none;font-size:16px;font-weight:600;margin-right:44px}
-.cinta a b{color:var(--c,#f7a600);margin-right:8px;font-size:12px;text-transform:uppercase}
 main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-inset-bottom,0px))}
-.im{position:relative;background:linear-gradient(135deg,var(--c),#0b0e14);aspect-ratio:16/9;overflow:hidden}
-.im img{width:100%;height:100%;object-fit:cover;display:block}
-.im span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:800;color:rgba(255,255,255,.35)}
-.hero{display:block;text-decoration:none;border-radius:16px;overflow:hidden;background:var(--pn);border:1px solid var(--bd);margin-bottom:14px}
-.hero .im{aspect-ratio:16/10}
-.hero .tx{padding:14px}
-.hero .tt{font-size:20px;line-height:1.25}
-.card{display:block;text-decoration:none;border-radius:14px;overflow:hidden;background:var(--pn);border:1px solid var(--bd)}
-.card .tx{padding:10px 12px 12px}
-.grid{display:grid;grid-template-columns:1fr;gap:12px}
-@media(min-width:560px){.grid{grid-template-columns:1fr 1fr}}
-.mt{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--dim);margin-bottom:5px}
-.mt b{color:var(--c);text-transform:uppercase;letter-spacing:.03em}
-.sx{margin-left:auto;background:var(--p2);border:1px solid var(--bd);color:var(--st);border-radius:8px;padding:3px 9px;font:inherit;font-size:12px;font-weight:700}
-.nw{background:#ef4444;color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:700}
-.tt{font-weight:700;color:var(--st);line-height:1.3;font-size:15px}
-.ds{font-size:13px;color:var(--dim);margin-top:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.vacio{text-align:center;color:var(--dim);padding:40px 0}
-.note{font-size:11px;color:var(--dim);line-height:1.5;margin-top:16px}
+.vid{position:relative;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden}
+.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.nm{font-size:18px;font-weight:800;color:var(--st);margin:12px 0 2px}
+.ds{font-size:13px;color:var(--dim);line-height:1.4}
+.bt{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{flex:1;min-width:130px;background:var(--p2);border:1px solid var(--bd);color:var(--st);border-radius:10px;padding:11px;font:inherit;font-size:14px;font-weight:700;text-align:center;text-decoration:none}
+.btn.x{background:#000;border-color:#000;color:#fff}
+.add{margin-top:22px;background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:14px}
+.add b{color:var(--st);font-size:14px}
+.add p{font-size:12px;color:var(--dim);margin:4px 0 10px;line-height:1.4}
+.add input{width:100%;background:var(--p2);border:1px solid var(--bd);color:var(--st);border-radius:8px;padding:10px;font:inherit;font-size:16px;outline:0}
+.add .fila{display:flex;gap:8px;margin-top:8px}
+.add input+input{margin-top:8px}
+.rad{margin-top:22px;background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:14px}
+.rad b{color:var(--st);font-size:16px}
+.rad audio{width:100%;margin-top:10px}
+.rad .bt{margin-top:10px}
+.err{color:#ef4444;font-size:12px;margin-top:6px;min-height:14px}
+.note{font-size:11px;color:var(--dim);line-height:1.5;margin-top:14px}
+.warn{display:inline-block;font-size:11px;color:#f59e0b;margin-left:6px}
 </style></head><body>
 <header>
- <div class="r1"><a href="index.html">← Hub</a><h1><span class="live"></span>Noticias en directo</h1><button class="btn" id="rf">↻</button></div>
- <div id="st">cargando…</div>
+ <div class="r1"><a href="index.html">← Hub</a><h1><span class="live"></span>TV y radio en directo</h1><span style="width:34px"></span></div>
  <div class="chips" id="chips"></div>
- <div class="cinta"><div class="tr" id="tr"></div></div>
 </header>
 <main>
- <div id="hero"></div>
- <div class="grid" id="grid"></div>
- <div class="vacio" id="vac">Cargando noticias…</div>
- <div class="note">Última hora mundial (CNN, BBC, Al Jazeera, El País), cripto, mercados, España y ciberseguridad, con imágenes (RSS vía rss2json y CryptoCompare). Cada tarjeta abre la noticia original. Se actualiza sola cada 2 minutos. Informativo, no es consejo financiero.</div>
+ <div class="vid" id="vid"></div>
+ <div class="nm" id="nm"></div>
+ <div class="ds" id="ds"></div>
+ <div class="bt">
+  <a class="btn" id="yt" target="_blank" rel="noopener noreferrer">▶ Abrir en YouTube</a>
+  <button class="btn x" id="sx">𝕏 Compartir</button>
+ </div>
+ <div class="rad">
+  <div class="lbl" style="font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">📻 Radio en directo</div>
+  <b>Radio Intereconomía</b>
+  <div class="ds">Economía, bolsa y actualidad en español. Pulsa play para escuchar.</div>
+  <audio id="au" controls preload="none" src="https://intereconomia.emitironline.com/"></audio>
+  <div class="err" id="aer"></div>
+  <div class="bt">
+   <a class="btn" href="https://intereconomia.emitironline.com/" target="_blank" rel="noopener noreferrer">▶ Abrir el audio</a>
+   <button class="btn x" id="rsx">𝕏 Compartir</button>
+  </div>
+  <div class="rad2" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)">
+   <b>Capital Radio</b>
+   <div class="ds">La radio de los líderes: economía, mercados y negocios en español. Incluye el programa «Capital, la Bolsa y la Vida».</div>
+   <div class="bt">
+    <a class="btn" href="https://www.capitalradio.es/directo" target="_blank" rel="noopener noreferrer">▶ Escuchar en directo</a>
+    <button class="btn x" id="rsx2">𝕏 Compartir</button>
+   </div>
+  </div>
+ </div>
+ <div class="add">
+  <b>➕ Añadir otro canal</b>
+  <p>Pega el enlace de un directo de YouTube (de la forma youtube.com/live/… o youtu.be/…). Se guarda en este móvil.</p>
+  <input id="u" placeholder="https://www.youtube.com/live/…" inputmode="url">
+  <input id="nn" placeholder="Nombre (opcional)">
+  <div class="fila"><button class="btn" id="ad">Añadir</button><button class="btn" id="bo" style="display:none">🗑 Quitar este</button></div>
+  <div class="err" id="er"></div>
+ </div>
+ <div class="note">Los directos son de los canales oficiales en YouTube; las radios se escuchan en sus propias emisiones. Si un directo no se ve aquí dentro, pulsa «Abrir en YouTube». Algunos canales, como NBC News NOW, crean un enlace nuevo cada día y pueden dejar de verse: en ese caso añade el enlace de hoy. Informativo, no es consejo financiero.</div>
 </main>
 <script src="telegram.js"></script>
 <script>
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-const KEY='nd.v2';
-const COL={cripto:'#f7a600',mercados:'#2196f3','españa':'#ef5350',mundo:'#e11d48','tecnología':'#8b5cf6'};
-const SRC=[
- {n:'Cointelegraph',c:'cripto',rss:'https://cointelegraph.com/rss'},
- {n:'CoinDesk',c:'cripto',rss:'https://www.coindesk.com/arc/outboundfeeds/rss/'},
- {n:'The Block',c:'cripto',rss:'https://www.theblock.co/rss.xml'},
- {n:'Bitcoin Magazine',c:'cripto',rss:'https://bitcoinmagazine.com/feed'},
- {n:'BeInCrypto',c:'cripto',rss:'https://beincrypto.com/feed/'},
- {n:'CriptoNoticias',c:'cripto',rss:'https://www.criptonoticias.com/feed/'},
- {n:'CryptoCompare',c:'cripto',cc:true},
- {n:'Yahoo Finance',c:'mercados',rss:'https://finance.yahoo.com/news/rssindex'},
- {n:'CNBC',c:'mercados',rss:'https://www.cnbc.com/id/10000664/device/rss/rss.html'},
- {n:'Expansión',c:'españa',rss:'https://e00-expansion.uecdn.es/rss/mercados.xml'},
- {n:'Cinco Días',c:'españa',rss:'https://feeds.elpais.com/mrss-s/pages/ep/site/cincodias.elpais.com/portada'},
- {n:'Investing.com',c:'españa',rss:'https://es.investing.com/rss/news.rss'},
- {n:'CNN',c:'mundo',rss:'http://rss.cnn.com/rss/edition.rss'},
- {n:'BBC',c:'mundo',rss:'https://feeds.bbci.co.uk/news/rss.xml'},
- {n:'Al Jazeera',c:'mundo',rss:'https://www.aljazeera.com/xml/rss/all.xml'},
- {n:'El País',c:'mundo',rss:'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada'},
- {n:'BleepingComputer',c:'tecnología',rss:'https://www.bleepingcomputer.com/feed/'},
- {n:'The Hacker News',c:'tecnología',rss:'https://feeds.feedburner.com/TheHackersNews'},
- {n:'The Verge',c:'tecnología',rss:'https://www.theverge.com/rss/index.xml'}
-];
-const FILT=[['todo','Todo'],['mundo','Última hora'],['cripto','Cripto'],['mercados','Mercados'],['españa','España'],['tecnología','Tech y hackeos']];
-let S={items:[],t:0,f:'todo',seen:0};
-try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&Array.isArray(r.items))S=Object.assign(S,r)}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({items:S.items.slice(0,120),t:S.t,f:S.f,seen:S.seen}))}catch(e){}};
-const plain=h=>{try{return (new DOMParser().parseFromString(h||'','text/html').body.textContent||'').replace(/\s+/g,' ').trim()}catch(e){return ''}};
-const ago=t=>{const m=Math.max(0,Math.round((Date.now()-t)/6e4));return m<1?'ahora':m<60?'hace '+m+' min':m<1440?'hace '+Math.round(m/60)+' h':'hace '+Math.round(m/1440)+' d'};
-const fold=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
-const okUrl=u=>/^https?:\/\//i.test(u||'');
-const https=u=>{u=String(u||'').trim();if(u.startsWith('//'))u='https:'+u;return /^https:\/\//i.test(u)?u:(/^http:\/\//i.test(u)?u.replace(/^http:/i,'https:'):'')};
-function imgDe(i){
-  let u=i.thumbnail||(i.enclosure&&/image|jpg|jpeg|png|webp/i.test((i.enclosure.type||'')+(i.enclosure.link||''))&&i.enclosure.link)||'';
-  if(!u){const m=/<img[^>]+src=["']([^"']+)/i.exec((i.content||'')+(i.description||''));if(m)u=m[1]}
-  return https(u);
-}
-async function viaRss(s){
-  const r=await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(s.rss));
-  const j=await r.json();
-  if(j.status!=='ok'||!Array.isArray(j.items))throw 0;
-  return j.items.map(i=>({s:s.n,c:s.c,t:plain(i.title),u:i.link,d:Date.parse(String(i.pubDate).replace(' ','T')+'Z'),x:plain(i.description).slice(0,200),i:imgDe(i)}));
-}
-async function viaCC(s){
-  const r=await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN');
-  const j=await r.json();
-  if(!Array.isArray(j.Data))throw 0;
-  return j.Data.map(i=>({s:(i.source_info&&i.source_info.name)||i.source||s.n,c:s.c,t:plain(i.title),u:i.url,d:(i.published_on||0)*1000,x:plain(i.body).slice(0,200),i:https(i.imageurl)}));
-}
-function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
-function imagen(x){
-  const b=el('div','im');b.style.setProperty('--c',COL[x.c]||'#2962ff');
-  b.append(el('span',null,(x.s||'?').charAt(0)));
-  if(x.i){const im=new Image();im.referrerPolicy='no-referrer';im.alt='';
-    im.onload=()=>{b.textContent='';b.append(im)};im.src=x.i}
-  return b;
-}
-function enlace(x,cls){
-  const a=el('a',cls);a.href=x.u;a.target='_blank';a.rel='noopener noreferrer';a.style.setProperty('--c',COL[x.c]||'#2962ff');
-  return a;
-}
 const WEB='https://dashboard482.github.io/dashboard/';
+const BASE=[
+ {id:'QB5BNdBFujE',n:'Bloomberg Business News Live',d:'Bolsa, economía y empresas en inglés, 24 h. Canal Bloomberg Television.'},
+ {id:'KQp-e_XQnDE',n:'Yahoo Finance 24/7',d:'Cobertura diaria de mercados en inglés. Canal oficial Yahoo Finance.'},
+ {id:'O9mOtdZ-nSk',n:'Euronews en español',d:'Noticias de última hora en español, 24 h.'},
+ {id:'GQXZIzMiXow',n:'NBC News NOW',d:'Noticias generales de EE. UU. en inglés.',w:'Su enlace cambia cada día'}
+];
+let custom=[];try{custom=JSON.parse(localStorage.getItem('tv.c')||'[]')}catch(e){}
+let sel=0;try{sel=+localStorage.getItem('tv.s')||0}catch(e){}
+const all=()=>BASE.concat(custom.map(c=>Object.assign({c:1},c)));
+const save=()=>{try{localStorage.setItem('tv.c',JSON.stringify(custom));localStorage.setItem('tv.s',sel)}catch(e){}};
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
 function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
-function compartirX(x){
-  const t=x.t.length>200?x.t.slice(0,197)+'…':x.t;
-  abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('📰 '+t+' ('+x.s+')\nVía Hub Financiero 👉 '+WEB)+'&url='+encodeURIComponent(x.u));
-}
-function meta(x){
-  const m=el('div','mt');m.append(el('b',null,x.s),el('span',null,ago(x.d)));
-  if(x.d>S.seen&&S.seen)m.append(el('span','nw','NUEVO'));
-  const b=el('button','sx','𝕏 Compartir');b.type='button';
-  b.onclick=e=>{e.preventDefault();e.stopPropagation();compartirX(x)};
-  m.append(b);
-  return m;
+function idDe(u){
+  u=String(u||'').trim();
+  let m=/(?:youtube\.com\/(?:live|embed|shorts)\/|youtu\.be\/|[?&]v=)([A-Za-z0-9_-]{11})/.exec(u);
+  return m?m[1]:'';
 }
 function render(){
-  const box=$('chips');box.textContent='';
-  FILT.forEach(([k,l])=>{const b=el('button','chip'+(S.f===k?' on':''),l);b.onclick=()=>{S.f=k;save();render()};box.append(b)});
-  const lim=Date.now()-864e5;
-  const list=S.items.filter(x=>(S.f==='todo'||x.c===S.f)&&x.d>=lim);
-  // cinta
-  const tr=$('tr');tr.textContent='';
-  list.slice(0,25).forEach(x=>{const a=enlace(x,null);a.append(el('b',null,x.s),document.createTextNode(x.t));tr.append(a)});
-  // héroe: la más reciente con imagen entre las 8 primeras
-  const hi=list.slice(0,8).findIndex(x=>x.i);
-  const hero=$('hero');hero.textContent='';
-  const rest=list.slice();
-  if(list.length){
-    const x=rest.splice(hi>=0?hi:0,1)[0];
-    const a=enlace(x,'hero');a.append(imagen(x));
-    const t=el('div','tx');t.append(meta(x),el('div','tt',x.t));if(x.x)t.append(el('div','ds',x.x));
-    a.append(t);hero.append(a);
-  }
-  const g=$('grid');g.textContent='';
-  rest.slice(0,60).forEach(x=>{
-    const a=enlace(x,'card');a.append(imagen(x));
-    const t=el('div','tx');t.append(meta(x),el('div','tt',x.t));
-    a.append(t);g.append(a);
-  });
-  $('vac').style.display=list.length?'none':'block';
-  if(!list.length)$('vac').textContent=S.t?'Sin noticias en las últimas 24 h':'Cargando noticias…';
-  $('st').textContent=S.t?('Actualizado '+new Date(S.t).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+' · '+list.length+' noticias'):'cargando…';
+  const L=all();if(sel>=L.length||sel<0)sel=0;const c=L[sel];
+  const ch=$('chips');ch.textContent='';
+  L.forEach((x,i)=>{const b=el('button','chip'+(i===sel?' on':''),x.n);b.onclick=()=>{sel=i;save();render()};ch.append(b)});
+  const v=$('vid');v.textContent='';
+  const f=document.createElement('iframe');
+  f.src='https://www.youtube.com/embed/'+c.id+'?autoplay=1&playsinline=1&rel=0';
+  f.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';f.allowFullscreen=true;f.title=c.n;
+  v.append(f);
+  $('nm').textContent=c.n;
+  $('ds').textContent=c.d||'Canal añadido por ti.';
+  if(c.w){const w=el('span','warn','⚠ '+c.w);$('ds').append(w)}
+  $('yt').href='https://www.youtube.com/watch?v='+c.id;
+  $('bo').style.display=c.c?'block':'none';
 }
-async function load(){
-  $('rf').disabled=true;$('st').textContent='actualizando…';
-  const res=await Promise.allSettled(SRC.map(s=>s.cc?viaCC(s):viaRss(s)));
-  const all=[];res.forEach(r=>{if(r.status==='fulfilled')r.value.forEach(x=>all.push(x))});
-  const uniq=[],seen=new Set();
-  all.filter(x=>x.t&&okUrl(x.u)&&isFinite(x.d)&&x.d<=Date.now()+36e5).sort((a,b)=>b.d-a.d).forEach(x=>{
-    const k=fold(x.t).slice(0,70);if(seen.has(k))return;seen.add(k);uniq.push(x);
-  });
-  if(uniq.length){
-    const prev=S.items.length?Math.max.apply(null,S.items.map(x=>x.d)):0;
-    S.seen=prev;S.items=uniq;S.t=Date.now();
-  }
-  save();render();$('rf').disabled=false;
+function compartir(){
+  const nombres=BASE.map(c=>c.n).concat(['Radio Intereconomía','Capital Radio']);
+  const t='📺📻 Ve y escucha gratis, en directo, desde un solo sitio:\n• '+nombres.join('\n• ')+'\nMíralo en el Hub Financiero 👇';
+  abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(WEB));
 }
-$('rf').onclick=load;
-render();load();
-setInterval(()=>{if(!document.hidden)load()},120000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-S.t>60000)load()});
+$('sx').onclick=compartir;
+$('au').addEventListener('error',()=>{$('aer').textContent='No suena aquí dentro. Pulsa «Abrir el audio».'});
+$('rsx').onclick=compartir;
+$('rsx2').onclick=compartir;
+$('ad').onclick=()=>{
+  const id=idDe($('u').value);
+  if(!id){$('er').textContent='No reconozco ese enlace. Pega el enlace completo del directo de YouTube.';return}
+  if(all().some(x=>x.id===id)){$('er').textContent='Ese canal ya está en la lista.';return}
+  custom.push({id:id,n:$('nn').value.trim()||('Canal '+(custom.length+1))});
+  sel=all().length-1;save();$('u').value='';$('nn').value='';$('er').textContent='';render();
+};
+$('bo').onclick=()=>{
+  const c=all()[sel];if(!c.c)return;
+  custom=custom.filter(x=>x.id!==c.id);sel=0;save();render();
+};
+render();
 })();
 </script></body></html>
