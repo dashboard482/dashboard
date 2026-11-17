@@ -19,12 +19,12 @@ h1{font-size:16px;margin:0;color:var(--st);display:flex;align-items:center;gap:7
 .chip{flex:none;background:var(--p2);border:1px solid var(--bd);color:var(--ink);border-radius:14px;padding:5px 12px;font:inherit;font-size:12px}
 .chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
 /* cinta */
-.cinta{overflow:hidden;background:#0d1320;border-bottom:1px solid var(--bd);white-space:nowrap;height:34px;display:flex;align-items:center}
+.cinta{overflow:hidden;background:#0d1320;border-bottom:1px solid var(--bd);white-space:nowrap;height:52px;display:flex;align-items:center}
 .cinta .tr{display:inline-block;padding-left:100%;animation:mv 120s linear infinite}
 .cinta:active .tr{animation-play-state:paused}
 @keyframes mv{to{transform:translateX(-100%)}}
-.cinta a{color:#dbe2f0;text-decoration:none;font-size:13px;margin-right:34px}
-.cinta a b{color:var(--c,#f7a600);margin-right:6px;font-size:11px;text-transform:uppercase}
+.cinta a{color:#dbe2f0;text-decoration:none;font-size:16px;font-weight:600;margin-right:44px}
+.cinta a b{color:var(--c,#f7a600);margin-right:8px;font-size:12px;text-transform:uppercase}
 main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-inset-bottom,0px))}
 .im{position:relative;background:linear-gradient(135deg,var(--c),#0b0e14);aspect-ratio:16/9;overflow:hidden}
 .im img{width:100%;height:100%;object-fit:cover;display:block}
@@ -115,7 +115,7 @@ function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=
 function imagen(x){
   const b=el('div','im');b.style.setProperty('--c',COL[x.c]||'#2962ff');
   b.append(el('span',null,(x.s||'?').charAt(0)));
-  if(x.i){const im=new Image();im.loading='lazy';im.referrerPolicy='no-referrer';im.alt='';
+  if(x.i){const im=new Image();im.referrerPolicy='no-referrer';im.alt='';
     im.onload=()=>{b.textContent='';b.append(im)};im.src=x.i}
   return b;
 }
