@@ -32,7 +32,7 @@ canvas{width:100%;height:100%;display:block}
  <div class="chips"><button class="chip" data-w="1h">1 hora</button><button class="chip on" data-w="24h">24 horas</button><button class="chip" data-w="7d">7 días</button></div>
  <div class="st" id="st">conectando…</div>
  <button class="btn" id="sx">𝕏 Compartir</button>
- <div class="note"><b>Cómo se lee:</b> la altura del avión es el precio de Bitcoin en directo. Si sube, el avión asciende; si baja, desciende. La estela es el recorrido del precio en la ventana elegida. La escala se ajusta sola al máximo y mínimo de esa ventana, así que la altura es relativa, no absoluta. Cielo verde-azul: BTC sube en 24 h. Cielo gris-rojizo: baja. Tormenta: caída fuerte.</div>
+ <div class="note"><b>Cómo se lee:</b> la altura del avión es el precio de Bitcoin en directo. Si sube, el avión asciende; si baja, desciende. La estela es el recorrido del precio en la ventana elegida. La escala se ajusta sola al máximo y mínimo de esa ventana, así que la altura es relativa, no absoluta. El avión es blanco, con detalles en verde si BTC sube en 24 h y en rojo si baja. Si baja, el cielo se vuelve gris, y con una caída fuerte aparece tormenta. El cielo cambia con la hora del día.</div>
 </div>
 <script src="telegram.js"></script>
 <script>
@@ -78,82 +78,113 @@ function range(){
   ymin+=(lo-ymin)*.05;ymax+=(hi-ymax)*.05;
   tmax=Date.now();tmin=tmax-CFG[WIN].ms;
 }
-var PX=.64;
+var PX=.6;
 function Y(p){return 24+(1-(p-ymin)/(ymax-ymin))*(H-48-40)}
 function X(t){var x0=8,x1=W*PX;return x0+(t-tmin)/(tmax-tmin)*(x1-x0)}
-// nubes y montañas
-var clouds=[],i;
-for(i=0;i<9;i++)clouds.push({x:Math.random()*700,y:Math.random(),s:.6+Math.random()*1.0,l:i%2});
-function cloud(x,y,s,a){cx.fillStyle='rgba(255,255,255,'+a+')';[[0,0,26],[24,-9,22],[48,0,26],[22,6,24]].forEach(function(c){cx.beginPath();cx.ellipse(x+c[0]*s,y+c[1]*s,c[2]*s,c[2]*s*.6,0,0,7);cx.fill()})}
-function hills(off,col,h,sp,seed){
-  cx.fillStyle=col;cx.beginPath();cx.moveTo(0,H);
-  for(var x=0;x<=W+10;x+=10){var yy=H-h-Math.sin((x+off*sp)/(60+seed*9))*h*.35-Math.sin((x+off*sp)/(23+seed*5))*h*.15;cx.lineTo(x,yy)}
-  cx.lineTo(W,H);cx.fill();
+// ---------- nubes (sprites pre-renderizados) ----------
+var TINT={day:['#ffffff','#a9b9d0'],dusk:['#ffe2c9','#8a7399'],night:['#93a3c8','#27355a'],storm:['#a4abb8','#353b47']};
+var SPR={};
+function rnd(sd){sd=Math.sin(sd*12.9898)*43758.5453;return sd-Math.floor(sd)}
+function mk(v,seed){
+  var c=document.createElement('canvas');c.width=300;c.height=120;var g=c.getContext('2d'),T=TINT[v];
+  for(var k=0;k<26;k++){
+    var u=rnd(seed*31+k),w=rnd(seed*17+k*3);
+    var x=30+u*240,env=1-Math.abs(u-.5)*1.5,r=(14+w*24)*(.5+env*.7),y=84-r*.55-env*14*w;
+    var gr=g.createRadialGradient(x-r*.3,y-r*.45,r*.08,x,y,r);
+    gr.addColorStop(0,T[0]);gr.addColorStop(.55,T[0]);gr.addColorStop(.85,T[1]);gr.addColorStop(1,'rgba(0,0,0,0)');
+    g.globalAlpha=.75;g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,7);g.fill();
+  }
+  return c;
 }
-function plane(x,y,ang,tt){
-  cx.save();cx.translate(x,y);cx.rotate(ang);var s=Math.max(.8,Math.min(1.3,W/380));cx.scale(s,s);
-  cx.fillStyle='rgba(0,0,0,.18)';cx.beginPath();cx.ellipse(0,38,34,4,0,0,7);cx.fill();
-  // ala trasera
-  cx.fillStyle='#b9c2d0';cx.beginPath();cx.moveTo(-14,-2);cx.lineTo(-30,-26);cx.lineTo(-20,-26);cx.lineTo(0,-2);cx.fill();
+function sprites(v){if(!SPR[v]){SPR[v]=[];for(var k=0;k<5;k++)SPR[v].push(mk(v,k+1))}return SPR[v]}
+var CL=[],i;
+for(i=0;i<14;i++)CL.push({x:rnd(i+1)*900,y:rnd(i*7+2),s:.5+rnd(i*5+3)*.9,l:i%3,k:i%5});
+var RAIN=[];for(i=0;i<70;i++)RAIN.push({x:rnd(i+9)*600,y:rnd(i+4)*600,v:300+rnd(i)*200});
+function plane(x,y,ang,tt,acc){
+  cx.save();cx.translate(x,y);cx.rotate(ang);var s=Math.max(.85,Math.min(1.35,W/360));cx.scale(s,s);
+  // ala lejana
+  cx.fillStyle='#9aa4b3';cx.beginPath();cx.moveTo(-2,2);cx.lineTo(-22,-12);cx.lineTo(-12,-12);cx.lineTo(16,2);cx.fill();
+  // estabilizador trasero
+  cx.fillStyle='#aab3c1';cx.beginPath();cx.moveTo(-46,0);cx.lineTo(-62,9);cx.lineTo(-53,9);cx.lineTo(-32,2);cx.fill();
+  // deriva
+  var gf=cx.createLinearGradient(0,-32,0,-6);gf.addColorStop(0,acc);gf.addColorStop(.45,acc);gf.addColorStop(.46,'#f1f4f8');gf.addColorStop(1,'#d3dae4');
+  cx.fillStyle=gf;cx.beginPath();cx.moveTo(-48,-6);cx.lineTo(-64,-33);cx.lineTo(-50,-33);cx.lineTo(-26,-8);cx.fill();
   // fuselaje
-  cx.fillStyle='#f4f7fb';cx.beginPath();cx.moveTo(-42,-6);cx.quadraticCurveTo(-46,-14,-38,-18);cx.lineTo(-30,-10);cx.lineTo(24,-10);cx.quadraticCurveTo(48,-8,50,0);cx.quadraticCurveTo(46,9,22,10);cx.lineTo(-30,10);cx.quadraticCurveTo(-40,8,-42,-6);cx.fill();
-  cx.fillStyle='#f7931a';cx.fillRect(-30,2,56,3.2);
+  var gb=cx.createLinearGradient(0,-10,0,9);gb.addColorStop(0,'#ffffff');gb.addColorStop(.55,'#eef1f6');gb.addColorStop(1,'#b8c1ce');
+  cx.fillStyle=gb;cx.beginPath();cx.moveTo(-60,-4);cx.quadraticCurveTo(-42,-10,-18,-10);cx.lineTo(30,-10);cx.bezierCurveTo(46,-10,58,-4,61,2);cx.bezierCurveTo(57,7,46,9,30,9);cx.lineTo(-22,9);cx.quadraticCurveTo(-46,7,-60,-4);cx.fill();
+  // franja
+  cx.fillStyle=acc;cx.fillRect(-48,3.2,92,1.8);
   // cabina
-  cx.fillStyle='#2b4a77';cx.beginPath();cx.moveTo(30,-9);cx.quadraticCurveTo(42,-9,46,-2);cx.lineTo(30,-2);cx.fill();
+  cx.fillStyle='#16233a';cx.beginPath();cx.moveTo(38,-8.5);cx.lineTo(47,-7);cx.lineTo(52,-3);cx.lineTo(38,-3.5);cx.closePath();cx.fill();
   // ventanillas
-  cx.fillStyle='#3b6fb5';for(var k=0;k<7;k++){cx.beginPath();cx.arc(-24+k*7,-3,1.9,0,7);cx.fill()}
-  // ala delantera
-  cx.fillStyle='#d5dbe6';cx.beginPath();cx.moveTo(-6,4);cx.lineTo(-24,30);cx.lineTo(-10,30);cx.lineTo(14,4);cx.fill();
-  cx.fillStyle='#f7931a';cx.beginPath();cx.ellipse(-10,17,6,3.4,0,0,7);cx.fill();
-  // llama del motor
-  cx.fillStyle='rgba(255,200,100,'+(.5+.3*Math.sin(tt*30))+')';cx.beginPath();cx.moveTo(-42,-2);cx.lineTo(-54-Math.random()*5,0);cx.lineTo(-42,3);cx.fill();
-  // B
-  cx.fillStyle='#f7931a';cx.font='700 9px sans-serif';cx.textAlign='center';cx.fillText('₿',-33,-12.5);
+  cx.fillStyle='#2a3a57';for(var k=0;k<15;k++){cx.fillRect(-40+k*4.6,-4.6,1.9,2.6)}
+  // ala cercana
+  var gw=cx.createLinearGradient(0,4,0,30);gw.addColorStop(0,'#f3f6fa');gw.addColorStop(1,'#aeb8c6');
+  cx.fillStyle=gw;cx.beginPath();cx.moveTo(6,4);cx.lineTo(-30,29);cx.lineTo(-17,29);cx.lineTo(26,4);cx.fill();
+  cx.fillStyle=acc;cx.beginPath();cx.moveTo(-30,29);cx.lineTo(-33,23);cx.lineTo(-27,29);cx.fill();
+  // motor
+  var ge=cx.createLinearGradient(0,10,0,22);ge.addColorStop(0,'#e4e9f0');ge.addColorStop(1,'#8d97a6');
+  cx.fillStyle=ge;cx.beginPath();cx.roundRect?cx.roundRect(-9,12,24,9,4):cx.rect(-9,12,24,9);cx.fill();
+  cx.fillStyle='#222b3a';cx.beginPath();cx.ellipse(14.5,16.5,1.8,3.8,0,0,7);cx.fill();
+  // luces
+  var bl=Math.sin(tt*5);
+  if(bl>.85){cx.fillStyle='rgba(255,255,255,.95)';cx.beginPath();cx.arc(-62,-33,2,0,7);cx.fill();cx.fillStyle='rgba(255,255,255,.25)';cx.beginPath();cx.arc(-62,-33,6,0,7);cx.fill()}
+  cx.fillStyle=pct>=0?'rgba(34,197,94,.9)':'rgba(239,68,68,.9)';cx.beginPath();cx.arc(-31,28.5,1.6,0,7);cx.fill();
   cx.restore();
 }
 function frame(now){
   var tt=(now-t0)/1000;
   if(!W){requestAnimationFrame(frame);return}
   range();
-  var hr=new Date().getHours(),night=hr<7||hr>=21;
-  var storm=pct<=-3,warm=pct<0;
-  var g=cx.createLinearGradient(0,0,0,H),a,b;
-  if(night){a=warm?'#1a1626':'#0a1633';b=warm?'#3b2b3f':'#1c3566'}
-  else if(storm){a='#2a2e3a';b='#59606f'}
-  else if(warm){a='#4a5a80';b='#b49aa0'}
-  else{a='#1c6fd8';b='#9ad8ff'}
-  g.addColorStop(0,a);g.addColorStop(1,b);cx.fillStyle=g;cx.fillRect(0,0,W,H);
-  if(night){cx.fillStyle='#fff';for(i=0;i<40;i++){var sx=(i*97.3)%W,sy=(i*53.7)%(H*.6);cx.globalAlpha=.4+.4*Math.sin(tt*2+i);cx.fillRect(sx,sy,1.4,1.4)}cx.globalAlpha=1;
-    cx.fillStyle='#f4f1d0';cx.beginPath();cx.arc(W*.15,H*.16,15,0,7);cx.fill();cx.fillStyle=a;cx.beginPath();cx.arc(W*.15+6,H*.16-3,13,0,7);cx.fill()}
-  else if(!storm){cx.fillStyle='rgba(255,236,160,.95)';cx.beginPath();cx.arc(W*.15,H*.16,17,0,7);cx.fill();cx.fillStyle='rgba(255,236,160,.2)';cx.beginPath();cx.arc(W*.15,H*.16,30,0,7);cx.fill()}
-  // nubes (parallax)
-  clouds.forEach(function(c){var v=c.l?22:10;var x=((c.x-tt*v)%(W+160)+W+160)%(W+160)-80;cloud(x,30+c.y*(H-140),c.s*(c.l?1.1:.7),(storm?.35:.8)*(c.l?.9:.55))});
-  // colinas
-  hills(tt,night?'#0d1a2b':storm?'#2c3340':'#5f8f6e',34,14,1);
-  hills(tt,night?'#08121f':storm?'#1e232d':'#3f7152',18,34,2);
-  // tormenta
-  if(storm){if(Math.random()<.01)flash=1;if(flash>0){cx.fillStyle='rgba(255,255,255,'+flash*.5+')';cx.fillRect(0,0,W,H);flash-=.08}}
-  // rejilla altímetro
-  var n=5;cx.font='10px sans-serif';cx.textAlign='right';
-  for(i=0;i<=n;i++){var pv=ymin+(ymax-ymin)*i/n,yy=Y(pv);cx.strokeStyle='rgba(255,255,255,.18)';cx.lineWidth=1;cx.setLineDash([3,5]);cx.beginPath();cx.moveTo(0,yy);cx.lineTo(W,yy);cx.stroke();cx.setLineDash([]);
-    cx.fillStyle='rgba(255,255,255,.85)';cx.fillText(fmt(pv),W-6,yy-3)}
+  var d=new Date(),hr=d.getHours()+d.getMinutes()/60;
+  var ph=hr<6.5||hr>=21?'night':hr<9?'dawn':hr<18?'day':'dusk';
+  var storm=pct<=-3,acc=pct>=0?'#22c55e':'#ef4444';
+  var SK={night:['#040914','#13264a'],dawn:['#2f4a7a','#f0b48a'],day:['#1b66bf','#a6d3f2'],dusk:['#222f66','#ee8a5c']}[ph];
+  var g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,SK[0]);g.addColorStop(1,SK[1]);cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  if(pct<0){cx.fillStyle='rgba(54,60,74,'+Math.min(storm?.7:.4,Math.abs(pct)/8+.08)+')';cx.fillRect(0,0,W,H)}
+  var cv_=ph==='night'?'night':storm?'storm':(ph==='dusk'||ph==='dawn')?'dusk':'day';
+  if(ph==='night'){cx.fillStyle='#fff';for(i=0;i<60;i++){cx.globalAlpha=(.25+.5*rnd(i))*(.6+.4*Math.sin(tt*1.5+i));cx.fillRect(rnd(i+1)*W,rnd(i+2)*H*.65,1.2,1.2)}cx.globalAlpha=1;
+    var mg=cx.createRadialGradient(W*.16,H*.17,2,W*.16,H*.17,48);mg.addColorStop(0,'rgba(235,240,255,.55)');mg.addColorStop(1,'rgba(235,240,255,0)');cx.fillStyle=mg;cx.fillRect(0,0,W,H*.5);
+    cx.fillStyle='#e9edf7';cx.beginPath();cx.arc(W*.16,H*.17,12,0,7);cx.fill();cx.fillStyle=SK[0];cx.beginPath();cx.arc(W*.16+5,H*.17-3,10.5,0,7);cx.fill()}
+  else if(!storm){var sy=ph==='day'?H*.2:H*.6,sg=cx.createRadialGradient(W*.16,sy,2,W*.16,sy,110);sg.addColorStop(0,'rgba(255,244,214,.95)');sg.addColorStop(.12,'rgba(255,230,170,.55)');sg.addColorStop(1,'rgba(255,220,160,0)');cx.fillStyle=sg;cx.fillRect(0,0,W,H)}
+  // nubes por capas
+  var SP=sprites(cv_);
+  CL.forEach(function(c){
+    var sp=[7,16,34][c.l],sc=[.55,.85,1.3][c.l],al=[.5,.75,.95][c.l];
+    var w=300*c.s*sc,x=((c.x-tt*sp)%(W+w)+W+w)%(W+w)-w;
+    var y=[.08,.2,.42][c.l]*H+c.y*H*.28;
+    cx.globalAlpha=al*(storm?1:.9);cx.drawImage(SP[c.k],x,y,w,w*.4);
+  });
+  cx.globalAlpha=1;
+  // mar de nubes inferior
+  for(i=0;i<5;i++){var ww=W*.7,xx=((i*ww*.62-tt*26)%(W*3.1)+W*3.1)%(W*3.1)-ww;cx.drawImage(SP[i%5],xx,H-ww*.36-6,ww,ww*.4)}
+  var hz=cx.createLinearGradient(0,H-70,0,H);hz.addColorStop(0,'rgba(0,0,0,0)');hz.addColorStop(1,ph==='night'?'rgba(4,8,20,.55)':'rgba(30,40,60,.18)');cx.fillStyle=hz;cx.fillRect(0,H-70,W,70);
+  // lluvia y relámpagos
+  if(storm){cx.strokeStyle='rgba(200,215,235,.35)';cx.lineWidth=1;cx.beginPath();RAIN.forEach(function(r){var yy=(r.y+tt*r.v)%H,xx=(r.x*W/600-tt*40+W)%W;cx.moveTo(xx,yy);cx.lineTo(xx-3,yy+12)});cx.stroke();
+    if(Math.random()<.008)flash=1;if(flash>0){cx.fillStyle='rgba(255,255,255,'+flash*.45+')';cx.fillRect(0,0,W,H);flash-=.07}}
+  // altímetro
+  cx.fillStyle='rgba(0,0,0,.22)';cx.fillRect(W-64,0,64,H);
+  var n=5;cx.font='600 10px -apple-system,sans-serif';cx.textAlign='right';
+  for(i=0;i<=n;i++){var pv=ymin+(ymax-ymin)*i/n,yy=Y(pv);cx.strokeStyle='rgba(255,255,255,.16)';cx.lineWidth=1;cx.beginPath();cx.moveTo(0,yy);cx.lineTo(W-64,yy);cx.stroke();
+    cx.strokeStyle='rgba(255,255,255,.6)';cx.beginPath();cx.moveTo(W-64,yy);cx.lineTo(W-58,yy);cx.stroke();
+    cx.fillStyle='rgba(255,255,255,.9)';cx.fillText(fmt(pv),W-6,yy+3.5)}
   if(pts.length>1&&price!=null){
     // estela
     cx.lineCap='round';cx.lineJoin='round';
-    var gx=cx.createLinearGradient(8,0,W*PX,0);gx.addColorStop(0,'rgba(255,255,255,0)');gx.addColorStop(1,'rgba(255,255,255,.9)');
-    cx.strokeStyle=gx;cx.lineWidth=5;cx.beginPath();
+    var gx=cx.createLinearGradient(8,0,W*PX,0);gx.addColorStop(0,'rgba(255,255,255,0)');gx.addColorStop(1,'rgba(255,255,255,.75)');
+    cx.strokeStyle=gx;cx.lineWidth=4;cx.beginPath();
     pts.forEach(function(q,k){var x=X(q.t),y=Y(q.p);if(k)cx.lineTo(x,y);else cx.moveTo(x,y)});cx.stroke();
-    cx.strokeStyle='rgba(247,147,26,.9)';cx.lineWidth=1.6;cx.beginPath();
+    var gc=cx.createLinearGradient(8,0,W*PX,0);gc.addColorStop(0,'rgba(255,255,255,0)');gc.addColorStop(1,acc);
+    cx.strokeStyle=gc;cx.lineWidth=1.4;cx.beginPath();
     pts.forEach(function(q,k){var x=X(q.t),y=Y(q.p);if(k)cx.lineTo(x,y);else cx.moveTo(x,y)});cx.stroke();
-    // avión
     var ty=Y(price);if(!py)py=ty;var dy=ty-py;py+=dy*.06;
-    var target=Math.max(-.45,Math.min(.45,dy*.03));pang+=(target-pang)*.08;
-    var bob=Math.sin(tt*2.2)*2.5,px=W*PX;
-    plane(px,py+bob,pang,tt);
-    // etiqueta de altura
-    var lab=fmt(price);cx.font='700 12px sans-serif';var tw=cx.measureText(lab).width+14;
-    cx.fillStyle='rgba(0,0,0,.65)';cx.beginPath();cx.roundRect?cx.roundRect(px-tw/2,py+bob-52,tw,20,6):cx.rect(px-tw/2,py+bob-52,tw,20);cx.fill();
-    cx.fillStyle='#fff';cx.textAlign='center';cx.fillText(lab,px,py+bob-38);
+    var target=Math.max(-.4,Math.min(.4,dy*.03));pang+=(target-pang)*.08;
+    var bob=Math.sin(tt*1.8)*2,px=W*PX;
+    plane(px,py+bob,pang,tt,acc);
+    var lab=fmt(price);cx.font='700 12px -apple-system,sans-serif';var tw=cx.measureText(lab).width+16;
+    cx.fillStyle='rgba(8,12,22,.72)';cx.beginPath();cx.roundRect?cx.roundRect(px-tw/2,py+bob-62,tw,21,7):cx.rect(px-tw/2,py+bob-62,tw,21);cx.fill();
+    cx.fillStyle=acc;cx.fillRect(px-tw/2+5,py+bob-56,3,9);
+    cx.fillStyle='#fff';cx.textAlign='center';cx.fillText(lab,px+3,py+bob-47);
   }
   requestAnimationFrame(frame);
 }
