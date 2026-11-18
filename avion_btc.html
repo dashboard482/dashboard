@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Avión BTC · Hub Financiero</title>
+<style>
+:root{--bg:#000;--pn:#10141c;--bd:#2a3342;--ink:#cfd5e1;--st:#f2f5fa;--dim:#8590a3;--o:#f7931a;--up:#22c55e;--dn:#ef4444}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:max(14px,env(safe-area-inset-top,0px),var(--tgtop,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px))}
+.top{display:flex;align-items:center;justify-content:space-between}
+.top a{color:var(--dim);text-decoration:none;font-size:13px}
+h1{font-size:16px;margin:0;color:var(--st)}
+.pr{text-align:center;margin:8px 0 4px}
+.pr b{display:block;font-size:38px;color:var(--st);font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.pr span{font-size:15px;font-weight:700}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.stage{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--bd);height:min(62vh,440px);min-height:300px}
+canvas{width:100%;height:100%;display:block}
+.chips{display:flex;gap:8px;margin-top:12px}
+.chip{flex:1;background:var(--pn);border:1px solid var(--bd);color:var(--dim);border-radius:10px;padding:10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.chip.on{color:#000;background:var(--o);border-color:var(--o)}
+.st{text-align:center;font-size:11px;color:var(--dim);margin-top:8px}
+.btn{width:100%;margin-top:12px;background:#fff;border:1px solid #fff;color:#000;border-radius:10px;padding:12px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.note{font-size:12px;color:var(--dim);line-height:1.55;margin-top:14px;background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:12px 14px}
+.note b{color:var(--st)}
+</style></head><body>
+<div class="wrap">
+ <div class="top"><a href="index.html">← Hub</a><h1>✈️ Avión BTC</h1><span style="width:34px"></span></div>
+ <div class="pr"><b id="pr">—</b><span id="ch"></span></div>
+ <div class="stage"><canvas id="cv"></canvas></div>
+ <div class="chips"><button class="chip" data-w="1h">1 hora</button><button class="chip on" data-w="24h">24 horas</button><button class="chip" data-w="7d">7 días</button></div>
+ <div class="st" id="st">conectando…</div>
+ <button class="btn" id="sx">𝕏 Compartir</button>
+ <div class="note"><b>Cómo se lee:</b> la altura del avión es el precio de Bitcoin en directo. Si sube, el avión asciende; si baja, desciende. La estela es el recorrido del precio en la ventana elegida. La escala se ajusta sola al máximo y mínimo de esa ventana, así que la altura es relativa, no absoluta. Cielo verde-azul: BTC sube en 24 h. Cielo gris-rojizo: baja. Tormenta: caída fuerte.</div>
+</div>
+<script src="telegram.js"></script>
+<script>
+(function(){
+var WEB='https://dashboard482.github.io/dashboard/';
+var $=function(i){return document.getElementById(i)};
+var cv=$('cv'),cx=cv.getContext('2d'),W=0,H=0,DPR=1;
+var WIN='24h',pts=[],price=null,pct=0,lastOk=0;
+var CFG={'1h':{iv:'1m',lim:60,ms:3600e3},'24h':{iv:'5m',lim:288,ms:864e5},'7d':{iv:'1h',lim:168,ms:6048e5}};
+var ymin=0,ymax=1,tmin=0,tmax=1,py=0,pang=0,t0=performance.now(),flash=0;
+function fmt(v){return '$'+Math.round(v).toLocaleString('es-ES')}
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);var r=cv.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0)}
+window.addEventListener('resize',resize);
+function J(u){return fetch(u,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
+function loadHist(){
+  var c=CFG[WIN];
+  return J('https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval='+c.iv+'&limit='+c.lim).then(function(k){
+    pts=k.map(function(x){return {t:x[0],p:+x[4]}});
+  }).catch(function(){
+    var d=WIN==='1h'?1:WIN==='24h'?1:7;
+    return J('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days='+d).then(function(j){
+      var cut=Date.now()-c.ms;pts=j.prices.filter(function(x){return x[0]>=cut}).map(function(x){return {t:x[0],p:x[1]}});
+    });
+  });
+}
+function loadTick(){
+  return J('https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT').then(function(j){return {p:+j.lastPrice,c:+j.priceChangePercent}}).catch(function(){
+    return J('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true').then(function(j){return {p:j.bitcoin.usd,c:j.bitcoin.usd_24h_change}});
+  }).then(function(o){
+    price=o.p;pct=o.c;lastOk=Date.now();
+    var n=Date.now();pts.push({t:n,p:price});
+    var cut=n-CFG[WIN].ms-60e3;while(pts.length>2&&pts[0].t<cut)pts.shift();
+    $('pr').textContent=fmt(price);
+    var e=$('ch');e.textContent=(pct>=0?'▲ +':'▼ ')+pct.toFixed(2).replace('.',',')+'% 24 h';e.className=pct>=0?'up':'dn';
+    $('st').textContent='en directo · actualizado '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }).catch(function(){$('st').textContent='sin conexión, reintentando…'});
+}
+function range(){
+  if(!pts.length)return;
+  var lo=1e12,hi=0;pts.forEach(function(q){if(q.p<lo)lo=q.p;if(q.p>hi)hi=q.p});
+  var pad=Math.max((hi-lo)*.14,hi*.0008);lo-=pad;hi+=pad;
+  if(ymax<=ymin+1){ymin=lo;ymax=hi}
+  ymin+=(lo-ymin)*.05;ymax+=(hi-ymax)*.05;
+  tmax=Date.now();tmin=tmax-CFG[WIN].ms;
+}
+var PX=.64;
+function Y(p){return 24+(1-(p-ymin)/(ymax-ymin))*(H-48-40)}
+function X(t){var x0=8,x1=W*PX;return x0+(t-tmin)/(tmax-tmin)*(x1-x0)}
+// nubes y montañas
+var clouds=[],i;
+for(i=0;i<9;i++)clouds.push({x:Math.random()*700,y:Math.random(),s:.6+Math.random()*1.0,l:i%2});
+function cloud(x,y,s,a){cx.fillStyle='rgba(255,255,255,'+a+')';[[0,0,26],[24,-9,22],[48,0,26],[22,6,24]].forEach(function(c){cx.beginPath();cx.ellipse(x+c[0]*s,y+c[1]*s,c[2]*s,c[2]*s*.6,0,0,7);cx.fill()})}
+function hills(off,col,h,sp,seed){
+  cx.fillStyle=col;cx.beginPath();cx.moveTo(0,H);
+  for(var x=0;x<=W+10;x+=10){var yy=H-h-Math.sin((x+off*sp)/(60+seed*9))*h*.35-Math.sin((x+off*sp)/(23+seed*5))*h*.15;cx.lineTo(x,yy)}
+  cx.lineTo(W,H);cx.fill();
+}
+function plane(x,y,ang,tt){
+  cx.save();cx.translate(x,y);cx.rotate(ang);var s=Math.max(.8,Math.min(1.3,W/380));cx.scale(s,s);
+  cx.fillStyle='rgba(0,0,0,.18)';cx.beginPath();cx.ellipse(0,38,34,4,0,0,7);cx.fill();
+  // ala trasera
+  cx.fillStyle='#b9c2d0';cx.beginPath();cx.moveTo(-14,-2);cx.lineTo(-30,-26);cx.lineTo(-20,-26);cx.lineTo(0,-2);cx.fill();
+  // fuselaje
+  cx.fillStyle='#f4f7fb';cx.beginPath();cx.moveTo(-42,-6);cx.quadraticCurveTo(-46,-14,-38,-18);cx.lineTo(-30,-10);cx.lineTo(24,-10);cx.quadraticCurveTo(48,-8,50,0);cx.quadraticCurveTo(46,9,22,10);cx.lineTo(-30,10);cx.quadraticCurveTo(-40,8,-42,-6);cx.fill();
+  cx.fillStyle='#f7931a';cx.fillRect(-30,2,56,3.2);
+  // cabina
+  cx.fillStyle='#2b4a77';cx.beginPath();cx.moveTo(30,-9);cx.quadraticCurveTo(42,-9,46,-2);cx.lineTo(30,-2);cx.fill();
+  // ventanillas
+  cx.fillStyle='#3b6fb5';for(var k=0;k<7;k++){cx.beginPath();cx.arc(-24+k*7,-3,1.9,0,7);cx.fill()}
+  // ala delantera
+  cx.fillStyle='#d5dbe6';cx.beginPath();cx.moveTo(-6,4);cx.lineTo(-24,30);cx.lineTo(-10,30);cx.lineTo(14,4);cx.fill();
+  cx.fillStyle='#f7931a';cx.beginPath();cx.ellipse(-10,17,6,3.4,0,0,7);cx.fill();
+  // llama del motor
+  cx.fillStyle='rgba(255,200,100,'+(.5+.3*Math.sin(tt*30))+')';cx.beginPath();cx.moveTo(-42,-2);cx.lineTo(-54-Math.random()*5,0);cx.lineTo(-42,3);cx.fill();
+  // B
+  cx.fillStyle='#f7931a';cx.font='700 9px sans-serif';cx.textAlign='center';cx.fillText('₿',-33,-12.5);
+  cx.restore();
+}
+function frame(now){
+  var tt=(now-t0)/1000;
+  if(!W){requestAnimationFrame(frame);return}
+  range();
+  var hr=new Date().getHours(),night=hr<7||hr>=21;
+  var storm=pct<=-3,warm=pct<0;
+  var g=cx.createLinearGradient(0,0,0,H),a,b;
+  if(night){a=warm?'#1a1626':'#0a1633';b=warm?'#3b2b3f':'#1c3566'}
+  else if(storm){a='#2a2e3a';b='#59606f'}
+  else if(warm){a='#4a5a80';b='#b49aa0'}
+  else{a='#1c6fd8';b='#9ad8ff'}
+  g.addColorStop(0,a);g.addColorStop(1,b);cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  if(night){cx.fillStyle='#fff';for(i=0;i<40;i++){var sx=(i*97.3)%W,sy=(i*53.7)%(H*.6);cx.globalAlpha=.4+.4*Math.sin(tt*2+i);cx.fillRect(sx,sy,1.4,1.4)}cx.globalAlpha=1;
+    cx.fillStyle='#f4f1d0';cx.beginPath();cx.arc(W*.15,H*.16,15,0,7);cx.fill();cx.fillStyle=a;cx.beginPath();cx.arc(W*.15+6,H*.16-3,13,0,7);cx.fill()}
+  else if(!storm){cx.fillStyle='rgba(255,236,160,.95)';cx.beginPath();cx.arc(W*.15,H*.16,17,0,7);cx.fill();cx.fillStyle='rgba(255,236,160,.2)';cx.beginPath();cx.arc(W*.15,H*.16,30,0,7);cx.fill()}
+  // nubes (parallax)
+  clouds.forEach(function(c){var v=c.l?22:10;var x=((c.x-tt*v)%(W+160)+W+160)%(W+160)-80;cloud(x,30+c.y*(H-140),c.s*(c.l?1.1:.7),(storm?.35:.8)*(c.l?.9:.55))});
+  // colinas
+  hills(tt,night?'#0d1a2b':storm?'#2c3340':'#5f8f6e',34,14,1);
+  hills(tt,night?'#08121f':storm?'#1e232d':'#3f7152',18,34,2);
+  // tormenta
+  if(storm){if(Math.random()<.01)flash=1;if(flash>0){cx.fillStyle='rgba(255,255,255,'+flash*.5+')';cx.fillRect(0,0,W,H);flash-=.08}}
+  // rejilla altímetro
+  var n=5;cx.font='10px sans-serif';cx.textAlign='right';
+  for(i=0;i<=n;i++){var pv=ymin+(ymax-ymin)*i/n,yy=Y(pv);cx.strokeStyle='rgba(255,255,255,.18)';cx.lineWidth=1;cx.setLineDash([3,5]);cx.beginPath();cx.moveTo(0,yy);cx.lineTo(W,yy);cx.stroke();cx.setLineDash([]);
+    cx.fillStyle='rgba(255,255,255,.85)';cx.fillText(fmt(pv),W-6,yy-3)}
+  if(pts.length>1&&price!=null){
+    // estela
+    cx.lineCap='round';cx.lineJoin='round';
+    var gx=cx.createLinearGradient(8,0,W*PX,0);gx.addColorStop(0,'rgba(255,255,255,0)');gx.addColorStop(1,'rgba(255,255,255,.9)');
+    cx.strokeStyle=gx;cx.lineWidth=5;cx.beginPath();
+    pts.forEach(function(q,k){var x=X(q.t),y=Y(q.p);if(k)cx.lineTo(x,y);else cx.moveTo(x,y)});cx.stroke();
+    cx.strokeStyle='rgba(247,147,26,.9)';cx.lineWidth=1.6;cx.beginPath();
+    pts.forEach(function(q,k){var x=X(q.t),y=Y(q.p);if(k)cx.lineTo(x,y);else cx.moveTo(x,y)});cx.stroke();
+    // avión
+    var ty=Y(price);if(!py)py=ty;var dy=ty-py;py+=dy*.06;
+    var target=Math.max(-.45,Math.min(.45,dy*.03));pang+=(target-pang)*.08;
+    var bob=Math.sin(tt*2.2)*2.5,px=W*PX;
+    plane(px,py+bob,pang,tt);
+    // etiqueta de altura
+    var lab=fmt(price);cx.font='700 12px sans-serif';var tw=cx.measureText(lab).width+14;
+    cx.fillStyle='rgba(0,0,0,.65)';cx.beginPath();cx.roundRect?cx.roundRect(px-tw/2,py+bob-52,tw,20,6):cx.rect(px-tw/2,py+bob-52,tw,20);cx.fill();
+    cx.fillStyle='#fff';cx.textAlign='center';cx.fillText(lab,px,py+bob-38);
+  }
+  requestAnimationFrame(frame);
+}
+function setWin(w){WIN=w;pts=[];ymin=0;ymax=1;py=0;[].forEach.call(document.querySelectorAll('.chip'),function(b){b.classList.toggle('on',b.dataset.w===w)});loadHist().then(loadTick)}
+[].forEach.call(document.querySelectorAll('.chip'),function(b){b.onclick=function(){setWin(b.dataset.w)}});
+function abrirX(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+$('sx').onclick=function(){
+  var t=price==null?'✈️ El avión de Bitcoin vuela en directo':'✈️ BTC vuela a '+fmt(price)+' ('+(pct>=0?'+':'')+pct.toFixed(2).replace('.',',')+'% en 24 h)\n'+(pct>=0?'El avión sube 📈':pct<=-3?'Turbulencias fuertes ⛈️':'El avión baja 📉')+'\nMíralo en directo en el Hub Financiero 👇';
+  abrirX('https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(WEB));
+};
+resize();requestAnimationFrame(frame);
+loadHist().then(loadTick);
+setInterval(loadTick,4000);
+setInterval(function(){loadHist()},300000);
+})();
+</script>
+</body></html>
