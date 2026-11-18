@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>BTC en 3D · Hub Financiero</title>
+<style>
+:root{--bg:#000;--pn:#10141c;--bd:#2a3342;--ink:#cfd5e1;--st:#f2f5fa;--dim:#8590a3;--o:#f7931a;--up:#22c55e;--dn:#ef4444}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:520px;margin:0 auto;padding:max(14px,env(safe-area-inset-top,0px),var(--tgtop,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px))}
+.top{display:flex;align-items:center;justify-content:space-between}
+.top a{color:var(--dim);text-decoration:none;font-size:13px}
+h1{font-size:16px;margin:0;color:var(--st)}
+.stage{position:relative;margin:10px auto 0;width:100%;max-width:400px;aspect-ratio:1/1}
+canvas{width:100%;height:100%;display:block;touch-action:none}
+.pr{text-align:center;margin-top:4px}
+.pr b{display:block;font-size:40px;color:var(--st);font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.pr span{font-size:16px;font-weight:700}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.st{text-align:center;font-size:11px;color:var(--dim);margin-top:4px}
+.bt{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{flex:1;min-width:120px;background:var(--pn);border:1px solid var(--bd);color:var(--st);border-radius:10px;padding:12px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.btn.x{background:#fff;border-color:#fff;color:#000}
+.note{font-size:12px;color:var(--dim);line-height:1.55;margin-top:16px;background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:12px 14px}
+.note b{color:var(--st)}
+</style></head><body>
+<div class="wrap">
+ <div class="top"><a href="index.html">← Hub</a><h1>₿ BTC en 3D</h1><span style="width:34px"></span></div>
+ <div class="stage"><canvas id="cv"></canvas></div>
+ <div class="pr"><b id="pr">—</b><span id="ch"></span></div>
+ <div class="st" id="st">conectando…</div>
+ <div class="bt">
+  <button class="btn" id="sp">⏸ Pausar</button>
+  <button class="btn" id="rv">🔄 Invertir giro</button>
+  <button class="btn x" id="sx">𝕏 Compartir</button>
+ </div>
+ <div class="note"><b>Cómo se ve el relieve:</b> aquí no hay nada dibujado en 3D, solo puntos de colores. Cada capa de puntos se mueve a una velocidad distinta y tu cerebro construye la profundidad. Si miras unos segundos, el anillo azul parece flotar delante o detrás del rojo. <br><br><b>Qué muestra Bitcoin:</b> el círculo del centro es <span class="up">verde</span> si BTC sube en 24 h y <span class="dn">rojo</span> si baja. Cuanto más se mueve el precio, más rápido gira todo. Los colores exteriores son los de Bitcoin.</div>
+</div>
+<script src="telegram.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const WEB='https://dashboard482.github.io/dashboard/';
+const cv=$('cv'),ctx=cv.getContext('2d');
+let W=300,dpr=1;
+function size(){dpr=Math.min(2,window.devicePixelRatio||1);W=Math.round(cv.clientWidth||300);cv.width=cv.height=Math.round(W*dpr)}
+size();addEventListener('resize',size);
+const rnd=Math.random;
+function mk(n,r){const a=[];for(let i=0;i<n;i++){const t=rnd()*6.2832,d=Math.sqrt(rnd())*r;a.push([Math.cos(t)*d,Math.sin(t)*d,rnd()])}return a}
+/* tres capas: exterior, medio, interior (radios relativos a 1) */
+const L=[
+ {r:1.00,n:7000,v:0.22,ph:0,col:['#f7931a','#c76f08']},
+ {r:0.62,n:4200,v:-0.30,ph:2,col:['#2f4bff','#1c2fb8']},
+ {r:0.30,n:1500,v:0.38,ph:4,col:['#ef4444','#b91c1c']}
+];
+L.forEach(l=>{l.d=mk(l.n,l.r)});
+const S={price:null,pct:0,dir:1,run:true,t:0,speed:1,last:0};
+function setCol(){
+  const up=S.pct>=0;
+  L[2].col=up?['#22c55e','#15803d']:['#ef4444','#b91c1c'];
+}
+function step(dt){
+  S.t+=dt*S.speed*S.dir;
+  L.forEach(l=>{
+    const ang=S.t*0.9*(l.v>0?1:-1)+l.ph,sp=Math.abs(l.v)*dt*S.speed;
+    l.d.forEach(p=>{
+      p[0]+=Math.cos(ang)*sp*0.9;p[1]+=Math.sin(ang)*sp*0.9;
+      if(p[0]*p[0]+p[1]*p[1]>l.r*l.r||rnd()<0.012){
+        const t=rnd()*6.2832,d=Math.sqrt(rnd())*l.r;p[0]=Math.cos(t)*d;p[1]=Math.sin(t)*d;
+      }
+    });
+  });
+}
+function disc(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,6.2832);ctx.fill()}
+function draw(){
+  const R=W*dpr*0.47,cx=W*dpr/2,cy=W*dpr/2,t=S.t,ds=Math.max(1.2,dpr*1.1);
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,cv.width,cv.height);
+  // centros que orbitan dentro del anterior
+  const m={x:cx+Math.cos(t*0.8)*0.24*R,y:cy+Math.sin(t*0.8)*0.24*R};
+  const i={x:m.x+Math.cos(-t*1.5+1)*0.22*R,y:m.y+Math.sin(-t*1.5+1)*0.22*R};
+  const C=[{x:cx,y:cy},m,i];
+  for(let k=0;k<3;k++){
+    const l=L[k],c=C[k];
+    if(k>0)disc(c.x,c.y,l.r*R*1.12,'#000');
+    for(let s=0;s<2;s++){
+      ctx.fillStyle=l.col[s];ctx.beginPath();
+      for(let j=s;j<l.d.length;j+=2){const p=l.d[j];ctx.rect(c.x+p[0]*R,c.y+p[1]*R,ds,ds)}
+      ctx.fill();
+    }
+  }
+}
+let prev=0;
+function loop(ts){
+  const dt=Math.min(0.05,(ts-prev)/1000||0.016);prev=ts;
+  if(S.run&&!document.hidden){step(dt);}
+  draw();requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+/* precio */
+const fmt=n=>'$'+n.toLocaleString('es-ES',{maximumFractionDigits:0});
+async function precio(){
+  try{
+    const r=await fetch('https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT');
+    const j=await r.json();S.price=+j.lastPrice;S.pct=+j.priceChangePercent;
+  }catch(e){
+    try{const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+      const j=(await r.json()).bitcoin;S.price=j.usd;S.pct=j.usd_24h_change}catch(e2){}
+  }
+  if(S.price){
+    $('pr').textContent=fmt(S.price);
+    const c=$('ch');c.textContent=(S.pct>=0?'+':'')+S.pct.toFixed(2)+'% en 24 h';c.className=S.pct>=0?'up':'dn';
+    S.speed=1+Math.min(3,Math.abs(S.pct)/2);setCol();
+    $('st').textContent='en directo · '+new Date().toLocaleTimeString('es-ES')+' · velocidad ×'+S.speed.toFixed(1);
+  }else $('st').textContent='sin datos de precio';
+}
+precio();setInterval(precio,5000);
+$('sp').onclick=()=>{S.run=!S.run;$('sp').textContent=S.run?'⏸ Pausar':'▶ Seguir'};
+$('rv').onclick=()=>{S.dir*=-1};
+function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+$('sx').onclick=()=>{
+  const t='₿ Bitcoin en 3D, en directo'+(S.price?': '+fmt(S.price)+' ('+(S.pct>=0?'+':'')+S.pct.toFixed(2)+'% en 24 h)':'')+'\nNo está dibujado en 3D: son solo puntos en movimiento y tu cerebro crea el relieve 👀\nMíralo en el Hub Financiero 👇';
+  abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(WEB));
+};
+})();
+</script></body></html>
