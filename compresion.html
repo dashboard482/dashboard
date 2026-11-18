@@ -10,7 +10,7 @@
 @media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--panel2:#eef1f7;--border:#dde1ea;--ink:#363a45;--strong:#0e1117;--dim:#6b6f7c;--grid:#e6e9f0;color-scheme:light}}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:760px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:760px;margin:0 auto;padding:calc(14px + max(env(safe-area-inset-top,0px),var(--tgtop,0px))) 14px calc(30px + env(safe-area-inset-bottom,0px))}
 header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
 header a{color:var(--dim);text-decoration:none;font-size:13px}
 header h1{font-size:16px;margin:0;color:var(--strong)}
@@ -54,6 +54,7 @@ canvas{display:block}
     <div class="zona" id="zona">Cargando…</div>
     <div class="sub" id="d7"></div>
   </div>
+  <button id="sx" style="width:100%;background:#000;color:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;font:inherit;font-weight:600;font-size:15px;cursor:pointer;margin-bottom:12px">𝕏 Compartir</button>
   <div class="card">
     <h2>Dónde está el precio en su rango de 30 días</h2>
     <div class="rbar"><i id="pin" style="left:50%"></i><em id="pinl"></em></div>
@@ -208,6 +209,18 @@ function show(){
 klines('1d',500).then(function(k){R=calc(k);show()}).catch(function(){$('zona').textContent='Sin datos';$('err').hidden=false;$('err').textContent='No se pudo cargar el histórico de BTC. Reintenta en un momento.'});
 var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){if(R){gauge(R.score);paint()}},120)});
 
+})();
+</script>
+<script>
+(function(){
+function abrirX(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+var WEB='https://dashboard482.github.io/dashboard/';
+var $=function(i){return document.getElementById(i)};
+$('sx').onclick=function(){
+  var sc=$('sc').textContent.trim(),z=$('zona').textContent.trim(),pr=$('price').textContent.trim(),rg=$('rng').textContent.trim(),ok=/\d/.test(sc);
+  var t='🗜️ Compresión de BTC: '+(ok?sc+' · '+z:'índice en directo')+(/\d/.test(pr)?'\nBTC a '+pr:'')+(/\d/.test(rg)?' · rango de 30 días: '+rg:'')+'\nMide lo estrecho que está el precio frente al último año. Alta = suele anteceder a un movimiento fuerte, sin decir hacia dónde.\nMíralo en el Hub Financiero 👇';
+  abrirX('https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(WEB));
+};
 })();
 </script>
 <script src="telegram.js" defer></script>
