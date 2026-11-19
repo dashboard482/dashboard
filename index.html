@@ -40,6 +40,8 @@ main{flex:1;padding:4px 16px 40px;max-width:1200px;margin:0 auto;width:100%}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
 .category{margin-bottom:24px}
 .cat-title{font-size:12px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.cat-title.tg{cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;font-size:13px;color:var(--ink-strong)}
+.cat-title .chev{width:12px;color:var(--dim)}.cat-title .cnt{font-size:10px;color:var(--dim2);font-weight:600}
 .cat-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
 .card{position:relative;display:flex;flex-direction:column;gap:4px;background:var(--panel-2);border:1px solid var(--border);padding:12px 14px;border-radius:6px;text-decoration:none;overflow:hidden;transition:transform .15s,border-color .15s,background .15s}
@@ -113,41 +115,45 @@ const KEY='hub.v1';
 const CATS=[
 {id:'fav',name:'Favoritos',color:'#f7a600',links:[]},
 {id:'top',name:'Más usados',color:'#2962ff',links:[]},
-{id:'mias',name:'Mis herramientas',color:'#e91e63',links:[
-['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚'],
+{id:'m_bolsa',name:'📈 Bolsa y mercados',color:'#2196f3',tool:true,open:true,links:[
+['Ticker de mercados','Resumen del bot: cripto, acciones, índices y oro con precio y variación del día','ticker.html','📊'],
+['Cinta de bolsa','Cinta de cotizaciones de bolsa','cinta_bolsa.html','🎞️'],
+['Hub de Bolsa y Cartera','Cotizaciones de bolsa, ETFs, innovación y materias primas','hub_bolsa.html','📈'],
+['Mapas de Mercado Global','Mapas interactivos de bolsa y cripto','mercados.html','🗺️'],
+['Gráficos de calor','Mapas de calor del mercado','graficos_calor.html','🌡️'],
+['Señales de Mercado','Análisis técnico en vivo y resumen de activos','senales.html','📊'],
+['Bono 30 años','Rendimiento del bono a 30 años','bono_30y.html','📉']]},
+{id:'m_macro',name:'📅 Macro y calendario',color:'#26a69a',tool:true,open:false,links:[
+['Calendario Macroeconómico','Eventos clave, IPC, Fed y BCE en vivo','calendario_macro.html','📅'],
+['Calendario Económico Directo','Agenda de eventos macro de alto impacto','calendario.html','📅'],
+['M2 global vs BTC (10 sem)','M2 de 21 bancos centrales adelantado 10 semanas (BGeometrics)','m2_btc_directo.html','💧']]},
+{id:'m_news',name:'📰 Noticias y directos',color:'#ff7043',tool:true,open:false,links:[
 ['Noticias del día','Titulares de cripto, mercados y España, se actualiza solo','noticias.html','📰'],
 ['Última hora en directo','Cinta de titulares con imágenes: mundo, cripto, mercados y hackeos','noticias_directo.html','🗞️'],
-['TV y radio en directo','Bloomberg, Schwab, Yahoo Finance, noticias 24 h y radios de economía en vivo','tv_directo.html','📺'],
+['TV y radio en directo','Bloomberg, Schwab, Yahoo Finance, noticias 24 h y radios de economía en vivo','tv_directo.html','📺']]},
+{id:'m_btc',name:'₿ Bitcoin',color:'#f7931a',tool:true,open:false,links:[
+['Panel Bitcoin','24 métricas clave en vivo: precio, media 200 semanas, volatilidad, miedo/codicia, dominancia, funding…','btc_panel.html','🟠'],
+['BTC ¿Caro o barato?','Índice 0–100 con datos en vivo','caro_barato_btc.html','⚖️'],
+['Ciclo de mercado BTC','En qué fase del ciclo está BTC: pico, suelo, expansión…','ciclo.html','🔄'],
+['Halvings BTC','Ciclo de 4 años con fases, halvings y proyección','halvingbtc.html','⛏️'],
+['Dominancia: compra / venta BTC','Miedo y codicia con zonas históricas de compra y venta','dominancia.html','🎯'],
+['Compresión BTC','Lo estrecho que está el rango de precio de los últimos 30 días','compresion.html','🗜️'],
 ['Coste de minar 1 BTC','Cuánto cuesta en luz producir un BTC vs su precio, en directo','coste_btc.html','⚡'],
-['BTC en 3D','Ilusión de relieve con puntos en movimiento, al ritmo del precio de BTC','btc_3d.html','🌀'],
-['Avión BTC','Un avión vuela a la altura del precio de Bitcoin, en directo','avion_btc.html','✈️'],
-['Mapas de Mercado Global','Mapas interactivos de bolsa y cripto','mercados.html','🗺️'],
+['Alerta BTC','Te avisa cada vez que BTC sube o baja $1.000 (o el importe que elijas)','alerta_btc.html','🔔']]},
+{id:'m_cripto',name:'🪙 Cripto en directo',color:'#f7a600',tool:true,open:false,links:[
+['Ticker cripto','Precios cripto en vivo','ticker_cripto.html','🪙'],
 ['Mapa de Calor Cripto','Mapa global de criptomonedas en vivo','crypto_heatmap.html','🪙'],
-['Gráficos de calor','Mapas de calor del mercado','graficos_calor.html','🌡️'],
 ['Liquidaciones en directo','Liquidaciones del mercado en tiempo real','liquidaciones_directo.html','💥'],
 ['Presión en directo','Presión de compra y venta en tiempo real','presion_directo.html','⚖️'],
 ['Guerra de Liquidez en Directo','Batalla visual de muros de compra y venta de BTC en tiempo real','guerra_liquidez.html','⚔️'],
 ['Gráficos de muros','Muros de órdenes en el libro','graficos_muros.html','🧱'],
-['BTC ¿Caro o barato?','Índice 0–100 con datos en vivo','caro_barato_btc.html','⚖️'],
-['Panel Bitcoin','24 métricas clave en vivo: precio, media 200 semanas, volatilidad, miedo/codicia, dominancia, funding…','btc_panel.html','🟠'],
-['Dominancia: compra / venta BTC','Miedo y codicia con zonas históricas de compra y venta','dominancia.html','🎯'],
-['Ciclo de mercado BTC','En qué fase del ciclo está BTC: pico, suelo, expansión…','ciclo.html','🔄'],
-['Halvings BTC','Ciclo de 4 años con fases, halvings y proyección','halvingbtc.html','⛏️'],
-['Compresión BTC','Lo estrecho que está el rango de precio de los últimos 30 días','compresion.html','🗜️'],
-['M2 global vs BTC (10 sem)','M2 de 21 bancos centrales adelantado 10 semanas (BGeometrics)','m2_btc_directo.html','💧'],
-['Alerta BTC','Te avisa cada vez que BTC sube o baja $1.000 (o el importe que elijas)','alerta_btc.html','🔔'],
-['Ticker de mercados','Resumen del bot: cripto, acciones, índices y oro con precio y variación del día','ticker.html','📊'],
-['Ticker cripto','Precios cripto en vivo','ticker_cripto.html','🪙'],
-['Cinta de bolsa','Cinta de cotizaciones de bolsa','cinta_bolsa.html','🎞️'],
-['Hub de Bolsa y Cartera','Cotizaciones de bolsa, ETFs, innovación y materias primas','hub_bolsa.html','📈'],
-['Calendario Macroeconómico','Eventos clave, IPC, Fed y BCE en vivo','calendario_macro.html','📅'],
-['Calendario Económico Directo','Agenda de eventos macro de alto impacto','calendario.html','📅'],
-['Bono 30 años','Rendimiento del bono a 30 años','bono_30y.html','📉'],
-['Señales de Mercado','Análisis técnico en vivo y resumen de activos','senales.html','📊'],
-['Screener de Criptomonedas','Escáner avanzado de activos cripto','screener.html','🔍'],
+['Screener de Criptomonedas','Escáner avanzado de activos cripto','screener.html','🔍']]},
+{id:'m_extra',name:'🎮 Extras',color:'#e91e63',tool:true,open:false,links:[
+['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚'],
+['BTC en 3D','Ilusión de relieve con puntos en movimiento, al ritmo del precio de BTC','btc_3d.html','🌀'],
+['Avión BTC','Un avión vuela a la altura del precio de Bitcoin, en directo','avion_btc.html','✈️'],
 ['Street Rush 3D','Carreras infinitas en 3D: esquiva tráfico, combos, power-ups y nitro','street_rush_3d.html','🏎️'],
-['Wall Street Trivia','Pon a prueba tus conocimientos sobre grandes inversores, trading y macroeconomía','trivia.html','🧠']
-]},
+['Wall Street Trivia','Pon a prueba tus conocimientos sobre grandes inversores, trading y macroeconomía','trivia.html','🧠']]},
 {id:'es',name:'Inversor en España',color:'#ef5350',links:[
 ['Trade Republic','Tu broker: cartera y órdenes','https://traderepublic.com/es-es','🟣'],
 ['justETF','Buscador y comparador de ETFs','https://www.justetf.com/es/','🧺'],
@@ -232,9 +238,10 @@ const CATS=[
 ['Academia Kiyotaka','Mecánica de mercado y estrategias','https://kiyotaka.ai/user-guides/core/academy','🥋']]}
 ];
 const REAL=CATS.filter(c=>c.id!=='fav'&&c.id!=='top');
+const TOOLS=CATS.filter(c=>c.tool);
 
 /* ---------- estado ---------- */
-let S={fav:[],clicks:{},custom:[],removed:[],theme:null};
+let S={fav:[],clicks:{},custom:[],removed:[],theme:null,open:{}};
 try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&typeof r==='object')S=Object.assign(S,r)}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 let editing=false;
@@ -246,7 +253,7 @@ function allLinks(){
   const out=[];
   REAL.forEach(c=>{
     c.links.forEach(a=>out.push({t:a[0],d:a[1],u:a[2],i:a[3],c:c.id,custom:false}));
-    S.custom.filter(l=>l.c===c.id).forEach(l=>out.push({t:l.t,d:l.d||'',u:l.u,i:l.i||'🔗',c:c.id,custom:true}));
+    S.custom.filter(l=>(l.c==='mias'?'m_extra':l.c)===c.id).forEach(l=>out.push({t:l.t,d:l.d||'',u:l.u,i:l.i||'🔗',c:c.id,custom:true}));
   });
   return out.filter(l=>!S.removed.includes(l.u));
 }
@@ -297,8 +304,17 @@ function card(l,term){
 
 function section(cat,links,term){
   const s=el('div','category');
-  s.append(el('div','cat-title',cat.name));
   const g=el('div','grid');links.forEach(l=>g.append(card(l,term)));
+  if(cat.tool){
+    const open=term?true:(S.open&&cat.id in S.open?S.open[cat.id]:!!cat.open);
+    const t=el('div','cat-title tg');t.setAttribute('role','button');t.tabIndex=0;t.setAttribute('aria-expanded',open);
+    t.append(el('span','chev',open?'▾':'▸'),el('span','',cat.name),el('span','cnt',String(links.length)));
+    const go=()=>{if(term)return;S.open=S.open||{};S.open[cat.id]=!open;save();render()};
+    t.onclick=go;t.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+    s.append(t);if(open)s.append(g);
+    return s;
+  }
+  s.append(el('div','cat-title',cat.name));
   s.append(g);return s;
 }
 
@@ -307,15 +323,14 @@ function render(){
   const box=$('links');box.textContent='';
   const all=allLinks();let n=0;
   if(!term){
-    const ap=all.filter(l=>l.c==='mias');
-    if(ap.length)box.append(section(catOf('mias'),ap,''));
+    TOOLS.forEach(cat=>{const ap=all.filter(l=>l.c===cat.id);if(ap.length)box.append(section(cat,ap,''))});
     const fav=S.fav.map(u=>all.find(l=>l.u===u)).filter(Boolean);
     if(fav.length)box.append(section(CATS[0],fav.map(l=>({...l,c:'fav'})),''));
     const top=all.filter(l=>S.clicks[l.u]>0).sort((a,b)=>S.clicks[b.u]-S.clicks[a.u]).slice(0,4);
     if(top.length)box.append(section(CATS[1],top.map(l=>({...l,c:'top'})),''));
   }
   REAL.forEach(cat=>{
-    if(!term&&cat.id==='mias')return;
+    if(!term&&cat.tool)return;
     const ls=all.filter(l=>l.c===cat.id&&(!term||fold(l.t+' '+l.d+' '+l.u).includes(term)));
     if(!ls.length)return;n+=ls.length;box.append(section(cat,ls,term));
   });
