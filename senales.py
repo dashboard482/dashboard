@@ -252,6 +252,8 @@ def analizar(c, v, spy):
         pt += 5
     b_p = pt
 
+    import re
+    motivos = [re.sub(r"(\d)\.(\d)", r"\1,\2", m) for m in motivos]
     nota = round(b_t + b_m + b_f + b_p)
     return {"p": p, "nota": nota, "b": [round(b_t, 1), round(b_m, 1), round(b_f, 1), round(b_p, 1)],
             "motivos": motivos, "rsi": None if rsi is None else round(rsi, 1),
