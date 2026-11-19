@@ -39,10 +39,14 @@ var BASE='https://s3.tradingview.com/external-embedding/';
 var MAPAS=[
  {id:'spx',n:'S&P 500',w:'embed-widget-stock-heatmap.js',c:{dataSource:'SPX500',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Las 500 mayores empresas de EEUU por sector. El tamaño es la capitalización y el color la variación del día.'},
  {id:'ndx',n:'Nasdaq 100',w:'embed-widget-stock-heatmap.js',c:{dataSource:'NASDAQ100',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Las 100 mayores empresas del Nasdaq (tecnología y crecimiento).'},
- {id:'dow',n:'Dow Jones',w:'embed-widget-stock-heatmap.js',c:{dataSource:'DOWJONES',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Las 30 empresas del Dow Jones Industrial Average.'},
+ {id:'dow',n:'Dow Jones',w:'embed-widget-stock-heatmap.js',c:{dataSource:'DJCA',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Las 30 empresas del Dow Jones Industrial Average.'},
+ {id:'rus',n:'Russell 3000',w:'embed-widget-stock-heatmap.js',c:{dataSource:'TVCRUA',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Las 3.000 mayores empresas de EEUU, cerca del 98% del mercado.'},
+ {id:'usa',n:'Todo EEUU',w:'embed-widget-stock-heatmap.js',c:{dataSource:'AllUSA',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Todas las empresas cotizadas en EEUU.'},
  {id:'esp',n:'España',w:'embed-widget-stock-heatmap.js',c:{dataSource:'AllES',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Empresas cotizadas en la bolsa española.'},
  {id:'ger',n:'Alemania',w:'embed-widget-stock-heatmap.js',c:{dataSource:'AllDE',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Empresas cotizadas en la bolsa alemana.'},
- {id:'eur',n:'Europa',w:'embed-widget-stock-heatmap.js',c:{dataSource:'AllEU',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Empresas cotizadas en las bolsas europeas por sector.'},
+ {id:'fra',n:'Francia',w:'embed-widget-stock-heatmap.js',c:{dataSource:'AllFR',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Empresas cotizadas en la bolsa francesa.'},
+ {id:'gbr',n:'Reino Unido',w:'embed-widget-stock-heatmap.js',c:{dataSource:'AllGB',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Empresas cotizadas en la bolsa británica.'},
+ {id:'ita',n:'Italia',w:'embed-widget-stock-heatmap.js',c:{dataSource:'AllIT',grouping:'sector',blockSize:'market_cap_basic',blockColor:'change'},d:'Empresas cotizadas en la bolsa italiana.'},
  {id:'cri',n:'Cripto',w:'embed-widget-crypto-coins-heatmap.js',c:{dataSource:'Crypto',blockSize:'market_cap_calc',blockColor:'change'},d:'Criptomonedas por capitalización. El color es la variación del día.'},
  {id:'etf',n:'ETF',w:'embed-widget-etf-heatmap.js',c:{dataSource:'AllUSEtf',blockSize:'aum',blockColor:'change',grouping:'asset_class'},d:'ETF de EEUU por activos bajo gestión, agrupados por clase de activo.'}
 ];
