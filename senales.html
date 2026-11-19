@@ -106,7 +106,7 @@ var D=[],T=0,FALTAN=[],F={lab:null,g:null,q:'',ord:'nota',solo:false},ABIERTAS={
 var LC={'Compra fuerte':'cf','Compra':'c','Neutral':'n','Venta':'v','Venta fuerte':'vf','Sin histórico':'s'};
 var ORD=['Compra fuerte','Compra','Neutral','Venta','Venta fuerte'];
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function fx(n,d){return Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function fx(n,d){return Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d,useGrouping:'always'})}
 function fp(a){var d=a.p>=100?2:a.p>=1?2:4;return (a.cur==='€'?'':a.cur)+fx(a.p,d)+(a.cur==='€'?' €':'')}
 function fc(c){return (c>=0?'▲ +':'▼ ')+fx(c,2)+'%'}
 function col(s){var h=Math.round(clampn((s-25)/50)*120);return 'hsl('+h+',55%,36%)'}
