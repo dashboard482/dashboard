@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0e1117">
-<title>Hub de Bolsa & Mercados</title>
+<title>Cintas de Mercado</title>
 <style>
 :root{
   --bg:#0e1117;
@@ -32,118 +32,28 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 <body>
 
 <header>
-  <a href="index.html" class="back-btn">← Volver al Hub</a>
+  <a href="index.html" class="back-btn">← Hub</a>
   <div class="status-badge">
     <span class="dot-live"></span>
-    <span>MERCADOS & CARTERA (EN VIVO)</span>
+    <span>CINTAS DE MERCADO</span>
+    <button id="shx" style="background:#000;color:#fff;border:1px solid #2a2e39;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;margin-left:8px">𝕏 Compartir</button>
   </div>
 </header>
 
-<!-- CINTA 1: BOLSA Y ACCIONES AMPLIADA (>40 ACTIVOS) -->
-<div class="section-title">Cinta Global (Bolsa, Innovación, Índices & Metales)</div>
-<div class="tape-container">
-  <div class="tradingview-widget-container">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-    {
-      "symbols": [
-        { "proName": "NASDAQ:SPCX", "title": "SpaceX" },
-        { "proName": "NASDAQ:ANT", "title": "Anthropic" },
-        { "proName": "NYSE:IONQ", "title": "IonQ" },
-        { "proName": "NYSE:MP", "title": "MP Materials" },
-        { "proName": "TVC:GOLD", "title": "Oro" },
-        { "proName": "TVC:SILVER", "title": "Plata" },
-        { "proName": "FOREXCOM:SPXUSD", "title": "S&P 500" },
-        { "proName": "NASDAQ:NDX", "title": "Nasdaq 100" },
-        { "proName": "NASDAQ:AAPL", "title": "Apple" },
-        { "proName": "NASDAQ:MSFT", "title": "Microsoft" },
-        { "proName": "NASDAQ:GOOGL", "title": "Alphabet" },
-        { "proName": "NASDAQ:AMZN", "title": "Amazon" },
-        { "proName": "NASDAQ:NVDA", "title": "NVIDIA" },
-        { "proName": "NASDAQ:META", "title": "Meta" },
-        { "proName": "NASDAQ:TSLA", "title": "Tesla" },
-        { "proName": "NASDAQ:AMD", "title": "AMD" },
-        { "proName": "NASDAQ:INTC", "title": "Intel" },
-        { "proName": "NASDAQ:QCOM", "title": "Qualcomm" },
-        { "proName": "NASDAQ:AVGO", "title": "Broadcom" },
-        { "proName": "NASDAQ:NFLX", "title": "Netflix" },
-        { "proName": "NASDAQ:PYPL", "title": "PayPal" },
-        { "proName": "NASDAQ:COIN", "title": "Coinbase" },
-        { "proName": "NASDAQ:MSTR", "title": "MicroStrategy" },
-        { "proName": "AMEX:ARKK", "title": "ARK Innovation" },
-        { "proName": "NYSE:PLTR", "title": "Palantir" },
-        { "proName": "NASDAQ:RKLB", "title": "Rocket Lab" },
-        { "proName": "NYSE:BA", "title": "Boeing" },
-        { "proName": "NYSE:LMT", "title": "Lockheed Martin" },
-        { "proName": "NYSE:NKE", "title": "Nike" },
-        { "proName": "NYSE:DIS", "title": "Disney" },
-        { "proName": "NYSE:JPM", "title": "JPMorgan" },
-        { "proName": "NYSE:V", "title": "Visa" },
-        { "proName": "NYSE:MA", "title": "Mastercard" },
-        { "proName": "NYSE:XOM", "title": "ExxonMobil" },
-        { "proName": "NYSE:CVX", "title": "Chevron" },
-        { "proName": "NYSE:BABA", "title": "Alibaba" },
-        { "proName": "NASDAQ:TSM", "title": "TSMC" },
-        { "proName": "NASDAQ:ASML", "title": "ASML" },
-        { "proName": "NASDAQ:ARM", "title": "Arm Holdings" },
-        { "proName": "NASDAQ:SNOW", "title": "Snowflake" },
-        { "proName": "NASDAQ:UBER", "title": "Uber" },
-        { "proName": "NASDAQ:ABNB", "title": "Airbnb" }
-      ],
-      "showSymbolLogo": true,
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "displayMode": "regular",
-      "locale": "es"
-    }
-    </script>
-  </div>
-</div>
-
-<!-- CINTA 2: CRIPTOMONEDAS AMPLIADA (~28 ACTIVOS) -->
-<div class="section-title">Cinta Cripto (Principales Activos del Mercado)</div>
-<div class="tape-container">
-  <div class="tradingview-widget-container">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-    {
-      "symbols": [
-        { "proName": "BINANCE:BTCUSDT", "title": "Bitcoin" },
-        { "proName": "BINANCE:ETHUSDT", "title": "Ethereum" },
-        { "proName": "BINANCE:SOLUSDT", "title": "Solana" },
-        { "proName": "BINANCE:BNBUSDT", "title": "BNB" },
-        { "proName": "BINANCE:XRPUSDT", "title": "XRP" },
-        { "proName": "BINANCE:ADAUSDT", "title": "Cardano" },
-        { "proName": "BINANCE:AVAXUSDT", "title": "Avalanche" },
-        { "proName": "BINANCE:DOGEUSDT", "title": "Dogecoin" },
-        { "proName": "BINANCE:SHIBUSDT", "title": "Shiba Inu" },
-        { "proName": "BINANCE:DOTUSDT", "title": "Polkadot" },
-        { "proName": "BINANCE:LINKUSDT", "title": "Chainlink" },
-        { "proName": "BINANCE:NEARUSDT", "title": "NEAR Protocol" },
-        { "proName": "BINANCE:SUIUSDT", "title": "Sui" },
-        { "proName": "BINANCE:APTUSDT", "title": "Aptos" },
-        { "proName": "BINANCE:ARBUSDT", "title": "Arbitrum" },
-        { "proName": "BINANCE:OPUSDT", "title": "Optimism" },
-        { "proName": "BINANCE:POLUSDT", "title": "Polygon" },
-        { "proName": "BINANCE:ATOMUSDT", "title": "Cosmos" },
-        { "proName": "BINANCE:LTCUSDT", "title": "Litecoin" },
-        { "proName": "BINANCE:BCHUSDT", "title": "Bitcoin Cash" },
-        { "proName": "BINANCE:INJUSDT", "title": "Injective" },
-        { "proName": "BINANCE:FETUSDT", "title": "Artificial Superintelligence" },
-        { "proName": "BINANCE:RENDERUSDT", "title": "Render" },
-        { "proName": "BINANCE:PEPEUSDT", "title": "Pepe" },
-        { "proName": "BINANCE:UNIUSDT", "title": "Uniswap" },
-        { "proName": "BINANCE:AAVEUSDT", "title": "Aave" }
-      ],
-      "showSymbolLogo": true,
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "displayMode": "regular",
-      "locale": "es"
-    }
-    </script>
-  </div>
-</div>
+<div id="cintas"></div>
+<script>
+var CINTAS=[["Favoritos e IA", [["NASDAQ:SPCX", "SpaceX"], ["NASDAQ:ANT", "Anthropic"], ["NASDAQ:NVDA", "NVIDIA"], ["NASDAQ:MSFT", "Microsoft"], ["NASDAQ:GOOGL", "Alphabet"], ["NASDAQ:AMZN", "Amazon"], ["NASDAQ:META", "Meta"], ["NYSE:PLTR", "Palantir"], ["NASDAQ:AVGO", "Broadcom"], ["NASDAQ:AMD", "AMD"], ["NASDAQ:ARM", "Arm"], ["NYSE:TSM", "TSMC"], ["NASDAQ:ASML", "ASML"], ["NASDAQ:MU", "Micron"], ["NYSE:ORCL", "Oracle"], ["NASDAQ:SMCI", "Super Micro"], ["NYSE:CRM", "Salesforce"], ["NYSE:IONQ", "IonQ"], ["NASDAQ:RKLB", "Rocket Lab"], ["NYSE:MP", "MP Materials"]]], ["EEUU: grandes empresas", [["NASDAQ:AAPL", "Apple"], ["NASDAQ:TSLA", "Tesla"], ["NASDAQ:NFLX", "Netflix"], ["NYSE:JPM", "JPMorgan"], ["NYSE:V", "Visa"], ["NYSE:MA", "Mastercard"], ["NYSE:BAC", "Bank of America"], ["NYSE:GS", "Goldman Sachs"], ["NYSE:BRK.B", "Berkshire"], ["NYSE:WMT", "Walmart"], ["NYSE:KO", "Coca-Cola"], ["NYSE:MCD", "McDonald's"], ["NYSE:DIS", "Disney"], ["NYSE:NKE", "Nike"], ["NYSE:JNJ", "J&J"], ["NYSE:LLY", "Eli Lilly"], ["NYSE:UNH", "UnitedHealth"], ["NYSE:XOM", "ExxonMobil"], ["NYSE:CVX", "Chevron"], ["NYSE:BA", "Boeing"], ["NYSE:LMT", "Lockheed Martin"], ["NASDAQ:COIN", "Coinbase"], ["NASDAQ:MSTR", "Strategy"]]], ["Índices", [["FOREXCOM:SPXUSD", "S&P 500"], ["FOREXCOM:NSXUSD", "Nasdaq 100"], ["FOREXCOM:DJI", "Dow Jones"], ["INDEX:DEU40", "DAX"], ["INDEX:IBEX", "IBEX 35"], ["TVC:SX5E", "Euro Stoxx 50"], ["TVC:CAC40", "CAC 40"], ["TVC:UKX", "FTSE 100"], ["TVC:NI225", "Nikkei 225"], ["TVC:VIX", "VIX"]]], ["España", [["BME:SAN", "Santander"], ["BME:BBVA", "BBVA"], ["BME:ITX", "Inditex"], ["BME:IBE", "Iberdrola"], ["BME:TEF", "Telefónica"], ["BME:REP", "Repsol"], ["BME:CABK", "CaixaBank"], ["BME:AMS", "Amadeus"], ["BME:FER", "Ferrovial"], ["BME:ELE", "Endesa"], ["BME:NTGY", "Naturgy"], ["BME:SAB", "Sabadell"], ["BME:ACS", "ACS"], ["BME:AENA", "Aena"], ["BME:IDR", "Indra"], ["BME:GRF", "Grifols"], ["BME:MAP", "Mapfre"], ["BME:BKT", "Bankinter"], ["BME:CLNX", "Cellnex"], ["BME:RED", "Redeia"]]], ["Europa", [["XETR:SAP", "SAP"], ["XETR:SIE", "Siemens"], ["XETR:ALV", "Allianz"], ["XETR:DTE", "Deutsche Telekom"], ["XETR:BMW", "BMW"], ["XETR:MBG", "Mercedes-Benz"], ["XETR:VOW3", "Volkswagen"], ["EURONEXT:MC", "LVMH"], ["EURONEXT:OR", "L'Oréal"], ["EURONEXT:TTE", "TotalEnergies"], ["EURONEXT:AIR", "Airbus"], ["EURONEXT:ASML", "ASML"], ["SIX:NESN", "Nestlé"], ["SIX:NOVN", "Novartis"], ["SIX:ROG", "Roche"], ["LSE:AZN", "AstraZeneca"], ["LSE:SHEL", "Shell"], ["LSE:HSBA", "HSBC"]]], ["Materias primas, divisas y bonos", [["TVC:GOLD", "Oro"], ["TVC:SILVER", "Plata"], ["TVC:USOIL", "Petróleo WTI"], ["TVC:UKOIL", "Brent"], ["NYMEX:NG1!", "Gas natural"], ["COMEX:HG1!", "Cobre"], ["FX:EURUSD", "EUR/USD"], ["FX:GBPUSD", "GBP/USD"], ["FX:USDJPY", "USD/JPY"], ["TVC:DXY", "Índice dólar"], ["TVC:US10Y", "Bono EEUU 10a"], ["TVC:DE10Y", "Bono Alemania 10a"], ["TVC:ES10Y", "Bono España 10a"]]], ["Cripto", [["BINANCE:BTCUSDT", "Bitcoin"], ["BINANCE:ETHUSDT", "Ethereum"], ["BINANCE:SOLUSDT", "Solana"], ["BINANCE:BNBUSDT", "BNB"], ["BINANCE:XRPUSDT", "XRP"], ["BINANCE:ADAUSDT", "Cardano"], ["BINANCE:AVAXUSDT", "Avalanche"], ["BINANCE:DOGEUSDT", "Dogecoin"], ["BINANCE:DOTUSDT", "Polkadot"], ["BINANCE:LINKUSDT", "Chainlink"], ["BINANCE:NEARUSDT", "NEAR"], ["BINANCE:SUIUSDT", "Sui"], ["BINANCE:APTUSDT", "Aptos"], ["BINANCE:ARBUSDT", "Arbitrum"], ["BINANCE:LTCUSDT", "Litecoin"], ["BINANCE:BCHUSDT", "Bitcoin Cash"], ["BINANCE:INJUSDT", "Injective"], ["BINANCE:RENDERUSDT", "Render"], ["BINANCE:PEPEUSDT", "Pepe"], ["BINANCE:UNIUSDT", "Uniswap"], ["BINANCE:AAVEUSDT", "Aave"]]]];
+CINTAS.forEach(function(c){
+ var t=document.createElement("div");t.className="section-title";t.textContent="Cinta · "+c[0];
+ var w=document.createElement("div");w.className="tape-container";
+ var k=document.createElement("div");k.className="tradingview-widget-container";
+ var i=document.createElement("div");i.className="tradingview-widget-container__widget";k.appendChild(i);
+ var s=document.createElement("script");s.src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js";s.async=true;
+ s.text=JSON.stringify({symbols:c[1].map(function(x){return{proName:x[0],title:x[1]}}),showSymbolLogo:true,colorTheme:"dark",isTransparent:true,displayMode:"regular",locale:"es"});
+ k.appendChild(s);w.appendChild(k);
+ var box=document.getElementById("cintas");box.appendChild(t);box.appendChild(w);
+});
+</script>
 
 <!-- PANEL VISUAL DE MERCADO CON PESTAÑAS Y GRÁFICOS (DEBAJO DE LAS CINTAS) -->
 <div class="section-title">Paneles Interactivos de Mercado</div>
@@ -212,6 +122,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   </div>
 </div>
 
+<script>
+document.getElementById('shx').onclick=function(){var u='https://twitter.com/intent/tweet?text='+encodeURIComponent('Cintas de bolsa, índices, materias primas y cripto en vivo. Míralo')+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}window.open(u,'_blank')};
+</script>
 <script src="telegram.js" defer></script>
 </body>
 </html>
