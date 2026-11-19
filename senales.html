@@ -2,324 +2,217 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Señales de Mercado - Hub Financiero</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
+<title>Señales de Mercado · Hub Financiero</title>
 <style>
-:root{
-  --bg:#0e1117;
-  --panel:#131722;
-  --panel-2:#1a1e29;
-  --border:#2a2e39;
-  --ink:#d1d4dc;
-  --ink-strong:#f0f3fa;
-  --dim:#787b86;
-  --up:#26a69a;   /* Verde Compra */
-  --down:#ef5350; /* Rojo Venta */
-  --amber:#f7a600;/* Amarillo Neutral */
-}
+:root{--bg:#0e1117;--pn:#131722;--pn2:#1a1e29;--bd:#2a2e39;--ink:#d1d4dc;--st:#f0f3fa;--dim:#787b86;--up:#26a69a;--dn:#ef5350;--am:#f7a600;--ac:#2962ff}
+@media(prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#f3f5f9;--pn:#fff;--pn2:#fff;--bd:#dde1ea;--ink:#363a45;--st:#0e1117;--dim:#6b6f7c}}
 *{box-sizing:border-box}
-body{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1200px;margin:0 auto}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
-.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-strong);text-decoration:none;background:var(--panel-2);border:1px solid var(--border);padding:6px 12px;border-radius:6px}
-.signals-container{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px}
-.title-section{font-size:14px;font-weight:600;color:var(--ink-strong);padding:14px 16px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;align-items:center;gap:8px}
-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
-th{background:var(--panel);color:var(--dim);padding:10px 12px;font-weight:600;border-bottom:1px solid var(--border)}
-td{padding:12px;border-bottom:1px solid var(--border);color:var(--ink-strong)}
-tr:last-child td{border-bottom:none}
-.badge{display:inline-block;padding:4px 10px;border-radius:4px;font-weight:700;font-size:11px;text-transform:uppercase}
-.badge.buy{background:rgba(38,166,154,0.15);color:var(--up);border:1px solid rgba(38,166,154,0.3)}
-.badge.sell{background:rgba(239,83,80,0.15);color:var(--down);border:1px solid rgba(239,83,80,0.3)}
-.badge.neutral{background:rgba(247,166,0,0.15);color:var(--amber);border:1px solid rgba(247,166,0,0.3)}
-.sub{font-size:11px;color:var(--dim);margin-top:2px}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding:max(12px,env(safe-area-inset-top,0px),var(--tgtop,0px)) 14px calc(30px + env(safe-area-inset-bottom,0px))}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.top a{color:var(--st);text-decoration:none;font-size:13px;background:var(--pn2);border:1px solid var(--bd);padding:6px 12px;border-radius:6px}
+.top span{font-size:11px;color:var(--dim);letter-spacing:.5px}
+h1{font-size:20px;margin:6px 0 2px;color:var(--st)}
+.sub{font-size:12px;color:var(--dim);margin-bottom:12px}
+.sub b{color:var(--ink)}
+.box{background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px}
+.res{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.rb{border:1px solid var(--bd);background:var(--pn2);border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;color:var(--ink);font:inherit}
+.rb b{display:block;font-size:20px;color:var(--st)}.rb span{font-size:10px;color:var(--dim);line-height:1.2;display:block}
+.rb.on{outline:2px solid var(--ac)}
+.rb.cf b{color:var(--up)}.rb.c b{color:#6fd0c6}.rb.n b{color:var(--am)}.rb.v b{color:#f08a88}.rb.vf b{color:var(--dn)}
+.amp{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--dim)}
+.amp b{color:var(--st)}
+.bar{height:6px;border-radius:3px;background:var(--bd);overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:var(--up)}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);margin:0 0 8px;font-weight:600}
+.heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:5px}
+.ht{border-radius:8px;padding:6px 8px;cursor:pointer;color:#fff;border:2px solid transparent;font:inherit;text-align:left}
+.ht b{display:block;font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ht span{font-size:17px;font-weight:700}.ht small{display:inline;font-size:10px;opacity:.85;margin-left:5px}
+.ht.on{border-color:var(--st)}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.q{flex:1;min-width:140px;background:var(--pn2);border:1px solid var(--bd);color:var(--st);border-radius:8px;padding:9px 12px;font:inherit;font-size:16px}
+.ch{background:var(--pn2);border:1px solid var(--bd);color:var(--ink);border-radius:8px;padding:8px 11px;font:inherit;font-size:12px;cursor:pointer}
+.ch.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.row{background:var(--pn);border:1px solid var(--bd);border-radius:10px;margin-bottom:6px;overflow:hidden}
+.rh{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.nm{font-size:14px;font-weight:600;color:var(--st)}.nm small{font-weight:400;color:var(--dim);font-size:11px;margin-left:4px}
+.gp{font-size:11px;color:var(--dim)}
+.pr{text-align:right;font-size:14px;color:var(--st);font-variant-numeric:tabular-nums;font-weight:600}
+.pr small{display:block;font-size:12px;font-weight:600}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.sg{grid-column:1/3;display:flex;align-items:center;gap:8px;margin-top:4px}
+.sc{width:34px;text-align:center;font-weight:700;font-size:15px;color:var(--st);font-variant-numeric:tabular-nums}
+.sb{flex:1;height:7px;border-radius:4px;background:var(--bd);overflow:hidden}.sb i{display:block;height:100%}
+.badge{font-size:10.5px;font-weight:700;text-transform:uppercase;padding:3px 8px;border-radius:4px;white-space:nowrap;border:1px solid}
+.l-cf{background:rgba(38,166,154,.18);color:var(--up);border-color:rgba(38,166,154,.4)}
+.l-c{background:rgba(38,166,154,.1);color:#5ec5bb;border-color:rgba(38,166,154,.25)}
+.l-n{background:rgba(247,166,0,.13);color:var(--am);border-color:rgba(247,166,0,.3)}
+.l-v{background:rgba(239,83,80,.1);color:#f08a88;border-color:rgba(239,83,80,.25)}
+.l-vf{background:rgba(239,83,80,.18);color:var(--dn);border-color:rgba(239,83,80,.4)}
+.l-s{background:var(--pn2);color:var(--dim);border-color:var(--bd)}
+.ev{grid-column:1/3;font-size:11px;color:var(--am);margin-top:2px}
+.det{display:none;border-top:1px solid var(--bd);padding:12px;background:var(--pn2)}
+.row.open .det{display:block}
+.bl{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-bottom:10px}
+.bl div{font-size:11px;color:var(--dim)}.bl b{float:right;color:var(--st)}
+.bl .bar{clear:both}
+ul.mo{margin:6px 0 10px;padding-left:18px;font-size:12.5px;line-height:1.55}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:6px;margin:8px 0}
+.kv div{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:6px 8px;font-size:10.5px;color:var(--dim)}
+.kv b{display:block;color:var(--st);font-size:13px;font-variant-numeric:tabular-nums}
+svg.sp{width:100%;height:70px;display:block}
+.btn{background:#000;color:#fff;border:1px solid var(--bd);border-radius:8px;padding:9px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.btn.w{width:100%;padding:12px;font-size:14px}
+.nota{font-size:11.5px;color:var(--dim);line-height:1.6;margin-top:14px}
+.nota b{color:var(--ink)}
+.vacio{text-align:center;padding:30px 14px;color:var(--dim);font-size:13px}
+@media(max-width:560px){.res{gap:4px}.rb b{font-size:17px}}
 </style>
 </head>
 <body>
+<div class="wrap">
+ <div class="top"><a href="index.html">← Hub</a><span>TERMINAL DE SEÑALES</span></div>
+ <h1>📊 Señales de mercado</h1>
+ <div class="sub" id="sub">cargando…</div>
 
-<header>
-  <a href="index.html" class="back-btn">← Volver al Hub</a>
-  <span style="font-size:12px; color:var(--dim);">PANEL DE SEÑALES</span>
-</header>
+ <div class="box" id="resumen" hidden>
+  <div class="res" id="res"></div>
+  <div class="amp" id="amp"></div>
+ </div>
+ <div class="box" id="mapabox" hidden><h2>Mapa por sectores (nota media)</h2><div class="heat" id="heat"></div></div>
 
-<div class="signals-container">
-  <div class="title-section">📊 Panel Masivo de Acciones, Privadas, Consumo y Criptomonedas</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Activo</th>
-        <th>Mercado</th>
-        <th>Señal Técnica</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- INNOVACIÓN Y MERCADO PRIVADO / ESPACIAL -->
-      <tr>
-        <td><strong>SpaceX</strong><div class="sub">Aeroespacial / Privada</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
-      <tr>
-        <td><strong>Rocket Lab (RKLB)</strong><div class="sub">Aeroespacial</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>IonQ (IONQ)</strong><div class="sub">Computación Cuántica</div></td>
-        <td>NYSE</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Palantir (PLTR)</strong><div class="sub">Software / IA</div></td>
-        <td>NYSE</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
+ <div class="tools">
+  <input class="q" id="q" type="search" placeholder="Buscar…" autocomplete="off">
+  <button class="ch" data-o="nota">Nota</button><button class="ch" data-o="dia">Día %</button><button class="ch" data-o="az">A–Z</button>
+  <button class="ch" id="solo">⚡ Cambios recientes</button>
+ </div>
+ <div id="lista"></div>
+ <button class="btn w" id="sxg" style="margin-top:12px">𝕏 Compartir resumen del día</button>
 
-      <!-- GIGANTES TECNOLÓGICOS Y CRECIMIENTO -->
-      <tr>
-        <td><strong>Apple (AAPL)</strong><div class="sub">Acciones EE.UU.</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge sell">Venta</span></td>
-      </tr>
-      <tr>
-        <td><strong>Microsoft (MSFT)</strong><div class="sub">Acciones EE.UU.</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-      <tr>
-        <td><strong>NVIDIA (NVDA)</strong><div class="sub">Acciones EE.UU.</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Tesla (TSLA)</strong><div class="sub">Acciones EE.UU.</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Amazon (AMZN)</strong><div class="sub">Acciones EE.UU.</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-      <tr>
-        <td><strong>Alphabet / Google (GOOGL)</strong><div class="sub">Acciones EE.UU.</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Meta Platforms (META)</strong><div class="sub">Acciones EE.UU.</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
-      <tr>
-        <td><strong>Netflix (NFLX)</strong><div class="sub">Acciones EE.UU.</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>AMD (AMD)</strong><div class="sub">Semiconductores</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-      <tr>
-        <td><strong>Intel (INTC)</strong><div class="sub">Semiconductores</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge sell">Venta</span></td>
-      </tr>
-      <tr>
-        <td><strong>Broadcom (AVGO)</strong><div class="sub">Semiconductores / IA</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
-
-      <!-- CONSUMO, RETAIL Y DEFENSIVAS -->
-      <tr>
-        <td><strong>Walmart (WMT)</strong><div class="sub">Retail / Consumo Masivo</div></td>
-        <td>NYSE</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>McDonald's (MCD)</strong><div class="sub">Restaurantes / Consumo</div></td>
-        <td>NYSE</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-      <tr>
-        <td><strong>Coca-Cola (KO)</strong><div class="sub">Bebidas / Defensiva</div></td>
-        <td>NYSE</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>PepsiCo (PEP)</strong><div class="sub">Alimentación y Bebidas</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-      <tr>
-        <td><strong>Costco (COST)</strong><div class="sub">Distribución Mayorista</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
-      <tr>
-        <td><strong>Nike (NKE)</strong><div class="sub">Moda / Calzado Deportivo</div></td>
-        <td>NYSE</td>
-        <td><span class="badge sell">Venta</span></td>
-      </tr>
-      <tr>
-        <td><strong>Walt Disney (DIS)</strong><div class="sub">Entretenimiento</div></td>
-        <td>NYSE</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-      <tr>
-        <td><strong>Procter & Gamble (PG)</strong><div class="sub">Bienes de Consumo</div></td>
-        <td>NYSE</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Johnson & Johnson (JNJ)</strong><div class="sub">Salud / Farmacéutica</div></td>
-        <td>NYSE</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-
-      <!-- BANCA, FINANZAS Y PAGOS -->
-      <tr>
-        <td><strong>JPMorgan Chase (JPM)</strong><div class="sub">Banca</div></td>
-        <td>NYSE</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Visa (V)</strong><div class="sub">Pagos y Servicios Financieros</div></td>
-        <td>NYSE</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Mastercard (MA)</strong><div class="sub">Pagos y Servicios Financieros</div></td>
-        <td>NYSE</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Coinbase (COIN)</strong><div class="sub">Exchange / Cripto</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>MicroStrategy (MSTR)</strong><div class="sub">Tesorería Bitcoin</div></td>
-        <td>NASDAQ</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
-
-      <!-- INDUSTRIALES Y ENERGÍA -->
-      <tr>
-        <td><strong>Boeing (BA)</strong><div class="sub">Aeronáutica</div></td>
-        <td>NYSE</td>
-        <td><span class="badge sell">Venta</span></td>
-      </tr>
-      <tr>
-        <td><strong>Lockheed Martin (LMT)</strong><div class="sub">Defensa y Aeroespacial</div></td>
-        <td>NYSE</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-      <tr>
-        <td><strong>ExxonMobil (XOM)</strong><div class="sub">Energía / Petróleo</div></td>
-        <td>NYSE</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Chevron (CVX)</strong><div class="sub">Energía / Petróleo</div></td>
-        <td>NYSE</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-
-      <!-- ÍNDICES GLOBALES -->
-      <tr>
-        <td><strong>S&P 500</strong><div class="sub">Índice Bursátil Global</div></td>
-        <td>CFD / Index</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Nasdaq 100</strong><div class="sub">Índice Tecnológico</div></td>
-        <td>CFD / Index</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-
-      <!-- CRIPTOMONEDAS -->
-      <tr>
-        <td><strong>Hyperliquid (HYPE)</strong><div class="sub">Ecosistema DeFi / L1</div></td>
-        <td>Binance</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
-      <tr>
-        <td><strong>PURR (PURR)</strong><div class="sub">Ecosistema Hyperliquid</div></td>
-        <td>DEX / Crypto</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Bitcoin (BTC)</strong><div class="sub">Criptomoneda</div></td>
-        <td>Binance</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
-      <tr>
-        <td><strong>Ethereum (ETH)</strong><div class="sub">Criptomoneda</div></td>
-        <td>Binance</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-      <tr>
-        <td><strong>Solana (SOL)</strong><div class="sub">Criptomoneda</div></td>
-        <td>Binance</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Binance Coin (BNB)</strong><div class="sub">Criptomoneda</div></td>
-        <td>Binance</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>XRP (XRP)</strong><div class="sub">Criptomoneda</div></td>
-        <td>Binance</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-      <tr>
-        <td><strong>Cardano (ADA)</strong><div class="sub">Criptomoneda</div></td>
-        <td>Binance</td>
-        <td><span class="badge sell">Venta</span></td>
-      </tr>
-      <tr>
-        <td><strong>Avalanche (AVAX)</strong><div class="sub">Criptomoneda</div></td>
-        <td>Binance</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Chainlink (LINK)</strong><div class="sub">Criptomoneda</div></td>
-        <td>Binance</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-      <tr>
-        <td><strong>Sui (SUI)</strong><div class="sub">Criptomoneda L1</div></td>
-        <td>Binance</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
-      <tr>
-        <td><strong>Dogecoin (DOGE)</strong><div class="sub">Meme Coin</div></td>
-        <td>Binance</td>
-        <td><span class="badge neutral">Neutral</span></td>
-      </tr>
-
-      <!-- FOREX Y MATERIAS PRIMAS -->
-      <tr>
-        <td><strong>EUR / USD</strong><div class="sub">Divisas Forex</div></td>
-        <td>FX Market</td>
-        <td><span class="badge sell">Venta</span></td>
-      </tr>
-      <tr>
-        <td><strong>Oro (XAU/USD)</strong><div class="sub">Materia Prima</div></td>
-        <td>OANDA</td>
-        <td><span class="badge buy">Compra Fuerte</span></td>
-      </tr>
-      <tr>
-        <td><strong>Plata (XAG/USD)</strong><div class="sub">Materia Prima</div></td>
-        <td>OANDA</td>
-        <td><span class="badge buy">Compra</span></td>
-      </tr>
-    </tbody>
-  </table>
+ <div class="nota">
+  <b>Cómo se calcula.</b> Cada activo recibe una nota de 0 a 100 sumando cuatro bloques de 25 puntos: <b>Tendencia</b> (precio frente a las medias de 20, 50 y 200 sesiones y su cruce), <b>Momento</b> (RSI de 14 y MACD), <b>Fuerza relativa</b> (rentabilidad a 1 y 3 meses, y frente al S&amp;P 500) y <b>Posición y volumen</b> (cercanía al máximo de 52 semanas y volumen en días de subida frente a bajada). Etiquetas: ≥72 Compra fuerte · 57–71 Compra · 43–56 Neutral · 28–42 Venta · &lt;28 Venta fuerte. El cambio de señal compara la nota actual con la de hace 5 sesiones.
+  Los activos con menos de 60 sesiones de histórico (por ejemplo, salidas a bolsa muy recientes) no se puntúan. Datos diarios de Yahoo Finance, con posible retraso. Es un análisis técnico automático: <b>no es asesoramiento financiero</b> ni predice el futuro.
+ </div>
 </div>
+<script src="telegram.js" defer></script>
+<script>
+(function(){
+'use strict';
+var WEB='https://dashboard482.github.io/dashboard/';
+var $=function(i){return document.getElementById(i)};
+var D=[],T=0,FALTAN=[],F={lab:null,g:null,q:'',ord:'nota',solo:false},ABIERTAS={};
+var LC={'Compra fuerte':'cf','Compra':'c','Neutral':'n','Venta':'v','Venta fuerte':'vf','Sin histórico':'s'};
+var ORD=['Compra fuerte','Compra','Neutral','Venta','Venta fuerte'];
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fx(n,d){return Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function fp(a){var d=a.p>=100?2:a.p>=1?2:4;return (a.cur==='€'?'':a.cur)+fx(a.p,d)+(a.cur==='€'?' €':'')}
+function fc(c){return (c>=0?'▲ +':'▼ ')+fx(c,2)+'%'}
+function col(s){var h=Math.round(clampn((s-25)/50)*120);return 'hsl('+h+',55%,36%)'}
+function clampn(x){return Math.max(0,Math.min(1,x))}
+function tk(a){return a.s.replace('.MC','').replace('-USD','').replace('=X','').replace('=F','').replace('^','')}
+function abrirX(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+function tw(t){abrirX('https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(WEB))}
 
+function cargar(){
+  fetch('senales.json?'+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+    D=j.d;T=j.t;FALTAN=j.faltan||[];pintar();
+  }).catch(function(){
+    $('sub').textContent='';
+    $('lista').innerHTML='<div class="vacio">Todavía no hay datos de señales.<br>En GitHub: <b>Actions → Senales → Run workflow</b>. Tarda un minuto y se actualiza solo cada 2 horas.</div>';
+  });
+}
+function hace(t){var m=Math.round((Date.now()/1000-t)/60);return m<2?'ahora mismo':m<90?'hace '+m+' min':m<2880?'hace '+Math.round(m/60)+' h':'hace '+Math.round(m/1440)+' días'}
+
+function pintar(){
+  var pun=D.filter(function(a){return a.sc!=null});
+  $('sub').innerHTML='<b>'+pun.length+'</b> activos analizados · datos '+hace(T)+' · sobre cierres diarios';
+  // resumen
+  var cnt={};ORD.forEach(function(l){cnt[l]=0});pun.forEach(function(a){cnt[a.lab]++});
+  var cl={'Compra fuerte':'cf','Compra':'c','Neutral':'n','Venta':'v','Venta fuerte':'vf'};
+  $('res').innerHTML=ORD.map(function(l){return '<button class="rb '+cl[l]+(F.lab===l?' on':'')+'" data-l="'+l+'"><b>'+cnt[l]+'</b><span>'+l+'</span></button>'}).join('');
+  var s50=pun.filter(function(a){return a.s50&&a.p>a.s50}).length,c200=pun.filter(function(a){return a.s200}),s200=c200.filter(function(a){return a.p>a.s200}).length;
+  var comp=cnt['Compra fuerte']+cnt['Compra'],pm=Math.round(pun.reduce(function(x,a){return x+a.sc},0)/Math.max(1,pun.length));
+  var est=pm>=57?'sano':pm>=45?'mixto':'débil';
+  $('amp').innerHTML='<span>Nota media <b>'+pm+'/100</b> · mercado <b>'+est+'</b></span><span>Sobre media 50: <b>'+Math.round(s50/Math.max(1,pun.length)*100)+'%</b></span><span>Sobre media 200: <b>'+Math.round(s200/Math.max(1,c200.length)*100)+'%</b></span><span>En compra: <b>'+Math.round(comp/Math.max(1,pun.length)*100)+'%</b></span>';
+  $('resumen').hidden=false;
+  // mapa
+  var G={};pun.forEach(function(a){(G[a.g]=G[a.g]||[]).push(a)});
+  var gs=Object.keys(G).map(function(g){var l=G[g];return {g:g,n:l.length,m:Math.round(l.reduce(function(x,a){return x+a.sc},0)/l.length)}}).sort(function(a,b){return b.m-a.m});
+  $('heat').innerHTML=gs.map(function(x){return '<button class="ht'+(F.g===x.g?' on':'')+'" data-g="'+esc(x.g)+'" style="background:'+col(x.m)+'"><b>'+esc(x.g)+'</b><span>'+x.m+'</span><small>'+x.n+' activos</small></button>'}).join('');
+  $('mapabox').hidden=false;
+  document.querySelectorAll('.ch[data-o]').forEach(function(b){b.classList.toggle('on',b.dataset.o===F.ord)});
+  $('solo').classList.toggle('on',F.solo);
+  lista();
+}
+function lista(){
+  var q=F.q.trim().toLowerCase();
+  var l=D.filter(function(a){
+    if(F.lab&&a.lab!==F.lab)return false;
+    if(F.g&&a.g!==F.g)return false;
+    if(F.solo&&!(a.ev&&a.ev.length))return false;
+    if(q&&(a.n+' '+a.s).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+  l.sort(function(a,b){
+    if(F.ord==='az')return a.n.localeCompare(b.n,'es');
+    if(F.ord==='dia')return b.c-a.c;
+    return (b.sc==null?-1:b.sc)-(a.sc==null?-1:a.sc);
+  });
+  var h=l.map(fila).join('');
+  if(!h)h='<div class="vacio">Ningún activo con ese filtro.</div>';
+  if(FALTAN.length&&!F.lab&&!F.g&&!q&&!F.solo)h+='<div class="nota">Sin datos esta vez: '+esc(FALTAN.join(', '))+'.</div>';
+  $('lista').innerHTML=h;
+}
+function fila(a){
+  var o=ABIERTAS[a.s]?' open':'',lc=LC[a.lab]||'s';
+  var s='<div class="row'+o+'" data-s="'+esc(a.s)+'"><div class="rh"><div><div class="nm">'+esc(a.n)+'<small>'+esc(tk(a))+'</small></div><div class="gp">'+esc(a.g)+' · '+esc(a.m)+'</div></div>'+
+   '<div class="pr">'+fp(a)+'<small class="'+(a.c>=0?'up':'dn')+'">'+fc(a.c)+'</small></div>'+
+   '<div class="sg">'+(a.sc!=null?'<div class="sc">'+a.sc+'</div><div class="sb"><i style="width:'+a.sc+'%;background:'+col(a.sc)+'"></i></div>':'<div class="gp" style="flex:1">'+a.ses+' sesiones de histórico: aún no hay datos para puntuar</div>')+'<span class="badge l-'+lc+'">'+esc(a.lab)+'</span></div>'+
+   (a.ev&&a.ev.length?'<div class="ev">⚡ '+esc(a.ev[0])+'</div>':'')+'</div>';
+  if(o&&a.sc!=null)s+=detalle(a);
+  return s+'</div>';
+}
+function spark(a){
+  var p=a.spark;if(!p||p.length<2)return '';
+  var mn=Math.min.apply(0,p),mx=Math.max.apply(0,p),W=300,H=70;
+  var pts=p.map(function(v,i){return (i/(p.length-1)*W).toFixed(1)+','+(H-4-(v-mn)/(mx-mn||1)*(H-8)).toFixed(1)}).join(' ');
+  var c=p[p.length-1]>=p[0]?'#26a69a':'#ef5350';
+  function lin(v,cl){if(v==null||v<mn||v>mx)return '';var y=(H-4-(v-mn)/(mx-mn||1)*(H-8)).toFixed(1);return '<line x1="0" x2="'+W+'" y1="'+y+'" y2="'+y+'" stroke="'+cl+'" stroke-dasharray="3 4" stroke-width="1" opacity=".7"/>'}
+  return '<svg class="sp" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+lin(a.s50,'#f7a600')+lin(a.s200,'#9c6bff')+'<polyline points="'+pts+'" fill="none" stroke="'+c+'" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="gp">Últimas 60 sesiones · <span style="color:#f7a600">- - media 50</span> · <span style="color:#9c6bff">- - media 200</span></div>';
+}
+function detalle(a){
+  var n=['Tendencia','Momento','Fuerza relativa','Posición y volumen'];
+  var s='<div class="det"><div class="bl">'+a.b.map(function(v,i){return '<div>'+n[i]+'<b>'+Math.round(v)+'/25</b><div class="bar"><i style="width:'+v/25*100+'%;background:'+col(25+v*2)+'"></i></div></div>'}).join('')+'</div>';
+  s+='<h2>Por qué esta señal</h2><ul class="mo">'+a.r.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>';
+  if(a.ev&&a.ev.length)s+='<ul class="mo" style="color:var(--am)">'+a.ev.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>';
+  s+='<div class="kv"><div>RSI (14)<b>'+(a.rsi==null?'—':fx(a.rsi,0))+'</b></div><div>Media 50<b>'+(a.s50?fx(a.s50,2):'—')+'</b></div><div>Media 200<b>'+(a.s200?fx(a.s200,2):'—')+'</b></div><div>Máx. 52 sem.<b>'+fx(a.h52,2)+'</b></div><div>Mín. 52 sem.<b>'+fx(a.l52,2)+'</b></div><div>1 mes<b class="'+(a.r1>=0?'up':'dn')+'">'+(a.r1>=0?'+':'')+fx(a.r1,1)+'%</b></div><div>3 meses<b class="'+(a.r3>=0?'up':'dn')+'">'+(a.r3>=0?'+':'')+fx(a.r3,1)+'%</b></div></div>';
+  s+=spark(a)+'<button class="btn w" data-x="'+esc(a.s)+'" style="margin-top:10px">𝕏 Compartir '+esc(tk(a))+'</button></div>';
+  return s;
+}
+// eventos
+$('lista').addEventListener('click',function(e){
+  var bx=e.target.closest('[data-x]');
+  if(bx){var a=D.filter(function(x){return x.s===bx.dataset.x})[0];if(a)tw('📊 '+a.n+' ('+tk(a)+'): '+a.lab+' · nota '+a.sc+'/100\nTendencia '+Math.round(a.b[0])+' · Momento '+Math.round(a.b[1])+' · Fuerza '+Math.round(a.b[2])+' · Posición '+Math.round(a.b[3])+' (sobre 25)\n'+(a.ev&&a.ev[0]?'⚡ '+a.ev[0]+'\n':'')+'Más señales en el Hub Financiero 👇');return}
+  var r=e.target.closest('.row');if(!r)return;
+  var s=r.dataset.s;ABIERTAS[s]=!ABIERTAS[s];lista();
+});
+$('res').addEventListener('click',function(e){var b=e.target.closest('.rb');if(!b)return;F.lab=F.lab===b.dataset.l?null:b.dataset.l;pintar()});
+$('heat').addEventListener('click',function(e){var b=e.target.closest('.ht');if(!b)return;F.g=F.g===b.dataset.g?null:b.dataset.g;pintar()});
+document.querySelectorAll('.ch[data-o]').forEach(function(b){b.onclick=function(){F.ord=b.dataset.o;pintar()}});
+$('solo').onclick=function(){F.solo=!F.solo;pintar()};
+$('q').addEventListener('input',function(){F.q=this.value;lista()});
+$('sxg').onclick=function(){
+  var pun=D.filter(function(a){return a.sc!=null});if(!pun.length){tw('📊 Terminal de señales en el Hub Financiero');return}
+  var top=pun.slice().sort(function(a,b){return b.sc-a.sc}).slice(0,5);
+  var cam=pun.filter(function(a){return a.ev&&a.ev[0]&&a.ev[0].indexOf('Cambio de señal')===0&&(a.lab==='Compra'||a.lab==='Compra fuerte')}).slice(0,3);
+  var cnt=pun.filter(function(a){return a.lab==='Compra'||a.lab==='Compra fuerte'}).length;
+  var t='📊 Señales técnicas del día ('+pun.length+' activos)\n'+Math.round(cnt/pun.length*100)+'% en compra\n🏆 '+top.map(function(a){return tk(a)+' '+a.sc}).join(' · ')+(cam.length?'\n⚡ Acaban de pasar a compra: '+cam.map(tk).join(', '):'')+'\nTodas en el Hub Financiero 👇';
+  tw(t);
+};
+cargar();setInterval(cargar,10*60*1000);
+})();
+</script>
 </body>
 </html>
