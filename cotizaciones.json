@@ -1,1 +1,132 @@
-{"t": 1795096006, "d": {"AAPL": {"p": 352.45, "c": 0.1534}, "MSFT": {"p": 508.29, "c": 0.4049}, "NVDA": {"p": 150.96, "c": -2.8946}, "AMZN": {"p": 267.74, "c": 3.8195}, "GOOGL": {"p": 282.44, "c": 0.7994}, "META": {"p": 616.38, "c": -0.4023}, "TSLA": {"p": 383.72, "c": 0.9497}, "JPM": {"p": 324.11, "c": -1.7729}, "NFLX": {"p": 59.82, "c": 0.2346}, "SPCX": {"p": 143.5, "c": 1.2703}, "MSTR": {"p": 90.32, "c": -6.4041}, "WMT": {"p": 127.36, "c": -0.1255}, "KO": {"p": 98.09, "c": -0.7086}, "PURR": {"p": 7.95, "c": -0.1256}, "AVGO": {"p": 354.05, "c": 3.6446}, "AMD": {"p": 530.14, "c": 5.3098}, "INTC": {"p": 54.67, "c": -0.9063}, "PLTR": {"p": 156.67, "c": 0.0703}, "COIN": {"p": 110.51, "c": -3.9211}, "HOOD": {"p": 69.17, "c": -0.0289}, "V": {"p": 415.22, "c": -0.3719}, "MA": {"p": 643.37, "c": -0.3655}, "BRK-B": {"p": 574.62, "c": -2.069}, "LLY": {"p": 1382.75, "c": -2.3171}, "ORCL": {"p": 113.89, "c": -0.9652}, "DIS": {"p": 122.36, "c": 4.6349}, "UBER": {"p": 68.76, "c": -0.0727}, "ABNB": {"p": 180.21, "c": -0.4034}, "PYPL": {"p": 57.89, "c": -0.3786}, "NKE": {"p": 36.31, "c": 1.2831}, "MCD": {"p": 274.03, "c": -0.649}, "PEP": {"p": 141.87, "c": -0.1056}, "XOM": {"p": 160.58, "c": -3.9651}, "BA": {"p": 162.91, "c": -0.6101}, "PFE": {"p": 28.06, "c": -1.4401}, "F": {"p": 11.28, "c": -0.5291}, "MARA": {"p": 6.56, "c": 2.1807}, "CRCL": {"p": 53.31, "c": -2.4163}, "SPY": {"p": 730.2, "c": -0.3058}, "QQQ": {"p": 659.51, "c": 0.3897}, "IBIT": {"p": 35.36, "c": -2.1583}, "ETHA": {"p": 39.58, "c": -2.6322}, "GLD": {"p": 341.19, "c": -3.203}, "SLV": {"p": 40.7, "c": -4.5497}, "TLT": {"p": 80.22, "c": 0.8422}, "SMH": {"p": 459.54, "c": -0.1217}, "XLE": {"p": 61.29, "c": -3.267}, "EEM": {"p": 57.88, "c": -0.6693}, "^GSPC": {"p": 7323.63, "c": -0.2302}, "^IXIC": {"p": 24429.885, "c": 0.4172}, "^DJI": {"p": 50198.17, "c": -1.1057}, "^RUT": {"p": 2714.306, "c": 0.4603}, "^IBEX": {"p": 19326.3, "c": -0.2426}, "^GDAXI": {"p": 25707.02, "c": -0.1135}, "^FCHI": {"p": 8138.48, "c": -0.1025}, "^FTSE": {"p": 10508.96, "c": -0.4001}, "^STOXX50E": {"p": 6168.72, "c": 0.2328}, "^N225": {"p": 59444.21, "c": 0.7115}, "^HSI": {"p": 22841.62, "c": -2.8355}, "^VIX": {"p": 22.35, "c": -8.9984}, "SAN.MC": {"p": 10.706, "c": 0.6203}, "BBVA.MC": {"p": 22.93, "c": 0.7027}, "ITX.MC": {"p": 58.72, "c": -1.0782}, "IBE.MC": {"p": 22.47, "c": -1.2742}, "TEF.MC": {"p": 3.338, "c": -1.4176}, "REP.MC": {"p": 28.7, "c": -0.0348}, "CABK.MC": {"p": 11.85, "c": 1.1092}, "ELE.MC": {"p": 42.83, "c": -1.0169}, "AMS.MC": {"p": 61.08, "c": -0.0654}, "NTGY.MC": {"p": 30.18, "c": -0.5929}, "GC=F": {"p": 3720.9, "c": -0.5612}, "SI=F": {"p": 45.165, "c": 0.2352}, "CL=F": {"p": 83.65, "c": 1.628}, "BZ=F": {"p": 90.27, "c": 1.2336}, "NG=F": {"p": 3.376, "c": 0.1186}, "HG=F": {"p": 5.664, "c": -0.0794}, "EURUSD=X": {"p": 1.1, "c": 0.2004}, "GBPUSD=X": {"p": 1.3149, "c": -0.0304}, "JPY=X": {"p": 159.934, "c": 0.4119}, "DX-Y.NYB": {"p": 103.661, "c": -0.1945}, "^TNX": {"p": 5.093, "c": 0.533}}}
+name: Cotizaciones
+on:
+  schedule:
+    - cron: "*/10 * * * 1-5"
+    - cron: "0 * * * 0,6"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  cotizaciones:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar cotizaciones de Yahoo
+        run: |
+          python3 - <<'PY'
+          import json, time, urllib.request, urllib.parse
+          from concurrent.futures import ThreadPoolExecutor
+          SYMS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "JPM", "NFLX", "SPCX", "ANT", "MSTR", "WMT", "KO", "PURR", "AVGO", "AMD", "INTC", "PLTR", "COIN", "HOOD", "V", "MA", "BRK-B", "LLY", "ORCL", "DIS", "UBER", "ABNB", "PYPL", "NKE", "MCD", "PEP", "XOM", "BA", "PFE", "F", "MARA", "CRCL", "SPY", "QQQ", "IBIT", "ETHA", "GLD", "SLV", "TLT", "SMH", "XLE", "EEM", "^GSPC", "^IXIC", "^DJI", "^RUT", "^IBEX", "^GDAXI", "^FCHI", "^FTSE", "^STOXX50E", "^N225", "^HSI", "^VIX", "SAN.MC", "BBVA.MC", "ITX.MC", "IBE.MC", "TEF.MC", "REP.MC", "CABK.MC", "ELE.MC", "AMS.MC", "NTGY.MC", "GC=F", "SI=F", "CL=F", "BZ=F", "NG=F", "HG=F", "EURUSD=X", "GBPUSD=X", "JPY=X", "DX-Y.NYB", "^TNX"]
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
+          def get(sym):
+              for host in ("query1", "query2", "query1", "query2"):
+                  try:
+                      u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?range=1d&interval=1d" % (host, urllib.parse.quote(sym))
+                      r = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=15)
+                      m = json.load(r)["chart"]["result"][0]["meta"]
+                      p = m.get("regularMarketPrice"); pv = m.get("chartPreviousClose") or m.get("previousClose")
+                      if p and pv:
+                          return sym, {"p": p, "c": round((p - pv) / pv * 100, 4)}
+                  except Exception as e:
+                      time.sleep(1.5)
+              return sym, None
+          with ThreadPoolExecutor(6) as ex:
+              res = list(ex.map(get, SYMS))
+          d = {s: v for s, v in res if v}
+          print("ok", len(d), "de", len(SYMS), "faltan", [s for s, v in res if not v])
+          if d:
+              json.dump({"t": int(time.time()), "d": d}, open("cotizaciones.json", "w"))
+          PY
+      - name: Imagen del resumen (para la tarjeta de X)
+        run: |
+          pip install --quiet pillow
+          if [ ! -f resumen.png ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] || [ "$(date +%M)" -lt 10 ]; then
+          python3 - <<'PY'
+          import json, os, time, urllib.request, urllib.parse
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          from PIL import Image, ImageDraw, ImageFont
+
+          W, H = 1200, 630
+          FB = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+          FR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          def font(p, s):
+              try: return ImageFont.truetype(p, s)
+              except Exception: return ImageFont.load_default()
+
+          # ---- datos
+          yh = {}
+          try: yh = json.load(open("cotizaciones.json"))["d"]
+          except Exception: pass
+          cr = {}
+          SIMB = {"Bitcoin": "BTCUSDT", "Ethereum": "ETHUSDT", "Solana": "SOLUSDT", "XRP": "XRPUSDT", "Dogecoin": "DOGEUSDT"}
+          if os.environ.get("SAMPLE"):
+              cr = {k: {"p": p, "c": c} for k, p, c in [("Bitcoin", 64837.33, .35), ("Ethereum", 1817.96, .14), ("Solana", 71.13, -.61), ("XRP", .9553, .47), ("Dogecoin", .0592, .71)]}
+          else:
+              for host in ("data-api.binance.vision", "api.binance.com"):
+                  try:
+                      q = json.dumps(list(SIMB.values()), separators=(",", ":"))
+                      u = "https://%s/api/v3/ticker/24hr?symbols=%s" % (host, urllib.parse.quote(q))
+                      arr = json.load(urllib.request.urlopen(u, timeout=15))
+                      by = {a["symbol"]: a for a in arr}
+                      cr = {n: {"p": float(by[s]["lastPrice"]), "c": float(by[s]["priceChangePercent"])} for n, s in SIMB.items() if s in by}
+                      break
+                  except Exception as e:
+                      print("binance fallo", host, e)
+
+          COLS = [
+              ("CRIPTO", [(n, cr.get(n), "$") for n in SIMB]),
+              ("ACCIONES", [(n, yh.get(s), "$") for n, s in [("Apple", "AAPL"), ("Nvidia", "NVDA"), ("Tesla", "TSLA"), ("Microsoft", "MSFT"), ("Strategy", "MSTR")]]),
+              ("MERCADOS", [(n, yh.get(s), c) for n, s, c in [("S&P 500", "^GSPC", ""), ("Nasdaq", "^IXIC", ""), ("IBEX 35", "^IBEX", ""), ("Oro", "GC=F", "$"), ("Petróleo", "CL=F", "$")]]),
+          ]
+
+          def fp(p, cur):
+              d = 2 if p >= 1 else 4
+              s = f"{p:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+              return cur + s
+          def fc(c): return ("▲ +" if c >= 0 else "▼ ") + f"{c:.2f}".replace(".", ",") + "%"
+
+          UP, DN = (0, 209, 85), (255, 64, 64)
+          img = Image.new("RGB", (W, H), (13, 17, 23))
+          d = ImageDraw.Draw(img)
+          for y in range(H):  # degradado
+              t = y / H
+              d.line([(0, y), (W, y)], fill=(int(13 + 3 * t), int(17 + 9 * t), int(23 + 23 * t)))
+          d.rectangle([0, 0, W, 8], fill=(41, 98, 255))
+          now = datetime.now(ZoneInfo("Europe/Madrid"))
+          d.text((50, 30), "RESUMEN DE MERCADOS", font=font(FB, 44), fill=(240, 243, 250))
+          d.text((50, 86), "Variación del día · " + now.strftime("%d/%m %H:%M") + " (Madrid)", font=font(FR, 22), fill=(120, 123, 134))
+          cw = (W - 100 - 2 * 30) // 3
+          for i, (tit, rows) in enumerate(COLS):
+              x0 = 50 + i * (cw + 30)
+              d.rounded_rectangle([x0, 135, x0 + cw, 520], 16, fill=(19, 23, 34))
+              d.text((x0 + 20, 150), tit, font=font(FB, 20), fill=(120, 123, 134))
+              y = 190
+              for n, v, cur in rows:
+                  d.text((x0 + 20, y), n, font=font(FB, 25), fill=(240, 243, 250))
+                  if v:
+                      col = UP if v["c"] >= 0 else DN
+                      d.text((x0 + 20, y + 31), fp(v["p"], cur), font=font(FR, 18), fill=(120, 123, 134))
+                      txt = fc(v["c"]); f = font(FB, 24)
+                      d.text((x0 + cw - 20 - d.textlength(txt, font=f), y + 8), txt, font=f, fill=col)
+                  else:
+                      d.text((x0 + cw - 40, y + 8), "–", font=font(FB, 24), fill=(120, 123, 134))
+                  y += 64
+          d.rounded_rectangle([50, 540, W - 50, 605], 14, fill=(19, 23, 34))
+          d.text((70, 550), "HUB FINANCIERO", font=font(FB, 30), fill=(41, 98, 255))
+          d.text((70, 584), "Mercados, cripto y herramientas gratis", font=font(FR, 15), fill=(209, 212, 220))
+          f = font(FB, 22); t1 = "dashboard482.github.io/dashboard"
+          d.text((W - 70 - d.textlength(t1, font=f), 550), t1, font=f, fill=(240, 243, 250))
+          f = font(FB, 18); t2 = "t.me/anafra_bot/hubfinanciero"
+          d.text((W - 70 - d.textlength(t2, font=f), 580), t2, font=f, fill=(138, 180, 255))
+          img = img.quantize(colors=96, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+          img.save("resumen.png", optimize=True)
+          print("imagen ok", os.path.getsize("resumen.png"))
+          PY
+          fi
+      - name: Guardar
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add cotizaciones.json resumen.png
+          git diff --cached --quiet || (git commit -m "cotizaciones" && git push)
