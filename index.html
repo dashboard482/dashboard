@@ -115,6 +115,8 @@ const KEY='hub.v1';
 const CATS=[
 {id:'fav',name:'Favoritos',color:'#f7a600',links:[]},
 {id:'top',name:'Más usados',color:'#2962ff',links:[]},
+{id:'don',name:'💚 Colabora',color:'#22c55e',links:[
+['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚']]},
 {id:'m_bolsa',name:'📈 Bolsa y mercados',color:'#2196f3',tool:true,open:true,links:[
 ['Ticker de mercados','Resumen del bot: cripto, acciones, índices y oro con precio y variación del día','ticker.html','📊'],
 ['Cinta de bolsa','Cinta de cotizaciones de bolsa','cinta_bolsa.html','🎞️'],
@@ -149,7 +151,6 @@ const CATS=[
 ['Gráficos de muros','Muros de órdenes en el libro','graficos_muros.html','🧱'],
 ['Screener de Criptomonedas','Escáner avanzado de activos cripto','screener.html','🔍']]},
 {id:'m_extra',name:'🎮 Extras',color:'#e91e63',tool:true,open:false,links:[
-['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚'],
 ['BTC en 3D','Ilusión de relieve con puntos en movimiento, al ritmo del precio de BTC','btc_3d.html','🌀'],
 ['Avión BTC','Un avión vuela a la altura del precio de Bitcoin, en directo','avion_btc.html','✈️'],
 ['Street Rush 3D','Carreras infinitas en 3D: esquiva tráfico, combos, power-ups y nitro','street_rush_3d.html','🏎️'],
@@ -323,6 +324,7 @@ function render(){
   const box=$('links');box.textContent='';
   const all=allLinks();let n=0;
   if(!term){
+    const dn=all.filter(l=>l.c==='don');if(dn.length)box.append(section(catOf('don'),dn,''));
     TOOLS.forEach(cat=>{const ap=all.filter(l=>l.c===cat.id);if(ap.length)box.append(section(cat,ap,''))});
     const fav=S.fav.map(u=>all.find(l=>l.u===u)).filter(Boolean);
     if(fav.length)box.append(section(CATS[0],fav.map(l=>({...l,c:'fav'})),''));
@@ -330,7 +332,7 @@ function render(){
     if(top.length)box.append(section(CATS[1],top.map(l=>({...l,c:'top'})),''));
   }
   REAL.forEach(cat=>{
-    if(!term&&cat.tool)return;
+    if(!term&&(cat.tool||cat.id==='don'))return;
     const ls=all.filter(l=>l.c===cat.id&&(!term||fold(l.t+' '+l.d+' '+l.u).includes(term)));
     if(!ls.length)return;n+=ls.length;box.append(section(cat,ls,term));
   });
