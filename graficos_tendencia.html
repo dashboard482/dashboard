@@ -140,19 +140,40 @@ function analizar(sym,name,g,bars){
   tx.push('Máximo de las últimas '+n+' semanas: '+nf(maxw)+' ('+pc((ult/maxw-1)*100,true)+' desde ahí). Mínimo de 52 semanas: '+nf(minw)+'.');
   return{s:sym,n:name,g:g,p:ult,cod:cod,est:est,w:bars,ch:{x0:x0,m:m,bs:bs,br:br},k:{pend:pend,pos:pos,sup:supA,res:resA,supf:supF,resf:resF,ts:ts,tr:tr},niv:nivs,tx:tx};
 }
-function datosWeb(i){
-  var a=D[i];
+var BIN={'BTC-USD':'BTCUSDT','ETH-USD':'ETHUSDT'};
+function binance(sym){
+  var u=function(h){return 'https://'+h+'/api/v3/klines?symbol='+BIN[sym]+'&interval=1w&limit=260'};
+  return ftj(u('api.binance.com')).catch(function(){return ftj(u('data-api.binance.vision'))}).then(function(r){
+    var b=r.map(function(k){return[Math.floor(k[0]/1000),+k[1],+k[2],+k[3],+k[4]]});
+    if(b.length<40)throw 'pocos datos';return b});
+}
+function fuente(a){return BIN[a.s]?binance(a.s).catch(function(){return bajar(a.s)}):bajar(a.s)}
+function esperar(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function datosWeb(i,intento){
+  var a=D[i];intento=intento||0;
   if(a.w)return Promise.resolve(a);
   try{var c=JSON.parse(localStorage.getItem('tend.'+a.s)||'null');if(c&&Date.now()-c.t<3*3600e3){D[i]=c.a;return Promise.resolve(c.a)}}catch(e){}
-  return bajar(a.s).then(function(b){var r=analizar(a.s,a.n,a.g,b);D[i]=r;try{localStorage.setItem('tend.'+a.s,JSON.stringify({t:Date.now(),a:r}))}catch(e){}return r});
+  return fuente(a).then(function(b){var r=analizar(a.s,a.n,a.g,b);D[i]=r;try{localStorage.setItem('tend.'+a.s,JSON.stringify({t:Date.now(),a:r}))}catch(e){}return r})
+   .catch(function(e){if(intento<2){return esperar(2500).then(function(){return datosWeb(i,intento+1)})}throw e});
+}
+var PRE=false;
+function precarga(){
+  if(PRE||!MODOWEB)return;PRE=true;
+  var idx=D.map(function(_,i){return i}),pasada=0;
+  (function paso(){
+    var i=idx.shift();
+    if(i===undefined){if(pasada++<1){idx=D.map(function(_,i){return i}).filter(function(i){return !D[i].w});if(idx.length)return setTimeout(paso,4000)}return}
+    if(D[i].w)return paso();
+    datosWeb(i,2).then(function(){setTimeout(paso,1500)},function(){setTimeout(paso,1500)});
+  })();
 }
 function sel(i){
   [].forEach.call(document.querySelectorAll('.ch'),function(b){b.classList.toggle('on',+b.dataset.i===i)});
   try{history.replaceState(null,'','#'+encodeURIComponent(D[i].s))}catch(e){}
   if(!D[i].w){
-    $('app').innerHTML='<div class="msg">Calculando '+D[i].n+'…</div>';
+    $('app').innerHTML='<div class="msg">Calculando '+D[i].n+'… (puede tardar unos segundos)</div>';
     var tk=i;SEL=i;
-    datosWeb(i).then(function(){if(SEL===tk)mostrar(i)}).catch(function(){if(SEL===tk)$('app').innerHTML='<div class="msg">No se han podido descargar los datos de '+D[i].n+' ahora mismo.<br><br><button class="ch" id="rt">Reintentar</button></div>';var rb=$('rt');if(rb)rb.onclick=function(){sel(i)}});
+    datosWeb(i).then(function(){if(SEL===tk)mostrar(i);precarga()}).catch(function(){if(SEL===tk)$('app').innerHTML='<div class="msg">No se han podido descargar los datos de '+D[i].n+' ahora mismo.<br><br><button class="ch" id="rt">Reintentar</button></div>';var rb=$('rt');if(rb)rb.onclick=function(){sel(i)}});
     return;
   }
   SEL=i;mostrar(i);
