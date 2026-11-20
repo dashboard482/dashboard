@@ -58,17 +58,95 @@ var $=function(i){return document.getElementById(i)};
 function nf(x){var d=Math.abs(x)>=1000?0:2;return x.toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d,useGrouping:'always'})}
 function pc(x,s){return (s&&x>0?'+':'')+x.toFixed(1).replace('.',',')+' %'}
 function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+var LISTA=[["^GSPC","S&P 500","Índices"],["^NDX","Nasdaq 100","Índices"],["^DJI","Dow Jones","Índices"],["^IBEX","IBEX 35","Índices"],["^GDAXI","DAX","Índices"],["NVDA","Nvidia","Acciones"],["MSFT","Microsoft","Acciones"],["AAPL","Apple","Acciones"],["AMZN","Amazon","Acciones"],["GOOGL","Alphabet","Acciones"],["TSLA","Tesla","Acciones"],["SAN.MC","Santander","Acciones"],["ITX.MC","Inditex","Acciones"],["BTC-USD","Bitcoin","Cripto"],["ETH-USD","Ethereum","Cripto"],["GC=F","Oro","Materias primas"]];
+var MODOWEB=false;
+function chips(){var h='';D.forEach(function(a,i){h+='<button class="ch" data-i="'+i+'">'+a.n+'</button>'});$('chips').innerHTML=h;$('chips').onclick=function(e){var b=e.target.closest('.ch');if(b){sel(+b.dataset.i)}}}
 function load(){
   fetch('tendencias.json?ts='+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
     D=j.d||[];if(!D.length)throw 0;
     var f=new Date(j.t);$('sub').textContent='Canal de tendencia, soportes y resistencias con datos semanales reales · actualizado '+f.toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    var h=''; D.forEach(function(a,i){h+='<button class="ch" data-i="'+i+'">'+a.n+'</button>'});$('chips').innerHTML=h;
-    $('chips').onclick=function(e){var b=e.target.closest('.ch');if(b){sel(+b.dataset.i)}};
-    var q=(location.hash||'').slice(1),k=D.findIndex(function(a){return a.s===decodeURIComponent(q)});
-    sel(k>=0?k:0);
-  }).catch(function(){$('app').innerHTML='<div class="msg">Aún no hay datos. Se generan al ejecutarse la acción «Tendencias» en GitHub.</div>'});
+    chips();pick();
+  }).catch(function(){
+    MODOWEB=true;D=LISTA.map(function(x){return{s:x[0],n:x[1],g:x[2]}});
+    $('sub').textContent='Canal de tendencia, soportes y resistencias calculados al momento con datos semanales de Yahoo Finance.';
+    chips();pick();
+  });
+}
+function pick(){var q=(location.hash||'').slice(1),k=D.findIndex(function(a){return a.s===decodeURIComponent(q)});sel(k>=0?k:0)}
+/* ---- cálculo en el navegador (cuando no hay tendencias.json) ---- */
+var PX=[function(u){return u},function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u)},function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u)}];
+function ftj(u,ms){return new Promise(function(ok,ko){var t=setTimeout(function(){ko('timeout')},ms||9000);fetch(u).then(function(r){if(!r.ok)throw r.status;return r.json()}).then(function(j){clearTimeout(t);ok(j)}).catch(function(e){clearTimeout(t);ko(e)})})}
+function bajar(sym){
+  var path='/v8/finance/chart/'+encodeURIComponent(sym)+'?range=5y&interval=1wk',intentos=[];
+  ['query1','query2'].forEach(function(h){PX.forEach(function(p){intentos.push(p('https://'+h+'.finance.yahoo.com'+path))})});
+  var i=0;
+  return new Promise(function(ok,ko){(function next(){
+    if(i>=intentos.length)return ko('sin datos');
+    ftj(intentos[i++]).then(function(r){
+      var res=r.chart.result[0],q=res.indicators.quote[0],b=[];
+      res.timestamp.forEach(function(t,k){var o=q.open[k],h=q.high[k],l=q.low[k],c=q.close[k];if(o==null||h==null||l==null||c==null)return;b.push([t,o,h,l,c])});
+      if(b.length<40)throw 0;
+      var mp=res.meta&&res.meta.regularMarketPrice;if(mp){var u=b[b.length-1];u[4]=mp;u[2]=Math.max(u[2],mp);u[3]=Math.min(u[3],mp)}
+      ok(b);
+    }).catch(next)})()});
+}
+function cuant(v,q){v=v.slice().sort(function(a,b){return a-b});return v[Math.min(v.length-1,Math.max(0,Math.round(q*(v.length-1))))]}
+function analizar(sym,name,g,bars){
+  var n=bars.length,cl=bars.map(function(b){return b[4]}),k=4,H=[],L=[],i,j;
+  for(i=k;i<n-k;i++){var mxh=-1e99,mnl=1e99;for(j=i-k;j<=i+k;j++){mxh=Math.max(mxh,bars[j][2]);mnl=Math.min(mnl,bars[j][3])}if(bars[i][2]>=mxh)H.push(i);if(bars[i][3]<=mnl)L.push(i)}
+  var ult=cl[n-1],W=Math.min(n,156),x0=n-W,mx=(W-1)/2,my=0,ys=[];
+  for(i=0;i<W;i++){ys.push(Math.log(cl[x0+i]));my+=ys[i]}my/=W;
+  var sxx=0,sxy=0;for(i=0;i<W;i++){sxx+=(i-mx)*(i-mx);sxy+=(i-mx)*(ys[i]-my)}
+  var m=sxy/sxx,b0=my-m*mx;
+  var fl=function(i){return m*(i-x0)+b0};
+  var resH=H.filter(function(i){return i>=x0}).map(function(i){return Math.log(bars[i][2])-fl(i)});
+  var resL=L.filter(function(i){return i>=x0}).map(function(i){return Math.log(bars[i][3])-fl(i)});
+  if(!resH.length){resH=[Math.max.apply(null,bars.slice(x0).map(function(b,t){return Math.log(b[2])-fl(x0+t)}))]}
+  if(!resL.length){resL=[Math.min.apply(null,bars.slice(x0).map(function(b,t){return Math.log(b[3])-fl(x0+t)}))]}
+  var br=b0+cuant(resH,.92),bs=b0+cuant(resL,.08),xl=n-1-x0,F=26;
+  var resA=Math.exp(m*xl+br),supA=Math.exp(m*xl+bs),resF=Math.exp(m*(xl+F)+br),supF=Math.exp(m*(xl+F)+bs);
+  var pos=(Math.log(ult)-(m*xl+bs))/((br-bs)||1e-9),pend=(Math.exp(m*52)-1)*100;
+  var tr=H.filter(function(i){return i>=x0&&Math.abs(Math.log(bars[i][2])-(m*(i-x0)+br))<.025}).length;
+  var ts=L.filter(function(i){return i>=x0&&Math.abs(Math.log(bars[i][3])-(m*(i-x0)+bs))<.025}).length;
+  var pts=H.map(function(i){return bars[i][2]}).concat(L.map(function(i){return bars[i][3]})).sort(function(a,b){return a-b}),cls=[];
+  pts.forEach(function(p){var u=cls[cls.length-1];if(u&&Math.abs(Math.log(p/(u.reduce(function(a,b){return a+b},0)/u.length)))<.018)u.push(p);else cls.push([p])});
+  var niv=cls.filter(function(c){return c.length>=2}).map(function(c){return[c.reduce(function(a,b){return a+b},0)/c.length,c.length]});
+  var deb=niv.filter(function(x){return x[0]<ult*.995}).sort(function(a,b){return b[0]-a[0]}).slice(0,3),arr=niv.filter(function(x){return x[0]>ult*1.005}).sort(function(a,b){return a[0]-b[0]}).slice(0,3);
+  var nivs=deb.map(function(x){return{p:x[0],n:x[1],t:'s'}}).concat(arr.map(function(x){return{p:x[0],n:x[1],t:'r'}}));
+  var est,cod;
+  if(pos>1.02){est='Rompe la resistencia del canal';cod='rompe_up'}
+  else if(pos<-.02){est='Pierde el soporte del canal';cod='rompe_dn'}
+  else if(pend>6){est=pos<.25?'Canal alcista, cerca del soporte':pos>.75?'Canal alcista, cerca de la resistencia':'Canal alcista';cod='alc'}
+  else if(pend<-6){est=pos<.25?'Canal bajista, cerca del soporte':pos>.75?'Canal bajista, cerca de la resistencia':'Canal bajista';cod='baj'}
+  else{est='Rango lateral';cod='lat'}
+  var maxw=Math.max.apply(null,bars.map(function(b){return b[2]})),minw=Math.min.apply(null,bars.slice(-52).map(function(b){return b[3]}));
+  var tx=['Canal de '+W+' semanas con pendiente de '+pc(pend,true)+' anual. '+tr+(tr===1?' toque':' toques')+' en la resistencia y '+ts+' en el soporte.',
+   'El precio ('+nf(ult)+') está al '+Math.round(Math.max(0,Math.min(100,pos*100)))+' % de la altura del canal (0 % = soporte, 100 % = resistencia).',
+   'Hoy el soporte está en '+nf(supA)+' y la resistencia en '+nf(resA)+'. Si el canal se mantiene, dentro de 26 semanas estarían en '+nf(supF)+' y '+nf(resF)+'.'];
+  if(deb.length)tx.push('Si pierde el soporte, el siguiente apoyo horizontal está en '+nf(deb[0][0])+' ('+pc((deb[0][0]/ult-1)*100,true)+'), con '+deb[0][1]+' toques históricos.');
+  if(arr.length)tx.push('Primer freno por arriba: '+nf(arr[0][0])+' ('+pc((arr[0][0]/ult-1)*100,true)+'), con '+arr[0][1]+' toques.');
+  tx.push('Máximo de las últimas '+n+' semanas: '+nf(maxw)+' ('+pc((ult/maxw-1)*100,true)+' desde ahí). Mínimo de 52 semanas: '+nf(minw)+'.');
+  return{s:sym,n:name,g:g,p:ult,cod:cod,est:est,w:bars,ch:{x0:x0,m:m,bs:bs,br:br},k:{pend:pend,pos:pos,sup:supA,res:resA,supf:supF,resf:resF,ts:ts,tr:tr},niv:nivs,tx:tx};
+}
+function datosWeb(i){
+  var a=D[i];
+  if(a.w)return Promise.resolve(a);
+  try{var c=JSON.parse(localStorage.getItem('tend.'+a.s)||'null');if(c&&Date.now()-c.t<3*3600e3){D[i]=c.a;return Promise.resolve(c.a)}}catch(e){}
+  return bajar(a.s).then(function(b){var r=analizar(a.s,a.n,a.g,b);D[i]=r;try{localStorage.setItem('tend.'+a.s,JSON.stringify({t:Date.now(),a:r}))}catch(e){}return r});
 }
 function sel(i){
+  [].forEach.call(document.querySelectorAll('.ch'),function(b){b.classList.toggle('on',+b.dataset.i===i)});
+  try{history.replaceState(null,'','#'+encodeURIComponent(D[i].s))}catch(e){}
+  if(!D[i].w){
+    $('app').innerHTML='<div class="msg">Calculando '+D[i].n+'…</div>';
+    var tk=i;SEL=i;
+    datosWeb(i).then(function(){if(SEL===tk)mostrar(i)}).catch(function(){if(SEL===tk)$('app').innerHTML='<div class="msg">No se han podido descargar los datos de '+D[i].n+' ahora mismo. Prueba en un momento u otro activo.</div>'});
+    return;
+  }
+  SEL=i;mostrar(i);
+}
+var SEL=0;
+function mostrar(i){
   CUR=D[i];
   [].forEach.call(document.querySelectorAll('.ch'),function(b){b.classList.toggle('on',+b.dataset.i===i)});
   try{history.replaceState(null,'','#'+encodeURIComponent(CUR.s))}catch(e){}
