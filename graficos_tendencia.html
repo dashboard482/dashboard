@@ -157,7 +157,7 @@ function analizar(sym,name,g,bars){
   var ts=L.filter(function(i){return i>=x0&&Math.abs(Math.log(bars[i][3])-(m*(i-x0)+bs))<.025}).length;
   var pts=H.map(function(i){return bars[i][2]}).concat(L.map(function(i){return bars[i][3]})).sort(function(a,b){return a-b}),cls=[];
   var avg=function(u){return u.reduce(function(a,b){return a+b},0)/u.length};
-  pts.forEach(function(p){var u=cls[cls.length-1];if(u&&Math.abs(Math.log(p/avg(u)))<.018)u.push(p);else cls.push([p])});
+  pts.forEach(function(p){var u=cls[cls.length-1];if(u&&Math.abs(Math.log(p/avg(u)))<.03)u.push(p);else cls.push([p])});
   var niv=cls.filter(function(c){return c.length>=2}).map(function(c){return{p:avg(c),n:c.length}});
   var est,cod;
   if(pos>1.02){est='Rompe la resistencia del canal';cod='rompe_up'}
@@ -325,7 +325,7 @@ function pintar(){
     var ln=function(f,col,name,dy){
       s+='<line x1="'+X(xa)+'" y1="'+Y(f(xa))+'" x2="'+X(n-1)+'" y2="'+Y(f(n-1))+'" stroke="'+col+'" stroke-width="2"/><line x1="'+X(n-1)+'" y1="'+Y(f(n-1))+'" x2="'+X(X1)+'" y2="'+Y(f(X1))+'" stroke="'+col+'" stroke-width="2" stroke-dasharray="6 5"/>';
       var xm=(xa+n-1)/2,ang=Math.atan2(Y(f(n-1))-Y(f(xa)),X(n-1)-X(xa))*180/Math.PI;
-      s+='<text transform="translate('+X(xm)+','+(Y(f(xm))+dy)+') rotate('+ang+')" text-anchor="middle" font-size="12" font-weight="700" fill="'+col+'">'+name+'</text>';
+      s+='<text transform="translate('+X(xm)+','+(Y(f(xm))+dy)+') rotate('+ang+')" text-anchor="middle" font-size="12" font-weight="700" fill="'+col+'" stroke="'+pn+'" stroke-width="3.5" paint-order="stroke">'+name+'</text>';
       if(!ESC)s+='<text x="'+(X(X1)-3)+'" y="'+(Y(f(X1))+(dy<0?-5:13))+'" text-anchor="end" font-size="10" fill="'+col+'">'+nf(f(X1))+'</text>';
     };
     ln(R,dn,'Resistencia',-8);ln(L,up,'Soporte',16);
@@ -347,12 +347,16 @@ function pintar(){
   var mover=function(ev){
     var r=svg.getBoundingClientRect(),x=(ev.clientX-r.left)*(w/r.width),i=Math.round(i0+(x-ml)/pw*(X1-i0));
     if(i<i0||i>n-1){$('xh').style.display='none';return}
-    var b=W[i],xx=X(i);$('xh').style.display='';$('xl').setAttribute('x1',xx);$('xl').setAttribute('x2',xx);
-    var cc=(i>0?(b[4]/W[i-1][4]-1)*100:0);
+    var xx=X(i);$('xh').style.display='';$('xl').setAttribute('x1',xx);$('xl').setAttribute('x2',xx);
+    tipV(i);
+  };
+  var tipV=function(i){
+    var b=W[i],cc=(i>0?(b[4]/W[i-1][4]-1)*100:0);
     $('tip').innerHTML='<b>'+fecha(b[0])+'</b> · A '+nf(b[1])+' · Máx '+nf(b[2])+' · Mín '+nf(b[3])+' · C <b>'+nf(b[4])+'</b> ('+pc(cc,true)+')';
   };
   svg.onpointermove=mover;svg.onpointerdown=mover;
-  svg.onpointerleave=function(){$('xh').style.display='none'};
+  svg.onpointerleave=function(){$('xh').style.display='none';tipV(n-1)};
+  tipV(n-1);
 }
 window.addEventListener('resize',function(){if(CUR&&DATA[CUR])pintar()});
 
