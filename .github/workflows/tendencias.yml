@@ -1,22 +1,21 @@
-name: Tendencias
+name: Senales
 on:
   schedule:
-    - cron: "40 */6 * * 1-5"
-    - cron: "40 */12 * * 0,6"
+    - cron: "20 */2 * * 1-5"
+    - cron: "20 */8 * * 0,6"
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
-  tendencias:
+  senales:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Calcular tendencias
-        run: python3 tendencias.py
+      - name: Calcular senales
+        run: python3 senales.py
       - name: Guardar
         run: |
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
-          git add tendencias.json
-          git diff --cached --quiet || (git commit -m "tendencias" && git pull --rebase && git push)
-Guárdalo como tendencias.yml dentro de .github/workflows/, junto a senales.yml. Los espacios del principio de cada línea importan, así que cópialo entero tal cual.
+          git add senales.json
+          git diff --cached --quiet || (git commit -m "senales" && git pull --rebase && git push)
