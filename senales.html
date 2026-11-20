@@ -188,7 +188,7 @@ function detalle(a){
   s+='<h2>Por qué esta señal</h2><ul class="mo">'+a.r.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>';
   if(a.ev&&a.ev.length)s+='<ul class="mo" style="color:var(--am)">'+a.ev.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>';
   s+='<div class="kv"><div>RSI (14)<b>'+(a.rsi==null?'—':fx(a.rsi,0))+'</b></div><div>Media 50<b>'+(a.s50?fx(a.s50,2):'—')+'</b></div><div>Media 200<b>'+(a.s200?fx(a.s200,2):'—')+'</b></div><div>Máx. 52 sem.<b>'+fx(a.h52,2)+'</b></div><div>Mín. 52 sem.<b>'+fx(a.l52,2)+'</b></div><div>1 mes<b class="'+(a.r1>=0?'up':'dn')+'">'+(a.r1>=0?'+':'')+fx(a.r1,1)+'%</b></div><div>3 meses<b class="'+(a.r3>=0?'up':'dn')+'">'+(a.r3>=0?'+':'')+fx(a.r3,1)+'%</b></div></div>';
-  s+=spark(a)+'<button class="btn w" data-x="'+esc(a.s)+'" style="margin-top:10px">𝕏 Compartir '+esc(tk(a))+'</button></div>';
+  s+=spark(a)+'<a class="btn w" href="graficos_tendencia.html#'+encodeURIComponent(a.s)+'" style="margin-top:10px;display:block;text-align:center;text-decoration:none;background:var(--ac)">📐 Ver tendencia y escenarios</a><button class="btn w" data-x="'+esc(a.s)+'" style="margin-top:8px">𝕏 Compartir '+esc(tk(a))+'</button></div>';
   return s;
 }
 // eventos
