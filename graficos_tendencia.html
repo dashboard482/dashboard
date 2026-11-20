@@ -38,6 +38,10 @@ ul{margin:0;padding-left:18px;font-size:14px;line-height:1.5}li{margin-bottom:6p
 .leg{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-top:6px}
 .leg i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
 .note{font-size:11px;color:var(--dim);line-height:1.5}
+.sc{border:1px solid var(--bd);border-left:4px solid var(--c);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--pn2)}
+.sc b{color:var(--st);font-size:14px}.sc .tg{float:right;font-weight:700;font-size:14px;color:var(--c)}
+.sc p{margin:4px 0 0;font-size:13px;line-height:1.45}.sc small{color:var(--dim)}
+.sc .bg{display:inline-block;font-size:10px;font-weight:700;border-radius:4px;padding:2px 6px;margin-left:6px;color:#fff;background:var(--c);vertical-align:1px}
 .msg{padding:30px 10px;text-align:center;color:var(--dim);font-size:14px}
 </style>
 </head>
@@ -59,7 +63,34 @@ function nf(x){var d=Math.abs(x)>=1000?0:2;return x.toLocaleString('es-ES',{mini
 function pc(x,s){return (s&&x>0?'+':'')+x.toFixed(1).replace('.',',')+' %'}
 function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
 var LISTA=[["^GSPC","S&P 500","Índices"],["^NDX","Nasdaq 100","Índices"],["^DJI","Dow Jones","Índices"],["^IBEX","IBEX 35","Índices"],["^GDAXI","DAX","Índices"],["NVDA","Nvidia","Acciones"],["MSFT","Microsoft","Acciones"],["AAPL","Apple","Acciones"],["AMZN","Amazon","Acciones"],["GOOGL","Alphabet","Acciones"],["TSLA","Tesla","Acciones"],["SAN.MC","Santander","Acciones"],["ITX.MC","Inditex","Acciones"],["BTC-USD","Bitcoin","Cripto"],["ETH-USD","Ethereum","Cripto"],["GC=F","Oro","Materias primas"]];
-var MODOWEB=false;
+var MODOWEB=false,ESC=true;
+function escenarios(a){
+  var n=a.w.length,ch=a.ch,F=26,xl=n-1-ch.x0,ult=a.p,h=ch.br-ch.bs,X1=n-1+F;
+  var lg=function(x,b){return Math.exp(ch.m*(x-ch.x0)+b)};
+  var sup=function(x){return lg(x,ch.bs)},res=function(x){return lg(x,ch.br)},mid=function(x){return lg(x,(ch.bs+ch.br)/2)};
+  var niv=a.niv||[],debs=niv.filter(function(v){return v.t==='s'&&v.p<ult}).sort(function(p,q){return q.p-p.p}),arrs=niv.filter(function(v){return v.t==='r'&&v.p>ult}).sort(function(p,q){return p.p-q.p});
+  var c=a.cod,S0=sup(n-1),R0=res(n-1),out=[];
+  // alcista
+  var ta,pa=[[n-1,ult]],ca,ia,na,ba=null;
+  if(c==='rompe_up'){ta=lg(X1,ch.br+h);na='Continuación tras ruptura al alza';ca='Se mantiene por encima de la resistencia rota ('+nf(R0)+') y busca el canal superior paralelo.';ia='Cierre semanal por debajo de '+nf(R0);ba='En curso'}
+  else{ta=res(X1);na='Sigue el canal al alza';ca='Mantiene el soporte ('+nf(S0)+') y sube hacia la resistencia del canal.'+(arrs.length&&arrs[0].p<ta?' Primer freno en '+nf(arrs[0].p)+'.':'');ia='Cierre semanal por debajo de '+nf(S0);if(c==='alc')ba='A favor de la tendencia'}
+  if(c!=='rompe_up'&&arrs.length&&arrs[0].p<ta)pa.push([n-1+10,arrs[0].p]);
+  pa.push([X1,ta]);
+  out.push({id:'alc',col:'#26c281',n:na,cond:ca,inv:ia,t:ta,pts:pa,badge:ba});
+  // lateral
+  var tm=mid(X1);
+  out.push({id:'lat',col:'#5c9dff',n:'Se queda dentro del canal',cond:'Ni rompe el soporte ('+nf(S0)+') ni alcanza la resistencia ('+nf(R0)+'): el precio tiende a la línea central.',inv:'Cierre semanal fuera del canal',t:tm,pts:[[n-1,ult],[X1,tm]],badge:c==='lat'?'Rango':null});
+  // bajista
+  var tb=lg(X1,ch.bs-h),pb=[[n-1,ult]],nb,cb,ib,bb=null,t1=debs.length?debs[0]:null;
+  if(c==='rompe_dn'){nb='Ruptura a la baja en curso';cb='Sigue por debajo del soporte roto ('+nf(S0)+'). Objetivo: canal inferior paralelo'+(t1?', pasando antes por el apoyo de '+nf(t1.p):'')+'.';ib='Vuelve a cerrar dentro del canal (sobre '+nf(S0)+')';bb='En curso'}
+  else{nb='Rompe el soporte';cb='Cierre semanal por debajo de '+nf(S0)+'. Objetivo: canal inferior paralelo'+(t1?', con apoyo previo en '+nf(t1.p):'')+'.';ib='Recupera '+nf(S0)+' y cierra dentro del canal';if(c==='baj')bb='A favor de la tendencia'}
+  if(t1&&t1.p>tb)pb.push([n-1+10,t1.p]);
+  pb.push([X1,tb]);
+  out.push({id:'baj',col:'#ff7043',n:nb,cond:cb,inv:ib,t:tb,pts:pb,badge:bb});
+  out.forEach(function(e){e.pct=(e.t/ult-1)*100});
+  return out;
+}
+function polyAt(p,x){for(var i=1;i<p.length;i++){if(x<=p[i][0]){var a=p[i-1],b=p[i];return a[1]+(b[1]-a[1])*(x-a[0])/((b[0]-a[0])||1)}}return p[p.length-1][1]}
 function chips(){var h='';D.forEach(function(a,i){h+='<button class="ch" data-i="'+i+'">'+a.n+'</button>'});$('chips').innerHTML=h;$('chips').onclick=function(e){var b=e.target.closest('.ch');if(b){sel(+b.dataset.i)}}}
 function load(){
   fetch('tendencias.json?ts='+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
@@ -186,24 +217,27 @@ function mostrar(i){
   var a=CUR,k=a.k;
   $('app').innerHTML=
   '<div class="box"><div class="hd"><div><div class="nm">'+a.n+'<small>'+a.s+'</small></div><span class="bd '+a.cod+'">'+a.est+'</span></div><div class="pr">'+nf(a.p)+'</div></div>'+
-  '<div class="tb" id="tb"><button data-r="52">1 año</button><button data-r="104">2 años</button><button data-r="156">3 años</button><button data-r="999">Todo</button><button data-m="velas">Velas</button><button data-m="linea">Línea</button></div>'+
+  '<div class="tb" id="tb"><button data-r="52">1 año</button><button data-r="104">2 años</button><button data-r="156">3 años</button><button data-r="999">Todo</button><button data-m="velas">Velas</button><button data-m="linea">Línea</button><button data-e="1">Escenarios</button></div>'+
   '<svg id="cv"></svg>'+
-  '<div class="leg"><span><i style="border-color:#ef5350"></i>Resistencia</span><span><i style="border-color:#26a69a"></i>Soporte</span><span><i style="border-color:#787b86;border-top-style:dashed"></i>Proyección (si el canal se mantiene)</span><span><i style="border-color:#f7a600;border-top-style:dotted"></i>Nivel horizontal</span></div></div>'+
+  '<div class="leg"><span><i style="border-color:#ef5350"></i>Resistencia</span><span><i style="border-color:#26a69a"></i>Soporte</span><span><i style="border-color:#787b86;border-top-style:dashed"></i>Proyección (si el canal se mantiene)</span><span><i style="border-color:#f7a600;border-top-style:dotted"></i>Nivel horizontal</span><span><i style="border-color:#26c281;border-top-style:dotted"></i>Escenarios</span></div></div>'+
   '<div class="kp"><div class="k g"><span>Soporte hoy</span><b>'+nf(k.sup)+'</b></div><div class="k r"><span>Resistencia hoy</span><b>'+nf(k.res)+'</b></div>'+
   '<div class="k"><span>Pendiente anual</span><b>'+pc(k.pend,true)+'</b></div><div class="k"><span>Posición en canal</span><b>'+Math.round(Math.max(0,Math.min(1,k.pos))*100)+(k.pos<0||k.pos>1?' % (fuera)':' %')+'</b></div>'+
   '<div class="k"><span>Soporte en 26 sem</span><b>'+nf(k.supf)+'</b></div><div class="k"><span>Resistencia en 26 sem</span><b>'+nf(k.resf)+'</b></div></div>'+
+  '<div class="box"><h2>Escenarios</h2><div id="scs"></div><div class="note" style="margin-top:6px">Son caminos condicionales calculados con el canal y los niveles; <b>no son predicciones ni tienen probabilidad asignada</b>. El objetivo supone que el canal se mantiene o se replica a la misma distancia.</div></div>'+
   '<div class="box"><h2>Análisis de tendencia</h2><ul>'+a.tx.map(function(t){return '<li>'+t+'</li>'}).join('')+'</ul></div>';
-  $('tb').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.r)RNG=+b.dataset.r;if(b.dataset.m)MODE=b.dataset.m;pintar()};
+  $('tb').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.r)RNG=+b.dataset.r;if(b.dataset.m)MODE=b.dataset.m;if(b.dataset.e)ESC=!ESC;pintar()};
+  $('scs').innerHTML=escenarios(a).map(function(e){return '<div class="sc" style="--c:'+e.col+'"><span class="tg">'+nf(e.t)+' · '+(e.pct>0?'+':'')+e.pct.toFixed(1).replace('.',',')+' %</span><b>'+e.n+'</b>'+(e.badge?'<span class="bg">'+e.badge+'</span>':'')+'<p>'+e.cond+'</p><p><small>Se anula si: '+e.inv+'</small></p></div>'}).join('');
   pintar();
 }
 function pintar(){
-  [].forEach.call(document.querySelectorAll('#tb button'),function(b){b.classList.toggle('on',b.dataset.r?+b.dataset.r===RNG:b.dataset.m===MODE)});
+  [].forEach.call(document.querySelectorAll('#tb button'),function(b){b.classList.toggle('on',b.dataset.e?ESC:b.dataset.r?+b.dataset.r===RNG:b.dataset.m===MODE)});
   var a=CUR,W=a.w,n=W.length,svg=$('cv'),w=svg.parentNode.clientWidth||340,h=Math.round(Math.max(280,Math.min(460,w*0.62)));
   var F=26,i0=Math.max(0,n-Math.min(RNG,n)),X1=n-1+F,ch=a.ch;
   var up=cssv('--up'),dn=cssv('--dn'),gr=cssv('--grid'),dm=cssv('--dim'),st=cssv('--st');
   var L=function(x){return Math.exp(ch.m*(x-ch.x0)+ch.bs)},R=function(x){return Math.exp(ch.m*(x-ch.x0)+ch.br)};
   var lo=1e99,hi=0;for(var i=i0;i<n;i++){lo=Math.min(lo,W[i][3]);hi=Math.max(hi,W[i][2])}
   var xa=Math.max(i0,ch.x0);lo=Math.min(lo,L(xa),L(X1));hi=Math.max(hi,R(xa),R(X1));
+  var SC=ESC?escenarios(a):[];SC.forEach(function(e){lo=Math.min(lo,e.t);hi=Math.max(hi,e.t)});
   lo*=0.97;hi*=1.03;
   var ml=6,mr=58,mt=8,mb=22,pw=w-ml-mr,ph=h-mt-mb,ll=Math.log(lo),lh=Math.log(hi);
   var X=function(i){return ml+(i-i0)/(X1-i0)*pw},Y=function(p){return mt+(lh-Math.log(p))/(lh-ll)*ph};
@@ -234,6 +268,13 @@ function pintar(){
     s+='<text x="'+(X(X1)-3)+'" y="'+(Y(f(X1))+(dy<0?-5:13))+'" text-anchor="end" font-size="10" fill="'+col+'">'+nf(f(X1))+'</text>';
   }
   ln(R,dn,'Resistencia',-8);ln(L,up,'Soporte',16);
+  SC.forEach(function(e,k){
+    var pts=e.pts.map(function(p){return X(p[0])+','+Y(p[1])}).join(' ');
+    s+='<polyline fill="none" stroke="'+e.col+'" stroke-width="2.2" stroke-dasharray="2 4" stroke-linecap="round" points="'+pts+'"/>';
+    var l=e.pts[e.pts.length-1];s+='<circle cx="'+X(l[0])+'" cy="'+Y(l[1])+'" r="4" fill="'+e.col+'"/>';
+    var xm=n-1+F*(e.id==='lat'?0.42:0.55),ym=Y(polyAt(e.pts,xm))+(e.id==='alc'?-9:e.id==='baj'?17:4);
+    s+='<text x="'+X(xm)+'" y="'+ym+'" text-anchor="middle" font-size="11" font-weight="700" fill="'+e.col+'" stroke="'+cssv('--pn')+'" stroke-width="3" paint-order="stroke">'+(e.pct>0?'▲ +':'▼ ')+Math.abs(e.pct).toFixed(1).replace('.',',')+' %</text>';
+  });
   // precio actual
   var py=Y(a.p);s+='<line x1="'+ml+'" x2="'+(ml+pw)+'" y1="'+py+'" y2="'+py+'" stroke="'+st+'" stroke-width=".6" stroke-dasharray="1 3"/><rect x="'+(w-mr+1)+'" y="'+(py-9)+'" width="'+(mr-2)+'" height="18" rx="3" fill="'+(a.p>=W[n-2][4]?up:dn)+'"/><text x="'+(w-mr/2)+'" y="'+(py+4)+'" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">'+nf(a.p)+'</text>';
   s+='<text x="'+(X(n-1)+4)+'" y="'+(mt+ph-6)+'" font-size="9.5" fill="'+dm+'">proyección 26 sem</text>';
