@@ -57,7 +57,7 @@ def descargar(sym):
         return simular(sym)
     ultimo = None
     # Yahoo limita las peticiones (error 429): se reintenta esperando cada vez más
-    intentos = (("query1", "1wk", 0), ("query2", "1wk", 12), ("query1", "1d", 30), ("query2", "1d", 60), ("query1", "1wk", 90))
+    intentos = (("query1", "1wk", 0), ("query2", "1d", 15))
     for host, inter, espera in intentos:
         if espera:
             time.sleep(espera)
@@ -199,15 +199,21 @@ def main():
     except Exception:
         pass
     out = []
+    fallos = 0
     for sym, name, g in U:
+        if fallos >= 3 and not out:
+            print("Yahoo está limitando las peticiones (429) desde GitHub. Se cancela para no gastar tiempo; se reintentará en la próxima ejecución.")
+            break
         bars = descargar(sym)
         if not bars:
+            fallos += 1
             print("sin datos:", sym)
             if sym in previo:
                 out.append(previo[sym])
                 print("  se mantiene el cálculo anterior de", sym)
             time.sleep(5)
             continue
+        fallos = 0
         try:
             out.append(analizar(sym, name, g, bars))
             print("ok", sym, out[-1]["est"])
