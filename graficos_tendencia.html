@@ -165,16 +165,18 @@ function analizar(sym,name,g,bars){
   else if(pend>6){est=pos<.25?'Canal alcista, cerca del soporte':pos>.75?'Canal alcista, cerca de la resistencia':'Canal alcista';cod='alc'}
   else if(pend<-6){est=pos<.25?'Canal bajista, cerca del soporte':pos>.75?'Canal bajista, cerca de la resistencia':'Canal bajista';cod='baj'}
   else{est='Rango lateral';cod='lat'}
+  var rets=[];for(i=Math.max(1,n-52);i<n;i++)rets.push(Math.log(cl[i]/cl[i-1]));
+  var mu=avg(rets),sig=Math.sqrt(avg(rets.map(function(r){return (r-mu)*(r-mu)})));
   return{s:sym,n:name,g:g,p:ult,w:bars,cod:cod,est:est,prev:bars[n-2][4],ch:{x0:x0,m:m,bs:bs,br:br},niv:niv,
-    k:{pend:pend,pos:pos,r2:r2,ts:ts,tr:tr,W:W,maxw:Math.max.apply(null,bars.map(function(b){return b[2]})),minw:Math.min.apply(null,bars.slice(-52).map(function(b){return b[3]}))}};
+    k:{sig:sig,pend:pend,pos:pos,r2:r2,ts:ts,tr:tr,W:W,maxw:Math.max.apply(null,bars.map(function(b){return b[2]})),minw:Math.min.apply(null,bars.slice(-52).map(function(b){return b[3]}))}};
 }
 function datos(sym,intento){
   intento=intento||0;
   if(DATA[sym])return Promise.resolve(DATA[sym]);
   var it=LISTA.filter(function(x){return x[0]===sym})[0];
-  try{var c=JSON.parse(localStorage.getItem('tend2.'+sym)||'null');if(c&&Date.now()-c.t<3*3600e3){DATA[sym]=c.a;return Promise.resolve(c.a)}}catch(e){}
+  try{var c=JSON.parse(localStorage.getItem('tend3.'+sym)||'null');if(c&&Date.now()-c.t<3*3600e3){DATA[sym]=c.a;return Promise.resolve(c.a)}}catch(e){}
   return fuente(sym).then(function(b){var r=analizar(sym,it[1],it[2],b);DATA[sym]=r;delete FALLO[sym];
-    try{localStorage.setItem('tend2.'+sym,JSON.stringify({t:Date.now(),a:r}))}catch(e){}pintaLista();return r})
+    try{localStorage.setItem('tend3.'+sym,JSON.stringify({t:Date.now(),a:r}))}catch(e){}pintaLista();return r})
    .catch(function(e){if(intento<2)return esp(2500).then(function(){return datos(sym,intento+1)});FALLO[sym]=1;throw e});
 }
 
@@ -182,31 +184,43 @@ function datos(sym,intento){
 function proy(a){var ch=a.ch,n=a.w.length,lg=function(x,b){return Math.exp(ch.m*(x-ch.x0)+b)};return{sup:function(x){return lg(x,ch.bs)},res:function(x){return lg(x,ch.br)},mid:function(x){return lg(x,(ch.bs+ch.br)/2)},lg:lg,h:ch.br-ch.bs,n:n}}
 function escenarios(a){
   var P=proy(a),n=P.n,ch=a.ch,ult=a.p,c=a.cod,X1=n-1+HZ,H2=Math.round(HZ/2),out=[];
+  var K=1.6,sg=(a.k.sig||.05)*Math.sqrt(HZ),capU=ult*Math.exp(K*sg),capD=ult*Math.exp(-K*sg);
   var S0=P.sup(n-1),R0=P.res(n-1),niv=a.niv||[];
-  var debs=niv.filter(function(v){return v.p<ult*.995}).sort(function(p,q){return q.p-p.p});
-  var arrs=niv.filter(function(v){return v.p>ult*1.005}).sort(function(p,q){return p.p-q.p});
-  // alcista
-  var tg=c==='rompe_up'?P.lg(X1,ch.br+P.h):P.res(X1),pa=[[n-1,ult]],ob=[];
-  var f1=arrs.length&&arrs[0].p<tg?arrs[0]:null;
-  if(f1){pa.push([n-1+H2,f1.p]);ob.push(['Freno intermedio',f1.p])}
-  pa.push([X1,tg]);ob.push(['Objetivo a '+HZ+' sem',tg]);
+  var cl=function(p){return Math.max(capD,Math.min(capU,p))};
+  var asc=function(p,q){return p-q},dsc=function(p,q){return q-p};
+  var minR=Math.min.apply(null,a.w.slice(-8).map(function(b){return b[3]})),maxR=Math.max.apply(null,a.w.slice(-8).map(function(b){return b[2]}));
+  // ---- alcista: niveles por encima hasta el alcance plausible
+  var tU=c==='rompe_up'?P.lg(X1,ch.br+P.h):P.res(X1);
+  var cu=niv.map(function(v){return v.p}).concat([tU]).filter(function(p){return p>ult*1.005}).sort(asc);
+  var wu=cu.filter(function(p){return p<=capU}),ta=wu.length?wu[wu.length-1]:capU,pa=[[n-1,ult]],oba=[];
+  var fu=wu.length&&wu[0]<ta*.995?wu[0]:null;
+  if(fu){pa.push([n-1+H2,fu]);oba.push(['Primer freno',fu])}
+  pa.push([X1,ta]);
+  oba.push([wu.length?'Objetivo a '+HZ+' sem':'Alcance máximo plausible a '+HZ+' sem',ta]);
+  if(cu.length&&cu[cu.length-1]>capU)oba.push(['Objetivo técnico (a más plazo)',cu[cu.length-1]]);
   out.push({id:'alc',col:'#26c281',n:c==='rompe_up'?'Continuación tras ruptura al alza':'Sigue el canal al alza',
-    cond:c==='rompe_up'?'Se mantiene sobre la resistencia rota ('+nf(R0)+') y apunta al canal superior paralelo.':'Mantiene el soporte ('+nf(S0)+') y sube hacia la resistencia del canal.',
-    inv:'Cierre semanal por debajo de '+nf(c==='rompe_up'?R0:S0),t:tg,pts:pa,ob:ob,badge:c==='rompe_up'?'En curso':c==='alc'?'A favor de la tendencia':null});
-  // lateral
-  var tm=P.mid(X1);
-  out.push({id:'lat',col:'#5c9dff',n:'Se queda dentro del canal',cond:'Ni rompe el soporte ('+nf(S0)+') ni alcanza la resistencia ('+nf(R0)+'): el precio tiende a la línea central.',
-    inv:'Cierre semanal fuera del canal',t:tm,pts:[[n-1,ult],[X1,tm]],ob:[['Línea central a '+HZ+' sem',tm]],badge:c==='lat'?'Rango':null});
-  // bajista: primero el apoyo horizontal más cercano, luego el canal inferior paralelo
-  var tp=P.lg(X1,ch.bs-P.h),t1=debs.length?debs[0]:null,pb=[[n-1,ult]],obb=[],fin;
-  if(t1){pb.push([n-1+H2,t1.p]);obb.push(['Objetivo 1 · apoyo ('+t1.n+' toques)',t1.p]);
-    if(tp<t1.p*.97){fin=tp;obb.push(['Objetivo 2 · canal inferior',tp])}else fin=t1.p}
-  else{fin=tp;obb.push(['Objetivo · canal inferior',tp])}
-  pb.push([X1,fin]);
+    cond:c==='rompe_up'?'Se mantiene sobre la resistencia rota ('+nf(R0)+') y busca niveles superiores.':c==='rompe_dn'?'Recupera con fuerza y vuelve a la zona del soporte roto ('+nf(S0)+'), con rebote hasta los niveles de arriba.':'Mantiene el soporte ('+nf(S0)+') y sube hacia la resistencia del canal.',
+    inv:'Cierre semanal por debajo de '+nf(c==='rompe_up'?R0:c==='rompe_dn'?minR:S0),t:ta,pts:pa,ob:oba,badge:c==='rompe_up'?'En curso':c==='alc'?'A favor de la tendencia':null});
+  // ---- intermedio
+  var nn,nc,ni,tm,bn=null;
+  if(c==='rompe_dn'){nn='Rebota y vuelve al canal';nc='Recupera el soporte roto ('+nf(S0)+') y vuelve a cerrar dentro del canal.';tm=cl(P.sup(X1));ni='Nuevo mínimo por debajo de '+nf(minR)}
+  else if(c==='rompe_up'){nn='Pierde la ruptura y vuelve al canal';nc='Cierra de nuevo por debajo de la resistencia rota ('+nf(R0)+'), dentro del canal.';tm=cl(P.res(X1));ni='Nuevo máximo por encima de '+nf(maxR)}
+  else{nn='Se queda dentro del canal';nc='Ni rompe el soporte ('+nf(S0)+') ni alcanza la resistencia ('+nf(R0)+'): el precio tiende a la línea central.';tm=cl(P.mid(X1));ni='Cierre semanal fuera del canal';bn=c==='lat'?'Rango':null}
+  out.push({id:'lat',col:'#5c9dff',n:nn,cond:nc,inv:ni,t:tm,pts:[[n-1,ult],[X1,tm]],ob:[[c==='rompe_dn'?'Retorno al soporte a '+HZ+' sem':c==='rompe_up'?'Retorno a la resistencia a '+HZ+' sem':'Línea central a '+HZ+' sem',tm]],badge:bn});
+  // ---- bajista: apoyos por debajo hasta el alcance plausible
+  var tD=P.lg(X1,ch.bs-P.h);
+  var cd=niv.map(function(v){return v.p}).concat([tD]).filter(function(p){return p<ult*.995}).sort(dsc);
+  var wd=cd.filter(function(p){return p>=capD}),tb=wd.length?wd[wd.length-1]:capD,pb=[[n-1,ult]],obb=[];
+  var fd=wd.length&&wd[0]>tb*1.005?wd[0]:null;
+  if(fd){pb.push([n-1+H2,fd]);obb.push(['Primer apoyo',fd])}
+  pb.push([X1,tb]);
+  obb.push([wd.length?'Objetivo a '+HZ+' sem':'Alcance máximo plausible a '+HZ+' sem (sin apoyo cercano)',tb]);
+  if(cd.length&&cd[cd.length-1]<capD)obb.push(['Objetivo técnico (a más plazo)',cd[cd.length-1]]);
   out.push({id:'baj',col:'#ff7043',n:c==='rompe_dn'?'Ruptura a la baja en curso':'Rompe el soporte',
-    cond:(c==='rompe_dn'?'Sigue por debajo del soporte roto ('+nf(S0)+').':'Cierre semanal por debajo de '+nf(S0)+'.')+(t1?' Primer apoyo en '+nf(t1.p)+'.':'')+' Después, canal inferior paralelo.',
-    inv:'Recupera '+nf(S0)+' y cierra dentro del canal',t:fin,pts:pb,ob:obb,badge:c==='rompe_dn'?'En curso':c==='baj'?'A favor de la tendencia':null});
+    cond:(c==='rompe_dn'?'Sigue por debajo del soporte roto ('+nf(S0)+').':'Cierre semanal por debajo de '+nf(S0)+'.')+(wd.length?' Busca los apoyos de abajo.':' No hay apoyos históricos cerca: el objetivo es el movimiento máximo habitual.'),
+    inv:c==='rompe_dn'?'Cierre semanal por encima de '+nf(S0):'Recupera '+nf(S0)+' y cierra dentro del canal',t:tb,pts:pb,ob:obb,badge:c==='rompe_dn'?'En curso':c==='baj'?'A favor de la tendencia':null});
   out.forEach(function(e){e.pct=(e.t/ult-1)*100});
+  out.cap=[capD,capU,sg];
   return out;
 }
 function polyAt(p,x){for(var i=1;i<p.length;i++){if(x<=p[i][0]){var a=p[i-1],b=p[i];return a[1]+(b[1]-a[1])*(x-a[0])/((b[0]-a[0])||1)}}return p[p.length-1][1]}
@@ -256,10 +270,10 @@ function mostrar(sym){
   var cab='<div class="box"><div class="hd"><div><div class="nm">'+a.n+'<small>'+a.s+'</small></div><span class="bd '+a.cod+'">'+a.est+'</span></div><div class="pr">'+nf(a.p)+'<small style="color:'+(cp>=0?'var(--up)':'var(--dn)')+'">'+pc(cp,true)+' sem.</small></div></div>'+
    '<div class="tb" id="tb"><button data-r="52">1 año</button><button data-r="104">2 años</button><button data-r="156">3 años</button><button data-r="999">Todo</button><i></i><button data-m="velas">Velas</button><button data-m="linea">Línea</button>'+(a.corto?'':'<i></i><button data-e="1">Escenarios</button><button data-h="13">13 sem</button><button data-h="26">26 sem</button>')+'</div>'+
    '<div id="tip">Toca o desliza sobre el gráfico para ver cada vela.</div><svg id="cv"></svg>'+
-   '<div class="leg"><span><i style="border-color:#ef5350"></i>Resistencia</span><span><i style="border-color:#26a69a"></i>Soporte</span><span><i style="border-color:#787b86;border-top-style:dashed"></i>Proyección del canal</span><span><i style="border-color:#f7a600;border-top-style:dotted"></i>Nivel horizontal</span><span><i style="border-color:#26c281;border-top-style:dotted"></i>Escenarios</span></div></div>';
+   '<div class="leg"><span><i style="border-color:#ef5350"></i>Resistencia</span><span><i style="border-color:#26a69a"></i>Soporte</span><span><i style="border-color:#787b86;border-top-style:dashed"></i>Proyección del canal</span><span><i style="border-color:#f7a600;border-top-style:dotted"></i>Nivel horizontal</span><span><i style="border-color:#26c281;border-top-style:dotted"></i>Escenarios</span><span><i style="border-color:#5c9dff"></i>Rango habitual ±1σ</span></div></div>';
   var cuerpo='';
   if(a.corto){cuerpo='<div class="box"><h2>Histórico insuficiente</h2><p class="note" style="font-size:13px;margin:0">'+a.n+' solo tiene '+a.w.length+' semanas de cotización. El canal de tendencia y los escenarios necesitan al menos 26 semanas para ser fiables, así que de momento solo se muestran las velas. Se activarán solos cuando haya más histórico.</p></div>'}
-  else{cuerpo='<div id="kpis"></div><div class="box"><h2>Escenarios a <span id="hzt"></span> semanas</h2><div id="scs"></div><div class="note" style="margin-top:6px">Son caminos condicionales calculados con el canal y los niveles; <b>no son predicciones ni tienen probabilidad asignada</b>. Los objetivos suponen que el canal se mantiene o se replica a la misma distancia.</div></div><div class="box"><h2>Análisis de tendencia</h2><ul id="txs"></ul></div>'}
+  else{cuerpo='<div id="kpis"></div><div class="box"><h2>Escenarios a <span id="hzt"></span> semanas</h2><div class="note" id="cono" style="margin-bottom:8px"></div><div id="scs"></div><div class="note" style="margin-top:6px">Son caminos condicionales calculados con el canal y los niveles; <b>no son predicciones ni tienen probabilidad asignada</b>. Los objetivos suponen que el canal se mantiene o se replica a la misma distancia.</div></div><div class="box"><h2>Análisis de tendencia</h2><ul id="txs"></ul></div>'}
   $('app').innerHTML=cab+cuerpo;
   $('tb').onclick=function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.r)RNG=+b.dataset.r;if(b.dataset.m)MODE=b.dataset.m;if(b.dataset.e)ESC=!ESC;if(b.dataset.h)HZ=+b.dataset.h;resumen();pintar()};
   resumen();pintar();
@@ -273,7 +287,8 @@ function resumen(){
    '<div class="k"><span>Distancia al soporte</span><b>'+pc((S0/a.p-1)*100,true)+'</b></div><div class="k"><span>Distancia a la resistencia</span><b>'+pc((R0/a.p-1)*100,true)+'</b></div>'+
    '<div class="k"><span>Anchura del canal</span><b>'+pc((R0/S0-1)*100)+'</b></div><div class="k"><span>Calidad del canal (R²)</span><b>'+k.r2.toFixed(2).replace('.',',')+'</b></div>'+
    '<div class="k g"><span>Soporte en '+HZ+' sem</span><b>'+nf(P.sup(X1))+'</b></div><div class="k r"><span>Resistencia en '+HZ+' sem</span><b>'+nf(P.res(X1))+'</b></div></div>';
-  $('scs').innerHTML=escenarios(a).map(function(e){return '<div class="sc" style="--c:'+e.col+'"><span class="tg">'+nf(e.t)+'<br><small style="color:var(--c)">'+pc(e.pct,true)+'</small></span><b>'+e.n+'</b>'+(e.badge?'<span class="bg">'+e.badge+'</span>':'')+'<p>'+e.cond+'</p><div class="ob">'+e.ob.map(function(o){return '<span>'+o[0]+': <b>'+nf(o[1])+'</b> ('+pc((o[1]/a.p-1)*100,true)+')</span>'}).join('')+'</div><p><small>Se anula si: '+e.inv+'</small></p></div>'}).join('');
+  var ES=escenarios(a);$('cono').innerHTML='Movimiento habitual a '+HZ+' semanas según la volatilidad reciente (±1,6σ, '+'±'+Math.round(ES.cap[2]*100)+' % por σ): <b>'+nf(ES.cap[0])+' – '+nf(ES.cap[1])+'</b>. Los objetivos se limitan a ese rango.';
+  $('scs').innerHTML=ES.map(function(e){return '<div class="sc" style="--c:'+e.col+'"><span class="tg">'+nf(e.t)+'<br><small style="color:var(--c)">'+pc(e.pct,true)+'</small></span><b>'+e.n+'</b>'+(e.badge?'<span class="bg">'+e.badge+'</span>':'')+'<p>'+e.cond+'</p><div class="ob">'+e.ob.map(function(o){return '<span>'+o[0]+': <b>'+nf(o[1])+'</b> ('+pc((o[1]/a.p-1)*100,true)+')</span>'}).join('')+'</div><p><small>Se anula si: '+e.inv+'</small></p></div>'}).join('');
   $('txs').innerHTML=textos(a).map(function(t){return '<li>'+t+'</li>'}).join('');
 }
 function pintar(){
@@ -298,8 +313,11 @@ function pintar(){
   if(!corto){
     s+='<rect x="'+X(n-1)+'" y="'+mt+'" width="'+(X(X1)-X(n-1))+'" height="'+ph+'" fill="'+dm+'" opacity=".06"/>';
     s+='<polygon points="'+X(xa)+','+Y(R(xa))+' '+X(X1)+','+Y(R(X1))+' '+X(X1)+','+Y(L(X1))+' '+X(xa)+','+Y(L(xa))+'" fill="'+dm+'" opacity=".07"/>';
-    (function(){var N=a.niv||[],b=N.filter(function(v){return v.p<a.p*.995}).sort(function(p,q){return q.p-p.p}).slice(0,3),r=N.filter(function(v){return v.p>a.p*1.005}).sort(function(p,q){return p.p-q.p}).slice(0,3);return b.concat(r)})().forEach(function(v){if(v.p<lo||v.p>hi)return;var y=Y(v.p);s+='<line x1="'+ml+'" x2="'+(ml+pw)+'" y1="'+y+'" y2="'+y+'" stroke="#f7a600" stroke-dasharray="2 4" opacity=".7"/><text x="'+(ml+4)+'" y="'+(y-3)+'" font-size="9.5" fill="#f7a600" stroke="'+pn+'" stroke-width="3" paint-order="stroke">'+nf(v.p)+' · '+v.n+' toques</text>'});
+    var LY=-99;
+    (function(){var N=a.niv||[],b=N.filter(function(v){return v.p<a.p*.995}).sort(function(p,q){return q.p-p.p}).slice(0,3),r=N.filter(function(v){return v.p>a.p*1.005}).sort(function(p,q){return p.p-q.p}).slice(0,3);return b.concat(r).sort(function(p,q){return q.p-p.p})})().forEach(function(v){if(v.p<lo||v.p>hi)return;var y=Y(v.p);s+='<line x1="'+ml+'" x2="'+(ml+pw)+'" y1="'+y+'" y2="'+y+'" stroke="#f7a600" stroke-dasharray="2 4" opacity=".7"/>';if(Math.abs(y-LY)>=12){s+='<text x="'+(ml+4)+'" y="'+(y-3)+'" font-size="9.5" fill="#f7a600" stroke="'+pn+'" stroke-width="3" paint-order="stroke">'+nf(v.p)+' · '+v.n+' toques</text>';LY=y}});
   }
+  if(!corto&&ESC){var sg1=(a.k.sig||.05),up_=[],dn_=[];for(var t=0;t<=HZ;t++){up_.push(X(n-1+t)+','+Y(a.p*Math.exp(sg1*Math.sqrt(t))));dn_.unshift(X(n-1+t)+','+Y(a.p*Math.exp(-sg1*Math.sqrt(t))))}
+    s+='<polygon points="'+up_.concat(dn_).join(' ')+'" fill="#5c9dff" opacity=".13"/>'}
   var bw=Math.max(1,Math.min(8,pw/((X1-i0)||1)*.7));
   if(MODE==='linea'){var pts='';for(var i=i0;i<n;i++)pts+=X(i)+','+Y(W[i][4])+' ';s+='<polyline fill="none" stroke="'+st+'" stroke-width="1.6" points="'+pts+'"/>'}
   else for(var i=i0;i<n;i++){var b=W[i],c=b[4]>=b[1]?up:dn,x=X(i);s+='<line x1="'+x+'" x2="'+x+'" y1="'+Y(b[2])+'" y2="'+Y(b[3])+'" stroke="'+c+'"/><rect x="'+(x-bw/2)+'" y="'+Math.min(Y(b[1]),Y(b[4]))+'" width="'+bw+'" height="'+Math.max(1,Math.abs(Y(b[1])-Y(b[4])))+'" fill="'+c+'"/>'}
