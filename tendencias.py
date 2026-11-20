@@ -56,9 +56,13 @@ def descargar(sym):
     if os.environ.get("SAMPLE"):
         return simular(sym)
     ultimo = None
-    for host, rango, inter in (("query1", "5y", "1wk"), ("query2", "5y", "1wk"), ("query1", "5y", "1d"), ("query2", "5y", "1d")):
+    # Yahoo limita las peticiones (error 429): se reintenta esperando cada vez más
+    intentos = (("query1", "1wk", 0), ("query2", "1wk", 12), ("query1", "1d", 30), ("query2", "1d", 60), ("query1", "1wk", 90))
+    for host, inter, espera in intentos:
+        if espera:
+            time.sleep(espera)
         try:
-            bars, mp = _pedir(host, sym, rango, inter)
+            bars, mp = _pedir(host, sym, "5y", inter)
             if inter == "1d":
                 bars = a_semanal(bars)
             if len(bars) < 40:
@@ -69,8 +73,9 @@ def descargar(sym):
                 bars[-1][3] = min(bars[-1][3], float(mp))
             return bars
         except Exception as e:
-            ultimo = "%s %s %s: %s" % (host, rango, inter, e)
-            time.sleep(1.2)
+            ultimo = "%s 5y %s: %s" % (host, inter, e)
+            if "429" not in str(e):
+                time.sleep(2)
     print("  error de descarga", sym, "->", ultimo)
     return None
 
@@ -186,18 +191,29 @@ def analizar(sym, name, grupo, bars):
 
 
 def main():
+    previo = {}
+    try:
+        with open("tendencias.json") as f:
+            for x in json.load(f).get("d", []):
+                previo[x["s"]] = x
+    except Exception:
+        pass
     out = []
     for sym, name, g in U:
         bars = descargar(sym)
         if not bars:
             print("sin datos:", sym)
+            if sym in previo:
+                out.append(previo[sym])
+                print("  se mantiene el cálculo anterior de", sym)
+            time.sleep(5)
             continue
         try:
             out.append(analizar(sym, name, g, bars))
             print("ok", sym, out[-1]["est"])
         except Exception as e:
             print("error", sym, e)
-        time.sleep(0.4)
+        time.sleep(3)
     if not out:
         print("No se pudo descargar ningún activo; no se sobrescribe tendencias.json")
         raise SystemExit(1)
