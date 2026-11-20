@@ -74,21 +74,33 @@ function load(){
 }
 function pick(){var q=(location.hash||'').slice(1),k=D.findIndex(function(a){return a.s===decodeURIComponent(q)});sel(k>=0?k:0)}
 /* ---- cálculo en el navegador (cuando no hay tendencias.json) ---- */
-var PX=[function(u){return u},function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u)},function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u)}];
-function ftj(u,ms){return new Promise(function(ok,ko){var t=setTimeout(function(){ko('timeout')},ms||9000);fetch(u).then(function(r){if(!r.ok)throw r.status;return r.json()}).then(function(j){clearTimeout(t);ok(j)}).catch(function(e){clearTimeout(t);ko(e)})})}
+var PX=[function(u){return u},
+ function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u)},
+ function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u)},
+ function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)},
+ function(u){return 'https://thingproxy.freeboard.io/fetch/'+u},
+ function(u){return 'https://cors.isomorphic-git.org/'+u}];
+function ftj(u,ms){return new Promise(function(ok,ko){var t=setTimeout(function(){ko('timeout')},ms||8000);fetch(u).then(function(r){if(!r.ok)throw r.status;return r.json()}).then(function(j){clearTimeout(t);ok(j)}).catch(function(e){clearTimeout(t);ko(e)})})}
+function parseY(r,diario){
+  var res=r.chart.result[0],q=res.indicators.quote[0],b=[];
+  res.timestamp.forEach(function(t,k){var o=q.open[k],h=q.high[k],l=q.low[k],c=q.close[k];if(o==null||h==null||l==null||c==null)return;b.push([t,o,h,l,c])});
+  if(diario){var m={},ks=[];b.forEach(function(x){var d=new Date(x[0]*1000),dn=(d.getUTCDay()+6)%7,key=Math.floor((x[0]-dn*86400)/604800);if(!m[key]){m[key]=x.slice();ks.push(key)}else{var w=m[key];w[2]=Math.max(w[2],x[2]);w[3]=Math.min(w[3],x[3]);w[4]=x[4]}});b=ks.map(function(k){return m[k]})}
+  if(b.length<40)throw 'pocos datos';
+  var mp=res.meta&&res.meta.regularMarketPrice;if(mp){var u=b[b.length-1];u[4]=mp;u[2]=Math.max(u[2],mp);u[3]=Math.min(u[3],mp)}
+  return b;
+}
+function carrera(urls,diario){
+  return new Promise(function(ok,ko){var fallos=0,hecho=false;
+    urls.forEach(function(u){ftj(u).then(function(r){var b=parseY(r,diario);if(!hecho){hecho=true;ok(b)}}).catch(function(){fallos++;if(fallos===urls.length&&!hecho)ko('sin datos')})})});
+}
 function bajar(sym){
-  var path='/v8/finance/chart/'+encodeURIComponent(sym)+'?range=5y&interval=1wk',intentos=[];
-  ['query1','query2'].forEach(function(h){PX.forEach(function(p){intentos.push(p('https://'+h+'.finance.yahoo.com'+path))})});
+  var path=function(i){return '/v8/finance/chart/'+encodeURIComponent(sym)+'?range=5y&interval='+i};
+  var lotes=[];
+  [['1wk',false],['1d',true]].forEach(function(iv){['query1','query2'].forEach(function(h){lotes.push([PX.map(function(p){return p('https://'+h+'.finance.yahoo.com'+path(iv[0]))}),iv[1]])})});
   var i=0;
   return new Promise(function(ok,ko){(function next(){
-    if(i>=intentos.length)return ko('sin datos');
-    ftj(intentos[i++]).then(function(r){
-      var res=r.chart.result[0],q=res.indicators.quote[0],b=[];
-      res.timestamp.forEach(function(t,k){var o=q.open[k],h=q.high[k],l=q.low[k],c=q.close[k];if(o==null||h==null||l==null||c==null)return;b.push([t,o,h,l,c])});
-      if(b.length<40)throw 0;
-      var mp=res.meta&&res.meta.regularMarketPrice;if(mp){var u=b[b.length-1];u[4]=mp;u[2]=Math.max(u[2],mp);u[3]=Math.min(u[3],mp)}
-      ok(b);
-    }).catch(next)})()});
+    if(i>=lotes.length)return ko('sin datos');
+    var l=lotes[i++];carrera(l[0],l[1]).then(ok).catch(function(){setTimeout(next,600)})})()});
 }
 function cuant(v,q){v=v.slice().sort(function(a,b){return a-b});return v[Math.min(v.length-1,Math.max(0,Math.round(q*(v.length-1))))]}
 function analizar(sym,name,g,bars){
@@ -140,7 +152,7 @@ function sel(i){
   if(!D[i].w){
     $('app').innerHTML='<div class="msg">Calculando '+D[i].n+'…</div>';
     var tk=i;SEL=i;
-    datosWeb(i).then(function(){if(SEL===tk)mostrar(i)}).catch(function(){if(SEL===tk)$('app').innerHTML='<div class="msg">No se han podido descargar los datos de '+D[i].n+' ahora mismo. Prueba en un momento u otro activo.</div>'});
+    datosWeb(i).then(function(){if(SEL===tk)mostrar(i)}).catch(function(){if(SEL===tk)$('app').innerHTML='<div class="msg">No se han podido descargar los datos de '+D[i].n+' ahora mismo.<br><br><button class="ch" id="rt">Reintentar</button></div>';var rb=$('rt');if(rb)rb.onclick=function(){sel(i)}});
     return;
   }
   SEL=i;mostrar(i);
