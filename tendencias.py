@@ -23,32 +23,55 @@ def pct(x, signo=False):
     return s.replace(".", ",") + " %"
 
 
+def _pedir(host, sym, rango, inter):
+    u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?range=%s&interval=%s" % (host, urllib.parse.quote(sym), rango, inter)
+    r = json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=25))
+    res = r["chart"]["result"][0]
+    q = res["indicators"]["quote"][0]
+    bars = []
+    for i, t in enumerate(res["timestamp"]):
+        o, h, l, c = q["open"][i], q["high"][i], q["low"][i], q["close"][i]
+        if None in (o, h, l, c):
+            continue
+        bars.append([int(t), float(o), float(h), float(l), float(c)])
+    return bars, res["meta"].get("regularMarketPrice")
+
+
+def a_semanal(d):
+    """Agrupa velas diarias en semanales (lunes a domingo)."""
+    out = {}
+    for t, o, h, l, c in d:
+        k = datetime.fromtimestamp(t, timezone.utc).isocalendar()[:2]
+        if k not in out:
+            out[k] = [t, o, h, l, c]
+        else:
+            w = out[k]
+            w[2] = max(w[2], h)
+            w[3] = min(w[3], l)
+            w[4] = c
+    return [out[k] for k in sorted(out)]
+
+
 def descargar(sym):
     if os.environ.get("SAMPLE"):
         return simular(sym)
-    for host in ("query1", "query2", "query1", "query2"):
+    ultimo = None
+    for host, rango, inter in (("query1", "5y", "1wk"), ("query2", "5y", "1wk"), ("query1", "5y", "1d"), ("query2", "5y", "1d")):
         try:
-            u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?range=5y&interval=1wk" % (host, urllib.parse.quote(sym))
-            r = json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=25))
-            res = r["chart"]["result"][0]
-            q = res["indicators"]["quote"][0]
-            ts = res["timestamp"]
-            bars = []
-            for i, t in enumerate(ts):
-                o, h, l, c = q["open"][i], q["high"][i], q["low"][i], q["close"][i]
-                if None in (o, h, l, c):
-                    continue
-                bars.append([int(t), float(o), float(h), float(l), float(c)])
+            bars, mp = _pedir(host, sym, rango, inter)
+            if inter == "1d":
+                bars = a_semanal(bars)
             if len(bars) < 40:
-                raise ValueError("pocos datos")
-            mp = res["meta"].get("regularMarketPrice")
+                raise ValueError("pocos datos (%d)" % len(bars))
             if mp:
                 bars[-1][4] = float(mp)
                 bars[-1][2] = max(bars[-1][2], float(mp))
                 bars[-1][3] = min(bars[-1][3], float(mp))
             return bars
-        except Exception:
+        except Exception as e:
+            ultimo = "%s %s %s: %s" % (host, rango, inter, e)
             time.sleep(1.2)
+    print("  error de descarga", sym, "->", ultimo)
     return None
 
 
@@ -175,6 +198,9 @@ def main():
         except Exception as e:
             print("error", sym, e)
         time.sleep(0.4)
+    if not out:
+        print("No se pudo descargar ningún activo; no se sobrescribe tendencias.json")
+        raise SystemExit(1)
     with open("tendencias.json", "w") as f:
         json.dump({"t": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), "d": out}, f, separators=(",", ":"), ensure_ascii=False)
     print(len(out), "activos")
