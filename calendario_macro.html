@@ -6,36 +6,23 @@
 <meta name="theme-color" content="#0e1117">
 <title>Calendario Macroeconómico</title>
 <style>
-:root{
-  --bg:#0e1117;
-  --panel:#131722;
-  --panel-2:#1a1e29;
-  --border:#2a2e39;
-  --ink:#d1d4dc;
-  --ink-strong:#f0f3fa;
-  --dim:#787b86;
-  --up:#26a69a;
-  --down:#ef5350;
-  --amber:#f7a600;
-}
+:root{--bg:#0e1117;--panel:#131722;--panel-2:#1a1e29;--border:#2a2e39;--ink:#d1d4dc;--ink-strong:#f0f3fa;--dim:#787b86;--up:#26a69a;--down:#ef5350;--amber:#f7a600}
 *{box-sizing:border-box}
 body{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1200px;margin:0 auto}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
-.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-strong);text-decoration:none;background:var(--panel-2);border:1px solid var(--border);padding:6px 12px;border-radius:6px}
-.status-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim)}
-.dot-live{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 6px var(--up)}
-
-/* TARJETAS INFORMATIVAS REALES */
-.grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+header{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:max(0px,env(safe-area-inset-top),var(--tgtop,0px)) 0 10px;border-bottom:1px solid var(--border)}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-strong);text-decoration:none;background:var(--panel-2);border:1px solid var(--border);padding:6px 12px;border-radius:6px;white-space:nowrap}
+.status-badge{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--dim);min-width:0}
+.status-badge span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot-live{flex:none;width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 6px var(--up)}
+.x{flex:none;padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:6px}
 .card-mini{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
 .card-mini .title{font-size:10px;color:var(--dim);text-transform:uppercase;font-weight:600;margin-bottom:6px}
 .card-mini .val{font-size:18px;font-weight:700;color:var(--ink-strong)}
 .card-mini .sub{font-size:10px;color:var(--amber);margin-top:4px}
-
+.nota{font-size:10px;color:var(--dim);text-align:center;margin-bottom:10px}
 .section-title{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 10px;display:flex;align-items:center;gap:8px}
 .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
-
-/* CONTENEDOR SEGURO */
 .widget-box{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:8px;overflow:hidden}
 .tradingview-widget-container{height:500px;width:100%}
 .tradingview-widget-container__widget{height:100%;width:100%}
@@ -44,33 +31,30 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 <body>
 
 <header>
-  <a href="index.html" class="back-btn">← Volver al Hub</a>
-  <div class="status-badge">
-    <span class="dot-live"></span>
-    <span>EVENTOS CLAVE EN DIRECTO</span>
-  </div>
+  <a href="index.html" class="back-btn">← Hub</a>
+  <div class="status-badge"><span class="dot-live"></span><span>EVENTOS CLAVE EN DIRECTO</span></div>
+  <button class="x" id="shx" type="button">𝕏 Compartir</button>
 </header>
 
-<!-- TARJETAS CON DATOS CLAVE REALES -->
 <div class="grid-cards">
   <div class="card-mini">
-    <div class="title">Fed Rate (EE. UU.)</div>
-    <div class="val">4.50% - 4.75%</div>
-    <div class="sub">Tipo de interés oficial</div>
+    <div class="title">Fed (EE. UU.)</div>
+    <div class="val">3,75 % – 4,00 %</div>
+    <div class="sub">Tipo oficial · reunión del 28 oct 2026</div>
   </div>
   <div class="card-mini">
-    <div class="title">Tipo BCE (Europa)</div>
-    <div class="val">3.25%</div>
-    <div class="sub">Tipo de depósito UE</div>
+    <div class="title">BCE (Europa)</div>
+    <div class="val">2,50 %</div>
+    <div class="sub">Tipo de depósito · desde 16 sep 2026</div>
   </div>
   <div class="card-mini">
-    <div class="title">Foco Principal</div>
+    <div class="title">Foco principal</div>
     <div class="val">IPC / Empleo</div>
     <div class="sub">Máxima volatilidad</div>
   </div>
 </div>
+<div class="nota">Los tipos se actualizan a mano en cada reunión; el calendario de abajo va en directo.</div>
 
-<!-- CALENDARIO DE EVENTOS -->
 <div class="section-title">Calendario Macroeconómico</div>
 <div class="widget-box">
   <div class="tradingview-widget-container">
@@ -89,5 +73,18 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   </div>
 </div>
 
+<script src="telegram.js" defer></script>
+<script>
+(function(){
+  var b=document.getElementById('shx');
+  if(window.innerWidth<420)b.textContent='𝕏';
+  b.onclick=function(){
+    var t='Calendario macroeconómico en directo: Fed, BCE, IPC y empleo. Míralo';
+    var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
+    try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+    window.open(u,'_blank');
+  };
+})();
+</script>
 </body>
 </html>
