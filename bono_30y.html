@@ -79,20 +79,27 @@ function yh(sym,rango,inter){
 }
 function unaVez(id){
   var y=YH[id];if(!y)return Promise.reject();
-  // últimos 10 años en diario + historia anterior en mensual
-  var diario=yh(y,'10y','1d');
-  var mensual=yh(y,'max','1mo').catch(function(){return []});
-  return Promise.all([diario,mensual]).then(function(r){
-    var d=r[0],m=r[1],t0=d[0][0];
-    return m.filter(function(p){return p[0]<t0-864e5*20}).concat(d);
-  });
+  // diario de los últimos 10 años; si falla, el histórico completo de siempre
+  return yh(y,'10y','1d').catch(function(){return yh(y,'max','1d')});
 }
 function bajar(id){
   return unaVez(id).catch(function(){return new Promise(function(ok){setTimeout(ok,1500)}).then(function(){return unaVez(id)})});
 }
+var HIST={};
+function historia(id){
+  // historia antigua en mensual, en segundo plano (si falla no pasa nada)
+  if(HIST[id]||!YH[id])return;HIST[id]=1;
+  yh(YH[id],'max','1mo').then(function(m){
+    var d=DATA[id];if(!d)return;var t0=d[0][0];
+    var ant=m.filter(function(p){return p[0]<t0-864e5*20});
+    if(!ant.length)return;
+    DATA[id]=ant.concat(d);
+    if(CUR===id)mostrar();
+  }).catch(function(){});
+}
 function carga(id){
   if(DATA[id])return Promise.resolve(DATA[id]);
-  return bajar(id).then(function(d){DATA[id]=d;return d});
+  return bajar(id).then(function(d){DATA[id]=d;setTimeout(function(){historia(id)},1500);return d});
 }
 function pintaTabs(){
   $('tabs').innerHTML=SER.map(function(s){var d=DATA[s.id],l=d?nf(d[d.length-1][1])+' %':'…';return '<button class="tab'+(s.id===CUR?' on':'')+'" data-id="'+s.id+'">'+s.n+'<small>'+l+'</small></button>'}).join('');
