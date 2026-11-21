@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Qué es este Hub</title>
+<script src="telegram.js" defer></script>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--ink:#f8fafc;--mut:#94a3b8;--acc:#38bdf8;--bd:rgba(255,255,255,.08);--warn:#f59e0b}
+@media (prefers-color-scheme:light){:root{--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--mut:#475569;--acc:#0369a1;--bd:rgba(0,0,0,.1);--warn:#b45309}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.55}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;padding:12px 14px;padding-top:max(12px,env(safe-area-inset-top),var(--tgtop,0px));background:var(--bg);border-bottom:1px solid var(--bd)}
+header a{color:var(--acc);text-decoration:none;font-weight:700;font-size:14px;white-space:nowrap}
+header h1{flex:1;margin:0;font-size:16px;text-align:center}
+#shx{flex:none;padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap}
+main{max-width:640px;margin:0 auto;padding:14px 14px 40px}
+.note{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 8px}
+p{margin:0 0 8px;font-size:14px}
+ul{margin:0;padding-left:18px;font-size:14px}li{margin-bottom:5px}
+.mut{color:var(--mut)}
+.dyor{border-color:rgba(245,158,11,.5)}.dyor h2{color:var(--warn)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.btns a,.btns button{flex:1;min-width:140px;text-align:center;padding:11px;border-radius:10px;font:700 14px system-ui,sans-serif;text-decoration:none;border:0;cursor:pointer}
+.b1{background:#1d9bf0;color:#fff}.b2{background:#22c55e;color:#04210f}
+</style>
+</head>
+<body>
+<header><a href="index.html">← Hub</a><h1>Qué es este Hub</h1><button id="shx" type="button" aria-label="Compartir en X">𝕏</button></header>
+<main>
+<div class="note">⏳ Las herramientas pueden tardar unos segundos en cargar los datos. Si ves algo vacío, espera un momento.</div>
+
+<section><h2>👋 Qué es</h2>
+<p>El Hub Financiero es mi panel personal para seguir bolsa, cripto, bonos, calendario macro y señales en un solo sitio.</p>
+<p class="mut">Es gratis, sin registros y hecho a mano. Funciona dentro de Telegram o en el navegador.</p></section>
+
+<section><h2>🧰 Qué tiene</h2>
+<ul>
+<li><b>📈 Bolsa y mercados:</b> ticker, cintas y mapas de mercado, señales, gráficos de tendencia, bono a 30 años y buscador de activos.</li>
+<li><b>📅 Macro y calendario:</b> calendarios económicos (Fed, BCE, datos clave) y M2 global frente a BTC.</li>
+<li><b>📰 Noticias y directos:</b> noticias del día, última hora, TV y radio en directo.</li>
+<li><b>₿ Bitcoin:</b> panel BTC, ¿caro o barato?, ciclo de mercado, halvings, dominancia, compresión, coste de minar y alertas.</li>
+<li><b>🪙 Cripto en directo:</b> ticker cripto, gráficos de calor, mapa de calor, liquidaciones, presión, guerra de liquidez y muros.</li>
+<li><b>🎮 Extras:</b> BTC en 3D, Avión BTC, Street Rush 3D y Wall Street Trivia.</li>
+</ul></section>
+
+<section><h2>🧭 Cómo se usa</h2>
+<ul>
+<li>⭐ Marca tus favoritos y aparecerán arriba.</li>
+<li>🔎 Usa el buscador para encontrar cualquier herramienta.</li>
+<li>📱 Ábrelo en Telegram para la mejor experiencia.</li>
+<li>← Hub: en cada página, para volver donde estabas.</li>
+</ul></section>
+
+<section><h2>🔌 De dónde salen los datos</h2>
+<p>De fuentes públicas: TradingView, Binance, Yahoo Finance, FRED y otras. Cada herramienta usa la que mejor le encaja.</p></section>
+
+<section class="dyor"><h2>⚠️ DYOR · Haz tu propia investigación</h2>
+<p>Nada de lo que ves aquí es asesoramiento financiero ni una recomendación de compra o venta.</p>
+<ul>
+<li>Los datos pueden tener errores o retrasos.</li>
+<li>Las señales y escenarios son orientativos, no predicciones.</li>
+<li>Investiga siempre por tu cuenta antes de decidir y no inviertas dinero que no puedas perder.</li>
+</ul></section>
+
+<section><h2>💬 Comparte y apoya</h2>
+<div class="btns"><button class="b1" id="sh2" type="button">𝕏 Compartir el Hub</button><a class="b2" href="donaciones.html">💚 Apoya el proyecto</a></div></section>
+</main>
+<script>
+(function(){
+  var T='Mi Hub Financiero: bolsa, cripto, bonos, calendario macro y señales en un solo sitio. Gratis, sin registros y hecho a mano. Échale un vistazo 👇';
+  function sh(){var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(T)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
+    try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+    window.open(u,'_blank');}
+  document.getElementById('shx').onclick=sh;document.getElementById('sh2').onclick=sh;
+})();
+</script>
+</body>
+</html>
