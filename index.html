@@ -73,7 +73,7 @@ dialog input,dialog select{width:100%;background:var(--panel-2);border:1px solid
 <div id="stage">
 <header id="hdr">
   <div class="brand"><h1>Hub Financiero</h1><span class="tag">LINKS</span><a id="idx" class="idx" href="caro_barato_btc.html" title="BTC: caro o barato" hidden></a></div>
-  <div id="ticker"><span id="tkdot" title="Estado del ticker"></span></div>
+  <button id="shx" type="button" aria-label="Compartir en X" style="flex:none;padding:5px 9px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer">𝕏</button><div id="ticker"><span id="tkdot" title="Estado del ticker"></span></div>
 </header>
 <div class="bar">
   <label class="search-box">
@@ -116,7 +116,8 @@ const CATS=[
 {id:'fav',name:'Favoritos',color:'#f7a600',links:[]},
 {id:'top',name:'Más usados',color:'#2962ff',links:[]},
 {id:'don',name:'💚 Colabora',color:'#22c55e',links:[
-['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚']]},
+['Apoya el proyecto','Invítame a un café con Estrellas de Telegram','donaciones.html','💚'],
+['Qué es este Hub','Qué es, qué contiene y aviso DYOR','que_es.html','ℹ️']]},
 {id:'m_bolsa',name:'📈 Bolsa y mercados',color:'#2196f3',tool:true,open:true,links:[
 ['Ticker de mercados','Resumen del bot: cripto, acciones, índices y oro con precio y variación del día','ticker.html','📊'],
 ['Cintas de mercado','Bolsa, índices, España, Europa, materias primas y cripto en cintas en vivo','hub_bolsa.html','📈'],
@@ -449,7 +450,7 @@ function showIdx(d){
   if(!d||typeof d.v!=='number'||typeof d.lab!=='string'||!/^#[0-9a-f]{3,6}$/i.test(d.col))return;
   idx.hidden=false;idx.textContent='';
   const dt=el('span');dt.style.cssText='width:7px;height:7px;border-radius:50%;margin-right:5px;background:'+d.col;
-  idx.append(dt,d.v+' · '+d.lab);
+  idx.append(dt,'BTC '+d.v+' · '+d.lab);
 }
 try{showIdx(JSON.parse(localStorage.getItem('hub.idx')||'null'))}catch(e){}
 const bf=document.createElement('iframe');bf.src='caro_barato_btc.html';bf.hidden=true;bf.tabIndex=-1;bf.title='';
@@ -478,6 +479,7 @@ render();
 })();
 
 })();
+document.getElementById('shx').onclick=function(){var u='https://twitter.com/intent/tweet?text='+encodeURIComponent('Mi Hub Financiero: bolsa, cripto, bonos, calendario macro y señales en un solo sitio. Gratis, sin registros y hecho a mano. Échale un vistazo 👇')+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}window.open(u,'_blank')};
 </script>
 </body>
 </html>
