@@ -42,7 +42,7 @@ footer{font-size:11px;color:var(--mu);text-align:center;line-height:1.5;margin-t
 <div class="tabs" id="tabs"></div>
 <div class="big"><b id="val">—</b><span id="chg"></span></div>
 <div class="rng" id="rng"></div>
-<div class="box"><div id="tip">Toca o desliza sobre el gráfico.</div><svg id="cv" height="300"></svg></div>
+<div class="box"><div id="tip">Toca o desliza sobre el gráfico.</div><svg id="cv" height="360"></svg></div>
 <div class="st" id="st"></div>
 
 <footer>Datos de la <b>Reserva Federal de St. Louis (FRED)</b>, cierre diario (el último dato suele ser del día hábil anterior). Si el gráfico no carga, míralo en
@@ -62,14 +62,29 @@ function parse(txt){
   for(var i=1;i<L.length;i++){var p=L[i].split(',');var v=parseFloat(p[1]);if(!isNaN(v)&&/^\d{4}-\d\d-\d\d/.test(p[0]))o.push([Date.parse(p[0]),v])}
   return o;
 }
+var YH={DGS30:'^TYX',DGS10:'^TNX'};
+function parseY(t){
+  var j=JSON.parse(t),r=j.chart.result[0],ts=r.timestamp,c=r.indicators.quote[0].close,o=[];
+  for(var i=0;i<ts.length;i++)if(c[i]!=null)o.push([ts[i]*1000,c[i]]);
+  if(o.length<50)throw 0;return o;
+}
+function carrera(ps){
+  return new Promise(function(ok,ko){var n=ps.length,f=0;ps.forEach(function(p){p.then(ok).catch(function(){if(++f===n)ko()})})});
+}
+function viaProxy(u,parse){
+  return carrera(PX.map(function(px){return fetch(px(u),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(parse)}));
+}
 function bajar(id){
-  var u='https://fred.stlouisfed.org/graph/fredgraph.csv?id='+id+'&cosd=1990-01-01';
-  return new Promise(function(ok,ko){
-    var n=PX.length,f=0;
-    PX.forEach(function(px){
-      fetch(px(u),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){var d=parse(t);if(d.length<50)throw 0;ok(d)}).catch(function(){if(++f===n)ko()});
-    });
+  // 1) datos guardados por el Hub (mismo dominio, sin bloqueos)
+  var j=fetch('bonos.json?t='+Math.floor(Date.now()/600000),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){
+    var a=d.s&&d.s[id];if(!a||a.length<50)throw 0;
+    return a.map(function(p){return [Date.parse(p[0]),p[1]]});
   });
+  // 2) en vivo: FRED y Yahoo (solo 30 y 10 años) a través de proxies
+  var vivo=function(){var v=[viaProxy('https://fred.stlouisfed.org/graph/fredgraph.csv?id='+id+'&cosd=1990-01-01',function(t){var d=parse(t);if(d.length<50)throw 0;return d})];
+  if(YH[id])v.push(carrera(['query1','query2'].map(function(q){return viaProxy('https://'+q+'.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(YH[id])+'?range=max&interval=1d',parseY)})));
+  return v};
+  return j.catch(function(){return carrera(vivo())});
 }
 function carga(id){
   if(DATA[id])return Promise.resolve(DATA[id]);
@@ -89,7 +104,7 @@ function mostrar(){
   if(!DATA[id]){
     $('val').textContent='…';$('chg').textContent='';$('cv').innerHTML='';$('st').innerHTML='';$('tip').textContent='Cargando datos de FRED…';
     carga(id).then(function(){pintaTabs();if(CUR===id)mostrar();relaciones()}).catch(function(){
-      if(CUR===id){$('tip').innerHTML='<div class="msg">No se han podido descargar los datos ahora mismo.<br>Imagen oficial de FRED:<img src="https://fred.stlouisfed.org/graph/fredgraph.png?id='+id+'" alt="FRED '+id+'"><br><br><button class="tab" id="rt" style="flex:none;padding:8px 18px">Reintentar</button></div>';$('rt').onclick=mostrar}
+      if(CUR===id){$('tip').innerHTML='<div class="msg">No se han podido descargar los datos ahora mismo.<br>Imagen oficial de FRED (desliza a la derecha para ver lo último):<div id="fi" style="overflow-x:auto;margin-top:10px"><img style="min-width:720px;width:100%" src="https://fred.stlouisfed.org/graph/fredgraph.png?id='+id+'" alt="FRED '+id+'" onload="var f=document.getElementById(\'fi\');f.scrollLeft=f.scrollWidth"></div><br><br><button class="tab" id="rt" style="flex:none;padding:8px 18px">Reintentar</button></div>';$('rt').onclick=mostrar}
     });
     return;
   }
@@ -113,7 +128,7 @@ function relaciones(){
   c.innerHTML='<i>Curva 10 a − 2 a</i><b class="'+(sp>=0?'up':'dn')+'">'+(sp>=0?'+':'−')+nf(Math.abs(sp))+' pp</b><small>'+(sp<0?'Curva invertida: señal clásica de recesión':sp<.25?'Curva casi plana':'Curva normal (los plazos largos pagan más)')+'</small>';
 }
 function dibuja(W){
-  var svg=$('cv'),w=svg.clientWidth||340,h=300,ml=8,mr=40,mt=10,mb=22,pw=w-ml-mr,ph=h-mt-mb;
+  var svg=$('cv'),w=svg.clientWidth||340,h=360,ml=8,mr=40,mt=10,mb=22,pw=w-ml-mr,ph=h-mt-mb;
   var t0=W[0][0],t1=W[W.length-1][0],lo=1e9,hi=-1e9;
   W.forEach(function(p){if(p[1]<lo)lo=p[1];if(p[1]>hi)hi=p[1]});
   var pad=(hi-lo)*.08||.1;lo-=pad;hi+=pad;
