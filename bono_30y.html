@@ -5,88 +5,153 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bonos del Tesoro — FRED</title>
 <style>
-  :root{
-    --bg:#0d1117; --panel:#131722; --border:#2a2e39; --muted:#8a93a6;
-    box-sizing:border-box;
-    padding-top:env(safe-area-inset-top,0px);
-    padding-bottom:env(safe-area-inset-bottom,0px);
-  }
-  html,body{height:100%;}
-  body{
-    margin:0; background:var(--bg); color:#fff;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    display:flex; flex-direction:column; align-items:center;
-    min-height:100%; gap:14px; padding:16px;
-  }
-  h1{font-size:14px; font-weight:700; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; margin:6px 0 0; text-align:center;}
-  .subtitulo{font-size:12px; color:var(--muted); text-align:center; max-width:640px;}
-
-  .tabs{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-  .tab{
-    background:var(--panel); border:1px solid var(--border); color:var(--muted);
-    font-size:14px; font-weight:700; padding:8px 18px; border-radius:8px; cursor:pointer;
-  }
-  .tab.activa{ background:#1d2740; border-color:#3b82f6; color:#fff; }
-
-  .caja{
-    width:100%; max-width:900px; background:var(--panel);
-    border:1px solid var(--border); border-radius:10px; padding:10px; min-height:200px;
-  }
-  .caja img{ width:100%; height:auto; border-radius:6px; display:block; }
-
-  footer{font-size:11px; color:var(--muted); text-align:center; max-width:640px; line-height:1.5; margin-top:4px;}
-  footer b{color:#ccc;}
-  footer a{color:#8ab4f8;}
+:root{--bg:#0d1117;--panel:#131722;--p2:#1a1e29;--bd:#2a2e39;--mu:#8a93a6;--tx:#e6e9f0;--ac:#3b82f6;--up:#26a69a;--dn:#ef5350;--am:#f7a600}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--p2:#eef1f6;--bd:#dde2ea;--mu:#667085;--tx:#10151f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;max-width:900px;margin:0 auto;padding:max(12px,env(safe-area-inset-top),var(--tgtop,0px)) 14px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.top a{color:var(--tx);text-decoration:none;font-size:13px;background:var(--p2);border:1px solid var(--bd);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.x{padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap}
+h1{font-size:18px;margin:4px 0 2px}.sub{font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.45}
+.tabs,.rng{display:flex;gap:8px;flex-wrap:wrap}
+.tab{flex:1;min-width:0;background:var(--panel);border:1px solid var(--bd);color:var(--mu);font-size:14px;font-weight:700;padding:10px 6px;border-radius:10px;cursor:pointer;text-align:center}
+.tab.on{background:#1d2740;border-color:var(--ac);color:#fff}
+.tab small{display:block;font-size:11px;font-weight:600;margin-top:2px;color:var(--mu)}.tab.on small{color:#b7c4e0}
+.big{display:flex;align-items:baseline;gap:10px;margin:14px 0 6px;flex-wrap:wrap}
+.big b{font-size:34px;font-variant-numeric:tabular-nums}.big span{font-size:14px;font-weight:700}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.rng{margin:8px 0}.rng button{background:var(--panel);border:1px solid var(--bd);color:var(--mu);font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer}
+.rng button.on{border-color:var(--ac);color:var(--tx)}
+.box{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:8px;position:relative}
+#tip{font-size:12px;color:var(--mu);min-height:18px;padding:2px 6px 4px}#tip b{color:var(--tx)}
+svg{width:100%;display:block;touch-action:pan-y}
+.st{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
+.st div{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:10px}
+.st i{display:block;font-style:normal;font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.st b{font-size:16px;font-variant-numeric:tabular-nums}.st small{display:block;font-size:11px;color:var(--mu);margin-top:3px}
+.msg{padding:30px 10px;text-align:center;color:var(--mu);font-size:13px}
+.msg img{width:100%;border-radius:6px;margin-top:10px}
+footer{font-size:11px;color:var(--mu);text-align:center;line-height:1.5;margin-top:14px}footer a{color:#8ab4f8}
 </style>
 </head>
 <body>
+<div class="top"><a href="index.html">← Hub</a><button class="x" id="shx" type="button">𝕏 Compartir</button></div>
+<h1>Rendimiento de bonos del Tesoro de EEUU</h1>
+<div class="sub" id="sub">Cuánto paga el Estado de EEUU por prestarle dinero a 30, 10 o 2 años. Datos oficiales de la Reserva Federal (FRED).</div>
 
-  <h1>Rendimiento de bonos del Tesoro de EEUU</h1>
-  <p class="subtitulo" id="subSerie">Serie DGS30, directo de la Reserva Federal (FRED) — se actualiza sola, sin que nosotros toquemos nada.</p>
+<div class="tabs" id="tabs"></div>
+<div class="big"><b id="val">—</b><span id="chg"></span></div>
+<div class="rng" id="rng"></div>
+<div class="box"><div id="tip">Toca o desliza sobre el gráfico.</div><svg id="cv" height="300"></svg></div>
+<div class="st" id="st"></div>
 
-  <div class="tabs" id="tabs"></div>
+<footer>Datos de la <b>Reserva Federal de St. Louis (FRED)</b>, cierre diario (el último dato suele ser del día hábil anterior). Si el gráfico no carga, míralo en
+<a id="lf" href="https://fred.stlouisfed.org/series/DGS30">fred.stlouisfed.org</a>. Solo informativo, no es asesoramiento financiero.</footer>
 
-  <div class="caja">
-    <img id="imgBono" src="https://fred.stlouisfed.org/graph/fredgraph.png?id=DGS30" alt="Bono del Tesoro — FRED">
-  </div>
-  <p class="subtitulo">Esta imagen la genera FRED al momento cada vez que abres la página, así que siempre es la actual — no es una imagen guardada por nosotros.</p>
-
-  <footer>
-    Datos de la <b>Reserva Federal de St. Louis (FRED)</b>. Son los gráficos oficiales de FRED insertados tal
-    cual, no algo construido por nosotros. Si alguno no carga bien, puedes verlo directo en
-    <a href="https://fred.stlouisfed.org/series/DGS30" id="linkFred">fred.stlouisfed.org/series/DGS30</a>.
-    Solo informativo, no asesoramiento financiero.
-  </footer>
-
+<script src="telegram.js" defer></script>
 <script>
-const SERIES = [
-  {id: "DGS30", nombre: "30 años"},
-  {id: "DGS10", nombre: "10 años"},
-  {id: "DGS2",  nombre: "2 años"},
-];
-
-const tabs = document.getElementById("tabs");
-const imgBono = document.getElementById("imgBono");
-const subSerie = document.getElementById("subSerie");
-const linkFred = document.getElementById("linkFred");
-
-function elegir(serie){
-  imgBono.src = `https://fred.stlouisfed.org/graph/fredgraph.png?id=${serie.id}`;
-  imgBono.alt = `Bono ${serie.nombre} (${serie.id}) — FRED`;
-  subSerie.textContent = `Serie ${serie.id}, directo de la Reserva Federal (FRED) — se actualiza sola, sin que nosotros toquemos nada.`;
-  linkFred.href = `https://fred.stlouisfed.org/series/${serie.id}`;
-  linkFred.textContent = `fred.stlouisfed.org/series/${serie.id}`;
-  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("activa", b.dataset.id === serie.id));
+var SER=[{id:'DGS30',n:'30 años'},{id:'DGS10',n:'10 años'},{id:'DGS2',n:'2 años'}];
+var RNG=[['6 m',182],['1 año',365],['5 años',1826],['10 años',3652],['Máx',99999]];
+var DATA={},CUR='DGS30',RI=1,$=function(i){return document.getElementById(i)};
+var PX=[function(u){return u},function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u)},function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u)},function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)}];
+function pc(v,s){return (s&&v>0?'+':'')+v.toFixed(2).replace('.',',')+' %'}
+function nf(v){return v.toFixed(2).replace('.',',')}
+function fecha(t){return new Date(t).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})}
+function parse(txt){
+  var L=txt.trim().split(/\r?\n/),o=[];
+  for(var i=1;i<L.length;i++){var p=L[i].split(',');var v=parseFloat(p[1]);if(!isNaN(v)&&/^\d{4}-\d\d-\d\d/.test(p[0]))o.push([Date.parse(p[0]),v])}
+  return o;
 }
-
-SERIES.forEach(serie=>{
-  const b = document.createElement("button");
-  b.className = "tab" + (serie.id === "DGS30" ? " activa" : "");
-  b.textContent = serie.nombre;
-  b.dataset.id = serie.id;
-  b.onclick = () => elegir(serie);
-  tabs.appendChild(b);
-});
+function bajar(id){
+  var u='https://fred.stlouisfed.org/graph/fredgraph.csv?id='+id+'&cosd=1990-01-01';
+  return new Promise(function(ok,ko){
+    var n=PX.length,f=0;
+    PX.forEach(function(px){
+      fetch(px(u),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){var d=parse(t);if(d.length<50)throw 0;ok(d)}).catch(function(){if(++f===n)ko()});
+    });
+  });
+}
+function carga(id){
+  if(DATA[id])return Promise.resolve(DATA[id]);
+  return bajar(id).then(function(d){DATA[id]=d;return d});
+}
+function pintaTabs(){
+  $('tabs').innerHTML=SER.map(function(s){var d=DATA[s.id],l=d?nf(d[d.length-1][1])+' %':'…';return '<button class="tab'+(s.id===CUR?' on':'')+'" data-id="'+s.id+'">'+s.n+'<small>'+l+'</small></button>'}).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){b.onclick=function(){CUR=b.dataset.id;pintaTabs();mostrar()}});
+}
+function pintaRng(){
+  $('rng').innerHTML=RNG.map(function(r,i){return '<button class="'+(i===RI?'on':'')+'" data-i="'+i+'">'+r[0]+'</button>'}).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('#rng button'),function(b){b.onclick=function(){RI=+b.dataset.i;pintaRng();mostrar()}});
+}
+function mostrar(){
+  var id=CUR,s=SER.filter(function(x){return x.id===id})[0];
+  $('lf').href='https://fred.stlouisfed.org/series/'+id;$('lf').textContent='fred.stlouisfed.org/series/'+id;
+  if(!DATA[id]){
+    $('val').textContent='…';$('chg').textContent='';$('cv').innerHTML='';$('st').innerHTML='';$('tip').textContent='Cargando datos de FRED…';
+    carga(id).then(function(){pintaTabs();if(CUR===id)mostrar();relaciones()}).catch(function(){
+      if(CUR===id){$('tip').innerHTML='<div class="msg">No se han podido descargar los datos ahora mismo.<br>Imagen oficial de FRED:<img src="https://fred.stlouisfed.org/graph/fredgraph.png?id='+id+'" alt="FRED '+id+'"><br><br><button class="tab" id="rt" style="flex:none;padding:8px 18px">Reintentar</button></div>';$('rt').onclick=mostrar}
+    });
+    return;
+  }
+  var all=DATA[id],n=all.length,last=all[n-1],prev=all[n-2];
+  var d=last[1]-prev[1];
+  $('val').textContent=nf(last[1])+' %';$('chg').textContent=(d>=0?'▲ +':'▼ ')+nf(Math.abs(d)).replace(/^/,d<0?'−':'')+' pp · '+fecha(last[0]);
+  $('chg').className=d>=0?'up':'dn';
+  var cut=last[0]-RNG[RI][1]*864e5,W=all.filter(function(p){return p[0]>=cut});if(W.length<2)W=all.slice(-30);
+  dibuja(W);
+  var mx=W[0],mn=W[0];W.forEach(function(p){if(p[1]>mx[1])mx=p;if(p[1]<mn[1])mn=p});
+  var v0=W[0][1],ch=last[1]-v0;
+  var h='<div><i>Máximo del periodo</i><b>'+nf(mx[1])+' %</b><small>'+fecha(mx[0])+'</small></div>'+
+        '<div><i>Mínimo del periodo</i><b>'+nf(mn[1])+' %</b><small>'+fecha(mn[0])+'</small></div>'+
+        '<div><i>Variación en el periodo</i><b class="'+(ch>=0?'up':'dn')+'">'+(ch>=0?'+':'−')+nf(Math.abs(ch))+' pp</b><small>desde '+nf(v0)+' %</small></div>';
+  $('st').innerHTML=h+'<div id="curva"></div>';relaciones();
+}
+function relaciones(){
+  var a=DATA.DGS10,b=DATA.DGS2,c=$('curva');if(!c)return;
+  if(!a||!b){carga('DGS10').then(function(){return carga('DGS2')}).then(function(){pintaTabs();relaciones()}).catch(function(){});c.innerHTML='<i>Curva 10 a − 2 a</i><b>…</b>';return}
+  var sp=a[a.length-1][1]-b[b.length-1][1];
+  c.innerHTML='<i>Curva 10 a − 2 a</i><b class="'+(sp>=0?'up':'dn')+'">'+(sp>=0?'+':'−')+nf(Math.abs(sp))+' pp</b><small>'+(sp<0?'Curva invertida: señal clásica de recesión':sp<.25?'Curva casi plana':'Curva normal (los plazos largos pagan más)')+'</small>';
+}
+function dibuja(W){
+  var svg=$('cv'),w=svg.clientWidth||340,h=300,ml=8,mr=40,mt=10,mb=22,pw=w-ml-mr,ph=h-mt-mb;
+  var t0=W[0][0],t1=W[W.length-1][0],lo=1e9,hi=-1e9;
+  W.forEach(function(p){if(p[1]<lo)lo=p[1];if(p[1]>hi)hi=p[1]});
+  var pad=(hi-lo)*.08||.1;lo-=pad;hi+=pad;
+  var X=function(t){return ml+(t-t0)/((t1-t0)||1)*pw},Y=function(v){return mt+(hi-v)/(hi-lo)*ph};
+  var st=getComputedStyle(document.body).getPropertyValue('--mu')||'#888',g=getComputedStyle(document.body).getPropertyValue('--bd')||'#333';
+  var s='<defs><linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b82f6" stop-opacity=".35"/><stop offset="1" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>';
+  var step=[.1,.25,.5,1,2].filter(function(x){return (hi-lo)/x<=7})[0]||2;
+  for(var v=Math.ceil(lo/step)*step;v<hi;v+=step)s+='<line x1="'+ml+'" x2="'+(ml+pw)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="'+g+'"/><text x="'+(w-mr+5)+'" y="'+(Y(v)+4)+'" font-size="10" fill="'+st+'">'+nf(v)+'</text>';
+  var y0=new Date(t0).getFullYear(),y1=new Date(t1).getFullYear(),ys=Math.max(1,Math.ceil((y1-y0)/5));
+  if(y1-y0>=1)for(var y=y0+1;y<=y1;y+=ys){var tx=X(Date.UTC(y,0,1));s+='<text x="'+tx+'" y="'+(h-6)+'" font-size="10" fill="'+st+'" text-anchor="middle">'+y+'</text>'}
+  else for(var m=0;m<6;m++){var dm=new Date(t0+m*(t1-t0)/5);s+='<text x="'+X(dm.getTime())+'" y="'+(h-6)+'" font-size="10" fill="'+st+'" text-anchor="'+(m===0?'start':m===5?'end':'middle')+'">'+dm.toLocaleDateString('es-ES',{month:'short'})+'</text>'}
+  var k=Math.max(1,Math.floor(W.length/(pw*1.5))),pts=[];
+  for(var i=0;i<W.length;i+=k)pts.push(X(W[i][0]).toFixed(1)+','+Y(W[i][1]).toFixed(1));
+  pts.push(X(t1).toFixed(1)+','+Y(W[W.length-1][1]).toFixed(1));
+  s+='<polygon points="'+ml+','+(mt+ph)+' '+pts.join(' ')+' '+(ml+pw)+','+(mt+ph)+'" fill="url(#gr)"/><polyline fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linejoin="round" points="'+pts.join(' ')+'"/>';
+  var ly=Y(W[W.length-1][1]);
+  s+='<line x1="'+ml+'" x2="'+(ml+pw)+'" y1="'+ly+'" y2="'+ly+'" stroke="#3b82f6" stroke-dasharray="2 4" opacity=".7"/><rect x="'+(w-mr+1)+'" y="'+(ly-9)+'" width="'+(mr-2)+'" height="18" rx="3" fill="#3b82f6"/><text x="'+(w-mr/2)+'" y="'+(ly+4)+'" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle">'+nf(W[W.length-1][1])+'</text>';
+  s+='<g id="xh" style="display:none"><line id="xl" y1="'+mt+'" y2="'+(mt+ph)+'" stroke="'+st+'" stroke-width=".8"/><circle id="xc" r="4" fill="#3b82f6" stroke="#fff" stroke-width="1.5"/></g>';
+  svg.setAttribute('viewBox','0 0 '+w+' '+h);svg.innerHTML=s;
+  var ult=function(){var p=W[W.length-1];$('tip').innerHTML='<b>'+fecha(p[0])+'</b> · <b>'+nf(p[1])+' %</b>'};ult();
+  var mover=function(ev){
+    var r=svg.getBoundingClientRect(),x=(ev.clientX-r.left)*(w/r.width),t=t0+(x-ml)/pw*(t1-t0);
+    var a=0,b=W.length-1;while(b-a>1){var m=(a+b)>>1;if(W[m][0]<t)a=m;else b=m}
+    var p=Math.abs(W[a][0]-t)<Math.abs(W[b][0]-t)?W[a]:W[b];
+    $('xh').style.display='';$('xl').setAttribute('x1',X(p[0]));$('xl').setAttribute('x2',X(p[0]));$('xc').setAttribute('cx',X(p[0]));$('xc').setAttribute('cy',Y(p[1]));
+    $('tip').innerHTML='<b>'+fecha(p[0])+'</b> · <b>'+nf(p[1])+' %</b>';
+  };
+  svg.onpointermove=mover;svg.onpointerdown=mover;svg.onpointerleave=function(){$('xh').style.display='none';ult()};
+}
+addEventListener('resize',function(){if(DATA[CUR])mostrar()});
+$('shx').onclick=function(){
+  var t='Rendimiento de los bonos del Tesoro de EEUU (30, 10 y 2 años) en vivo, con datos de la Fed. Míralo';
+  var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
+  try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+  window.open(u,'_blank');
+};
+if(innerWidth<420)$('shx').textContent='𝕏';
+pintaTabs();pintaRng();mostrar();
 </script>
 </body>
 </html>
