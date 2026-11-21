@@ -37,7 +37,7 @@ footer{font-size:11px;color:var(--mu);text-align:center;line-height:1.5;margin-t
 <body>
 <div class="top"><a href="index.html">← Hub</a><button class="x" id="shx" type="button">𝕏 Compartir</button></div>
 <h1>Rendimiento de bonos del Tesoro de EEUU</h1>
-<div class="sub" id="sub">Cuánto paga el Estado de EEUU por prestarle dinero a 30, 10 o 2 años. Datos oficiales de la Reserva Federal (FRED).</div>
+<div class="sub" id="sub">Cuánto paga el Estado de EEUU por prestarle dinero a 30, 10 o 5 años. Datos de Yahoo Finance.</div>
 
 <div class="tabs" id="tabs"></div>
 <div class="big"><b id="val">—</b><span id="chg"></span></div>
@@ -45,12 +45,12 @@ footer{font-size:11px;color:var(--mu);text-align:center;line-height:1.5;margin-t
 <div class="box"><div id="tip">Toca o desliza sobre el gráfico.</div><svg id="cv" height="360"></svg></div>
 <div class="st" id="st"></div>
 
-<footer>Datos de la <b>Reserva Federal de St. Louis (FRED)</b>, cierre diario (el último dato suele ser del día hábil anterior). Si el gráfico no carga, míralo en
+<footer>Datos de <b>Yahoo Finance</b> (índices de rendimiento del Tesoro). Si el gráfico no carga, puedes ver la serie oficial en
 <a id="lf" href="https://fred.stlouisfed.org/series/DGS30">fred.stlouisfed.org</a>. Solo informativo, no es asesoramiento financiero.</footer>
 
 <script src="telegram.js" defer></script>
 <script>
-var SER=[{id:'DGS30',n:'30 años'},{id:'DGS10',n:'10 años'},{id:'DGS2',n:'2 años'}];
+var SER=[{id:'DGS30',n:'30 años'},{id:'DGS10',n:'10 años'},{id:'DGS5',n:'5 años'}];
 var RNG=[['6 m',182],['1 año',365],['5 años',1826],['10 años',3652],['Máx',99999]];
 var DATA={},CUR='DGS30',RI=1,$=function(i){return document.getElementById(i)};
 var PX=[function(u){return u},function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u)},function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u)},function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)}];
@@ -62,10 +62,10 @@ function parse(txt){
   for(var i=1;i<L.length;i++){var p=L[i].split(',');var v=parseFloat(p[1]);if(!isNaN(v)&&/^\d{4}-\d\d-\d\d/.test(p[0]))o.push([Date.parse(p[0]),v])}
   return o;
 }
-var YH={DGS30:'^TYX',DGS10:'^TNX'};
+var YH={DGS30:'^TYX',DGS10:'^TNX',DGS5:'^FVX',DGS3M:'^IRX'};
 function parseY(t){
   var j=JSON.parse(t),r=j.chart.result[0],ts=r.timestamp,c=r.indicators.quote[0].close,o=[];
-  for(var i=0;i<ts.length;i++)if(c[i]!=null)o.push([ts[i]*1000,c[i]]);
+  for(var i=0;i<ts.length;i++)if(c[i]!=null){var t=ts[i]*1000,k=Math.floor(t/864e5);if(o.length&&Math.floor(o[o.length-1][0]/864e5)===k)o[o.length-1]=[t,c[i]];else o.push([t,c[i]])}
   if(o.length<50)throw 0;return o;
 }
 function carrera(ps){
@@ -75,16 +75,8 @@ function viaProxy(u,parse){
   return carrera(PX.map(function(px){return fetch(px(u),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(parse)}));
 }
 function bajar(id){
-  // 1) datos guardados por el Hub (mismo dominio, sin bloqueos)
-  var j=fetch('bonos.json?t='+Math.floor(Date.now()/600000),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){
-    var a=d.s&&d.s[id];if(!a||a.length<50)throw 0;
-    return a.map(function(p){return [Date.parse(p[0]),p[1]]});
-  });
-  // 2) en vivo: FRED y Yahoo (solo 30 y 10 años) a través de proxies
-  var vivo=function(){var v=[viaProxy('https://fred.stlouisfed.org/graph/fredgraph.csv?id='+id+'&cosd=1990-01-01',function(t){var d=parse(t);if(d.length<50)throw 0;return d})];
-  if(YH[id])v.push(carrera(['query1','query2'].map(function(q){return viaProxy('https://'+q+'.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(YH[id])+'?range=max&interval=1d',parseY)})));
-  return v};
-  return j.catch(function(){return carrera(vivo())});
+  var y=YH[id];if(!y)return Promise.reject();
+  return carrera(['query1','query2'].map(function(q){return viaProxy('https://'+q+'.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(y)+'?range=max&interval=1d',parseY)}));
 }
 function carga(id){
   if(DATA[id])return Promise.resolve(DATA[id]);
@@ -122,10 +114,10 @@ function mostrar(){
   $('st').innerHTML=h+'<div id="curva"></div>';relaciones();
 }
 function relaciones(){
-  var a=DATA.DGS10,b=DATA.DGS2,c=$('curva');if(!c)return;
-  if(!a||!b){carga('DGS10').then(function(){return carga('DGS2')}).then(function(){pintaTabs();relaciones()}).catch(function(){});c.innerHTML='<i>Curva 10 a − 2 a</i><b>…</b>';return}
+  var a=DATA.DGS10,b=DATA.DGS3M,c=$('curva');if(!c)return;
+  if(!a||!b){carga('DGS10').then(function(){return carga('DGS3M')}).then(function(){relaciones()}).catch(function(){var e=$('curva');if(e)e.innerHTML='<i>Curva 10 a − 3 m</i><b>—</b><small>No disponible ahora mismo</small>'});c.innerHTML='<i>Curva 10 a − 3 m</i><b>…</b>';return}
   var sp=a[a.length-1][1]-b[b.length-1][1];
-  c.innerHTML='<i>Curva 10 a − 2 a</i><b class="'+(sp>=0?'up':'dn')+'">'+(sp>=0?'+':'−')+nf(Math.abs(sp))+' pp</b><small>'+(sp<0?'Curva invertida: señal clásica de recesión':sp<.25?'Curva casi plana':'Curva normal (los plazos largos pagan más)')+'</small>';
+  c.innerHTML='<i>Curva 10 a − 3 meses</i><b class="'+(sp>=0?'up':'dn')+'">'+(sp>=0?'+':'−')+nf(Math.abs(sp))+' pp</b><small>'+(sp<0?'Curva invertida: señal clásica de recesión':sp<.25?'Curva casi plana':'Curva normal (los plazos largos pagan más)')+'</small>';
 }
 function dibuja(W){
   var svg=$('cv'),w=svg.clientWidth||340,h=360,ml=8,mr=40,mt=10,mb=22,pw=w-ml-mr,ph=h-mt-mb;
@@ -160,13 +152,14 @@ function dibuja(W){
 }
 addEventListener('resize',function(){if(DATA[CUR])mostrar()});
 $('shx').onclick=function(){
-  var t='Rendimiento de los bonos del Tesoro de EEUU (30, 10 y 2 años) en vivo, con datos de la Fed. Míralo';
+  var t='Rendimiento de los bonos del Tesoro de EEUU (30, 10 y 5 años) en vivo. Míralo';
   var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
   try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
   window.open(u,'_blank');
 };
 if(innerWidth<420)$('shx').textContent='𝕏';
 pintaTabs();pintaRng();mostrar();
+['DGS30','DGS10','DGS5','DGS3M'].reduce(function(p,id){return p.then(function(){return carga(id).catch(function(){})}).then(pintaTabs)},Promise.resolve());
 </script>
 </body>
 </html>
