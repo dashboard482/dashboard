@@ -3,53 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Screener de Mercado - Hub Financiero</title>
+<meta name="theme-color" content="#0e1117">
+<title>Buscador de activos - Hub Financiero</title>
 <style>
-:root{
-  --bg:#0e1117;
-  --panel:#131722;
-  --panel-2:#1a1e29;
-  --border:#2a2e39;
-  --ink:#d1d4dc;
-  --ink-strong:#f0f3fa;
-  --dim:#787b86;
-}
+:root{--bg:#0e1117;--panel:#131722;--panel2:#1a1e29;--border:#2a2e39;--ink:#d1d4dc;--strong:#f0f3fa;--dim:#787b86;--accent:#2962ff;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--panel2:#eef1f7;--border:#dde1ea;--ink:#363a45;--strong:#0e1117;--dim:#6b6f7c;color-scheme:light}}
 *{box-sizing:border-box}
-body{margin:0;padding:12px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:1200px;margin:0 auto}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
-.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-strong);text-decoration:none;background:var(--panel-2);border:1px solid var(--border);padding:6px 12px;border-radius:6px}
-.widget-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;padding:12px;margin-bottom:20px}
-.section-title{font-size:14px;font-weight:600;color:var(--ink-strong);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.sub{font-size:11px;color:var(--dim);margin-bottom:16px;text-align:center}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:calc(12px + max(env(safe-area-inset-top,0px),var(--tgtop,0px))) 12px calc(24px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.back{display:inline-flex;align-items:center;font-size:13px;color:var(--strong);text-decoration:none;background:var(--panel2);border:1px solid var(--border);padding:6px 12px;border-radius:8px;white-space:nowrap}
+#shx{flex:none;padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap}
+h1{font-size:19px;margin:6px 2px 2px;color:var(--strong)}
+.lead{font-size:12.5px;color:var(--dim);margin:0 2px 12px;line-height:1.5}
+.lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin:8px 2px 5px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;background:var(--panel2);color:var(--ink);border:1px solid var(--border);border-radius:999px;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#vs button{padding:6px 12px;font-size:12px}
+#vs button.on{background:#1d2740;border-color:var(--accent)}
+.box{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;margin-top:10px}
+#w{width:100%}
+#msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--dim);font-size:13px;line-height:1.5;pointer-events:none}
+.desc{font-size:12px;color:var(--dim);margin:10px 2px 0;line-height:1.55}
+.desc b{color:var(--strong)}
+.tip{font-size:11px;color:var(--dim);margin:6px 2px 0;line-height:1.5}
 </style>
 </head>
 <body>
+<div class="wrap">
+  <header><a class="back" href="index.html">← Hub</a><button id="shx" type="button">𝕏 Compartir</button></header>
 
-<header>
-  <a href="index.html" class="back-btn">← Volver al Hub</a>
-  <span style="font-size:12px; color:var(--dim);">ESCANÉADOR EN VIVO</span>
-</header>
+  <h1>🔍 Buscador de activos</h1>
+  <p class="lead">Filtra y ordena miles de activos de un vistazo: los que más suben, los más baratos, los de mayor volumen… Elige el mercado y la vista.</p>
 
-<div class="sub">Filtra y analiza los activos con mayor movimiento y volumen del mercado cripto.</div>
+  <div class="lbl">Mercado</div>
+  <div class="tabs" id="tabs"></div>
+  <div class="lbl">Vista</div>
+  <div class="tabs" id="vs"></div>
 
-<div class="widget-box">
-  <div class="section-title">🔍 Screener Avanzado de Criptomonedas</div>
-  <div class="tradingview-widget-container">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
-    {
-      "width": "100%",
-      "height": "550",
-      "defaultColumn": "overview",
-      "market": "crypto",
-      "showToolbar": true,
-      "colorTheme": "dark",
-      "locale": "es",
-      "isTransparent": true
-    }
-    </script>
-  </div>
+  <div class="box"><div id="w"></div><div id="msg">Cargando…</div></div>
+  <div class="desc" id="desc"></div>
+  <div class="tip">💡 Toca el título de una columna para ordenar de mayor a menor (y otra vez para invertir). El botón de filtros de arriba a la derecha de la tabla permite afinar por precio, volumen o variación. Toca un activo para abrir su ficha. Datos de TradingView; solo informativo, no es asesoramiento financiero.</div>
 </div>
 
+<script>
+(function(){
+'use strict';
+var SRC='https://s3.tradingview.com/external-embedding/embed-widget-screener.js';
+var $=function(i){return document.getElementById(i)};
+var MERC=[
+ {id:'crypto',n:'Cripto',m:'crypto',t:'cripto'},
+ {id:'usa',n:'Acciones EEUU',m:'america',t:'acc'},
+ {id:'esp',n:'España',m:'spain',t:'acc'},
+ {id:'ale',n:'Alemania',m:'germany',t:'acc'},
+ {id:'fra',n:'Francia',m:'france',t:'acc'},
+ {id:'uk',n:'Reino Unido',m:'uk',t:'acc'},
+ {id:'fx',n:'Divisas',m:'forex',t:'fx'}
+];
+var VISTAS={
+ overview:{n:'Resumen',d:'<b>Resumen:</b> precio, variación del día, volumen y valoración básica. Es el punto de partida para ver quién se mueve hoy.'},
+ performance:{n:'Rendimiento',d:'<b>Rendimiento:</b> cuánto ha subido o bajado cada activo en 1 semana, 1 mes, 3 meses, 6 meses, 1 año y en lo que va de año. Ideal para ver tendencias.'},
+ valuation:{n:'Valoración',d:'<b>Valoración:</b> si la acción está cara o barata: PER, precio/ventas, capitalización y más. Ordena por PER para encontrar las más baratas (con cuidado: barata no siempre es buena).'},
+ dividends:{n:'Dividendos',d:'<b>Dividendos:</b> rentabilidad por dividendo y reparto anual. Ordena por rentabilidad para ver las que más pagan.'},
+ oscillators:{n:'Técnico',d:'<b>Técnico:</b> indicadores como RSI, MACD o estocástico. Sirven para ver si un activo está sobrecomprado (RSI alto) o sobrevendido (RSI bajo).'},
+ moving_averages:{n:'Medias móviles',d:'<b>Medias móviles:</b> precio frente a sus medias de 10, 20, 50, 100 y 200 periodos. Un activo por encima de la media de 200 suele estar en tendencia alcista.'}
+};
+var ORD={acc:['overview','performance','valuation','dividends','oscillators','moving_averages'],cripto:['overview','performance','oscillators','moving_averages'],fx:['overview','performance','oscillators','moving_averages']};
+var cur='usa',vis='overview';
+try{var g=localStorage.getItem('scr.m');if(g&&MERC.some(function(x){return x.id===g}))cur=g;var gv=localStorage.getItem('scr.v');if(gv&&VISTAS[gv])vis=gv}catch(e){}
+function merc(){return MERC.filter(function(x){return x.id===cur})[0]}
+function oscuro(){return !(window.matchMedia&&matchMedia('(prefers-color-scheme:light)').matches)}
+function alto(){return Math.max(440,Math.min(820,window.innerHeight-250))}
+function guarda(){try{localStorage.setItem('scr.m',cur);localStorage.setItem('scr.v',vis)}catch(e){}}
+function pintaVistas(){
+  var m=merc(),l=ORD[m.t];if(l.indexOf(vis)<0)vis='overview';
+  var c=$('vs');c.innerHTML='';
+  l.forEach(function(k){var b=document.createElement('button');b.textContent=VISTAS[k].n;if(k===vis)b.className='on';b.onclick=function(){vis=k;guarda();pintaVistas();cargar()};c.appendChild(b)});
+}
+function pintaMercados(){
+  var c=$('tabs');c.innerHTML='';
+  MERC.forEach(function(m){var b=document.createElement('button');b.textContent=m.n;if(m.id===cur)b.className='on';b.onclick=function(){cur=m.id;guarda();pintaMercados();pintaVistas();cargar()};c.appendChild(b)});
+  var on=c.querySelector('.on');if(on&&on.scrollIntoView)try{on.scrollIntoView({inline:'center',block:'nearest'})}catch(e){}
+}
+function cargar(){
+  var m=merc(),box=$('w');box.innerHTML='';
+  var cont=document.createElement('div');cont.className='tradingview-widget-container';
+  var inner=document.createElement('div');inner.className='tradingview-widget-container__widget';cont.appendChild(inner);
+  var cfg={width:'100%',height:alto(),defaultColumn:vis,defaultScreen:'general',market:m.m,showToolbar:true,colorTheme:oscuro()?'dark':'light',locale:'es',isTransparent:true};
+  var s=document.createElement('script');s.type='text/javascript';s.async=true;s.src=SRC;s.text=JSON.stringify(cfg);
+  cont.appendChild(s);box.appendChild(cont);box.style.minHeight=alto()+'px';
+  $('msg').style.display='flex';$('msg').textContent='Cargando '+m.n+'…';
+  $('desc').innerHTML=VISTAS[vis].d;
+  var t=Date.now(),chk=setInterval(function(){
+    if(box.querySelector('iframe')){$('msg').style.display='none';clearInterval(chk)}
+    else if(Date.now()-t>10000){$('msg').textContent='No se ha podido cargar la tabla. Comprueba la conexión o vuelve a pulsar el mercado.';clearInterval(chk)}
+  },400);
+}
+$('shx').onclick=function(){
+  var t='Buscador de activos: filtra y ordena acciones, cripto y divisas en directo. Míralo';
+  var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
+  try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+  window.open(u,'_blank');
+};
+if(window.innerWidth<420)$('shx').textContent='𝕏';
+pintaMercados();pintaVistas();cargar();
+if(window.matchMedia)try{matchMedia('(prefers-color-scheme:light)').addEventListener('change',cargar)}catch(e){}
+var rt,w0=window.innerWidth;addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){if(innerWidth!==w0){w0=innerWidth;cargar()}},300)});
+})();
+</script>
+<script src="telegram.js" defer></script>
 </body>
 </html>
