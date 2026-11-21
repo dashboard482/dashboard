@@ -63,43 +63,68 @@ function parse(txt){
   return o;
 }
 var YH={DGS30:'^TYX',DGS10:'^TNX',DGS5:'^FVX',DGS3M:'^IRX'};
+var FAIL={},LS='bono.v3';
 function parseY(t){
   var j=JSON.parse(t),r=j.chart.result[0],ts=r.timestamp,c=r.indicators.quote[0].close,o=[];
   for(var i=0;i<ts.length;i++)if(c[i]!=null){var t=ts[i]*1000,k=Math.floor(t/864e5);if(o.length&&Math.floor(o[o.length-1][0]/864e5)===k)o[o.length-1]=[t,c[i]];else o.push([t,c[i]])}
   if(o.length<20)throw 0;return o;
 }
-function carrera(ps){
-  return new Promise(function(ok,ko){var n=ps.length,f=0;ps.forEach(function(p){p.then(ok).catch(function(){if(++f===n)ko()})})});
-}
-function viaProxy(u,parse){
-  return carrera(PX.map(function(px){return fetch(px(u),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(parse)}));
+function guarda(){try{localStorage.setItem(LS,JSON.stringify(DATA))}catch(e){}}
+function lee(){try{var d=JSON.parse(localStorage.getItem(LS)||'{}');for(var k in d)if(d[k]&&d[k].length>20)DATA[k]=d[k]}catch(e){}}
+// Candidatos escalonados: se lanza uno cada 1,3 s (en vez de todos a la vez) y gana el primero que responde.
+// Se recuerda cuál funcionó para probarlo el primero la próxima vez.
+var BASE=[[1,'query1'],[2,'query1'],[3,'query1'],[1,'query2'],[2,'query2'],[0,'query1']];
+function cands(){
+  var l=BASE.slice(),p=-1;
+  try{p=+localStorage.getItem('bono.px')}catch(e){}
+  if(p>=0&&p<l.length){var x=l.splice(p,1)[0];l.unshift(x)}
+  return l;
 }
 function yh(sym,rango,inter){
-  return carrera(['query1','query2'].map(function(q){return viaProxy('https://'+q+'.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?range='+rango+'&interval='+inter,parseY)}));
+  return new Promise(function(ok,ko){
+    var L=cands(),fin=0,fall=0,tm=[];
+    function listo(){tm.forEach(clearTimeout)}
+    L.forEach(function(c,i){
+      tm.push(setTimeout(function(){
+        if(fin)return;
+        var u='https://'+c[1]+'.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?range='+rango+'&interval='+inter;
+        var ac=window.AbortController?new AbortController():null,to=setTimeout(function(){ac&&ac.abort()},14000);
+        fetch(PX[c[0]](u),ac?{signal:ac.signal}:{}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(parseY).then(function(d){
+          clearTimeout(to);if(fin)return;fin=1;listo();
+          try{localStorage.setItem('bono.px',String(BASE.findIndex(function(z){return z[0]===c[0]&&z[1]===c[1]})))}catch(e){}
+          ok(d);
+        }).catch(function(){clearTimeout(to);if(++fall===L.length&&!fin){fin=1;listo();ko()}});
+      },i*1300));
+    });
+  });
 }
-function unaVez(id){
-  var y=YH[id];if(!y)return Promise.reject();
-  // diario de los últimos 10 años; si falla, el histórico completo de siempre
-  return yh(y,'10y','1d').catch(function(){return yh(y,'max','1d')});
+function espera(ms){return new Promise(function(ok){setTimeout(ok,ms)})}
+function reint(f){return f().catch(function(){return espera(1500).then(f)})}
+var COLA=Promise.resolve();
+function encola(f){COLA=COLA.then(f,f);return COLA}
+function sube(id,d){ // datos diarios recientes: sustituyen el tramo que cubren
+  var o=DATA[id]||[];DATA[id]=o.filter(function(p){return p[0]<d[0][0]}).concat(d);guarda();
 }
-function bajar(id){
-  return unaVez(id).catch(function(){return new Promise(function(ok){setTimeout(ok,1500)}).then(function(){return unaVez(id)})});
+function bajaReciente(id){
+  return reint(function(){return yh(YH[id],'2y','1d')}).then(function(d){FAIL[id]=0;sube(id,d)}).catch(function(){FAIL[id]=1});
 }
-var HIST={};
-function historia(id){
-  // historia antigua en mensual, en segundo plano (si falla no pasa nada)
-  if(HIST[id]||!YH[id])return;HIST[id]=1;
-  yh(YH[id],'max','1mo').then(function(m){
+function bajaHistoria(id){
+  return yh(YH[id],'10y','1d').then(function(d){sube(id,d)}).catch(function(){})
+   .then(function(){return yh(YH[id],'max','1mo')}).then(function(m){
     var d=DATA[id];if(!d)return;var t0=d[0][0];
     var ant=m.filter(function(p){return p[0]<t0-864e5*20});
-    if(!ant.length)return;
-    DATA[id]=ant.concat(d);
-    if(CUR===id)mostrar();
+    if(ant.length){DATA[id]=ant.concat(d);guarda()}
   }).catch(function(){});
 }
-function carga(id){
-  if(DATA[id])return Promise.resolve(DATA[id]);
-  return bajar(id).then(function(d){DATA[id]=d;setTimeout(function(){historia(id)},1500);return d});
+function repinta(id){pintaTabs();if(CUR===id||id==='DGS10'||id==='DGS3M')mostrar()}
+function arranca(){
+  var orden=[CUR].concat(['DGS30','DGS10','DGS5','DGS3M'].filter(function(x){return x!==CUR}));
+  orden.forEach(function(id){encola(function(){return bajaReciente(id).then(function(){repinta(id)})})});
+  orden.forEach(function(id){encola(function(){return bajaHistoria(id).then(function(){repinta(id)})})});
+}
+function reintenta(){
+  FAIL={};COLA=Promise.resolve();mostrar();
+  ['DGS30','DGS10','DGS5','DGS3M'].forEach(function(id){if(!DATA[id])encola(function(){return bajaReciente(id).then(function(){repinta(id)})})});
 }
 function pintaTabs(){
   $('tabs').innerHTML=SER.map(function(s){var d=DATA[s.id],l=d?nf(d[d.length-1][1])+' %':'…';return '<button class="tab'+(s.id===CUR?' on':'')+'" data-id="'+s.id+'">'+s.n+'<small>'+l+'</small></button>'}).join('');
@@ -113,10 +138,10 @@ function mostrar(){
   var id=CUR,s=SER.filter(function(x){return x.id===id})[0];
   $('lf').href='https://fred.stlouisfed.org/series/'+id;$('lf').textContent='fred.stlouisfed.org/series/'+id;
   if(!DATA[id]){
-    $('val').textContent='…';$('chg').textContent='';$('cv').innerHTML='';$('st').innerHTML='';$('tip').textContent='Cargando datos de FRED…';
-    carga(id).then(function(){pintaTabs();if(CUR===id)mostrar();relaciones()}).catch(function(){
-      if(CUR===id){$('tip').innerHTML='<div class="msg">No se han podido descargar los datos ahora mismo.<br>Imagen oficial de FRED (desliza a la derecha para ver lo último):<div id="fi" style="overflow-x:auto;margin-top:10px"><img style="min-width:720px;width:100%" src="https://fred.stlouisfed.org/graph/fredgraph.png?id='+id+'" alt="FRED '+id+'" onload="var f=document.getElementById(\'fi\');f.scrollLeft=f.scrollWidth"></div><br><br><button class="tab" id="rt" style="flex:none;padding:8px 18px">Reintentar</button></div>';$('rt').onclick=mostrar}
-    });
+    $('val').textContent='…';$('chg').textContent='';$('cv').innerHTML='';$('st').innerHTML='';
+    if(FAIL[id])$('tip').innerHTML='<div class="msg">No se han podido descargar los datos ahora mismo.<br><button id="rt" style="margin-top:10px;padding:9px 16px;border-radius:8px;border:0;background:#3b82f6;color:#fff;font-weight:700">Reintentar</button></div>';
+    else $('tip').textContent='Cargando datos de Yahoo Finance… pueden tardar unos segundos.';
+    if(FAIL[id])$('rt').onclick=reintenta;
     return;
   }
   var all=DATA[id],n=all.length,last=all[n-1],prev=all[n-2];
@@ -135,7 +160,7 @@ function mostrar(){
 }
 function relaciones(){
   var a=DATA.DGS10,b=DATA.DGS3M,c=$('curva');if(!c)return;
-  if(!a||!b){carga('DGS10').then(function(){return carga('DGS3M')}).then(function(){relaciones()}).catch(function(){var e=$('curva');if(e)e.innerHTML='<i>Curva 10 a − 3 m</i><b>—</b><small>No disponible ahora mismo</small>'});c.innerHTML='<i>Curva 10 a − 3 m</i><b>…</b>';return}
+  if(!a||!b){c.innerHTML='<i>Curva 10 a − 3 meses</i><b>…</b><small>'+(FAIL.DGS10||FAIL.DGS3M?'No disponible ahora mismo':'Cargando…')+'</small>';return}
   var sp=a[a.length-1][1]-b[b.length-1][1];
   c.innerHTML='<i>Curva 10 a − 3 meses</i><b class="'+(sp>=0?'up':'dn')+'">'+(sp>=0?'+':'−')+nf(Math.abs(sp))+' pp</b><small>'+(sp<0?'Curva invertida: señal clásica de recesión':sp<.25?'Curva casi plana':'Curva normal (los plazos largos pagan más)')+'</small>';
 }
@@ -178,8 +203,7 @@ $('shx').onclick=function(){
   window.open(u,'_blank');
 };
 if(innerWidth<420)$('shx').textContent='𝕏';
-pintaTabs();pintaRng();mostrar();
-['DGS30','DGS10','DGS5','DGS3M'].reduce(function(p,id){return p.then(function(){return carga(id).catch(function(){})}).then(pintaTabs)},Promise.resolve());
+lee();pintaTabs();pintaRng();mostrar();arranca();
 </script>
 </body>
 </html>
