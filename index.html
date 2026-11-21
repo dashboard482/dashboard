@@ -462,6 +462,21 @@ addEventListener('message',e=>{
 document.body.append(bf);
 
 render();
+/* ---------- recordar la posición al volver desde otra página ---------- */
+(function(){
+  const K='hub_scroll';let tm=null;
+  const guarda=()=>{try{if($('q').value)return;localStorage.setItem(K,JSON.stringify({y:window.scrollY,t:Date.now()}))}catch(e){}};
+  addEventListener('scroll',()=>{clearTimeout(tm);tm=setTimeout(guarda,150)},{passive:true});
+  addEventListener('pagehide',guarda);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)guarda()});
+  document.addEventListener('click',e=>{if(e.target.closest('a.card'))guarda()},true);
+  let r=null;try{r=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
+  if(r&&r.y>0&&Date.now()-r.t<30*60*1000){
+    const ir=()=>window.scrollTo(0,r.y);
+    ir();setTimeout(ir,150);setTimeout(ir,600);addEventListener('load',ir);
+  }
+})();
+
 })();
 </script>
 </body>
