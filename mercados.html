@@ -90,5 +90,24 @@ var rt,w0=window.innerWidth;window.addEventListener('resize',function(){clearTim
 })();
 </script>
 <script src="telegram.js" defer></script>
+<script>
+/* botón compartir en X (Hub) */
+(function(){
+  function go(){
+    var h=document.querySelector('.top-actions')||document.querySelector('header')||document.querySelector('.wrap');
+    if(!h||document.getElementById('shx'))return;
+    var b=document.createElement('button');b.id='shx';b.type='button';b.textContent=window.innerWidth<420?'𝕏':'𝕏 Compartir';b.setAttribute('aria-label','Compartir en X');var st=document.createElement('style');st.textContent='header a{white-space:nowrap}';document.head.appendChild(st);
+    b.style.cssText='flex:none;margin-left:8px;padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap';
+    b.onclick=function(){
+      var t=(document.title||'Hub Financiero').replace(/\s*[·|\-–].*$/,'')+' en vivo en el Hub Financiero. Míralo';
+      var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
+      try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+      window.open(u,'_blank');
+    };
+    h.appendChild(b);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();
+})();
+</script>
 </body>
 </html>
