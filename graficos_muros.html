@@ -18,9 +18,12 @@
   body{
     margin:0; background:var(--bg); color:#fff;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    padding:14px; display:flex; flex-direction:column; align-items:center; gap:14px;
+    padding:max(14px,env(safe-area-inset-top,0px),var(--tgtop,0px)) 14px 14px; display:flex; flex-direction:column; align-items:center; gap:14px;
   }
-  h1{font-size:14px; font-weight:700; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; margin:4px 0 0;}
+  #top{width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:-4px;}
+  #top a{color:#fff;text-decoration:none;font-size:13px;background:#1a1e29;border:1px solid var(--border);padding:6px 12px;border-radius:8px;white-space:nowrap;}
+  #shx{padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap;}
+  h1{text-align:center;font-size:14px; font-weight:700; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; margin:4px 0 0;}
   .leyenda{font-size:11.5px; color:var(--muted); display:flex; gap:14px; flex-wrap:wrap; justify-content:center;}
   .leyenda span{display:flex; align-items:center; gap:5px;}
   .barra{width:12px; height:3px; border-radius:2px;}
@@ -45,6 +48,8 @@
 </style>
 </head>
 <body>
+
+  <div id="top"><a href="index.html">← Hub</a><button id="shx" type="button">𝕏 Compartir</button></div>
 
   <h1>4 gráficos en directo — velas + muros de órdenes</h1>
   <div class="leyenda">
@@ -215,11 +220,23 @@ async function actualizarMuros(){
   }
 }
 
+(function(){
+  const sh = document.getElementById("shx");
+  if(window.innerWidth<420) sh.textContent = "𝕏";
+  sh.onclick = function(){
+    const t = "Muros de órdenes de BTC, ETH, SOL y HYPE en directo: soportes y resistencias del libro. Míralo";
+    const u = "https://twitter.com/intent/tweet?text="+encodeURIComponent(t)+"&url="+encodeURIComponent("https://dashboard482.github.io/dashboard/");
+    try{ if(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink){ Telegram.WebApp.openLink(u); return; } }catch(e){}
+    window.open(u,"_blank");
+  };
+})();
+
 iniciarVelas();
 actualizarCambio24h();
 actualizarMuros();
 setInterval(actualizarMuros, 4000);
 setInterval(actualizarCambio24h, 20000);
 </script>
+<script src="telegram.js" defer></script>
 </body>
 </html>
