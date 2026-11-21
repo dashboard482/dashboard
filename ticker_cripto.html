@@ -19,7 +19,13 @@
     transition: background 0.6s ease; }
 
   /* ── pestañas ── */
-  #tabs { display: flex; gap: 8px; padding: calc(10px + env(safe-area-inset-top,0px)) 12px 8px;
+  #top { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: max(10px, env(safe-area-inset-top,0px), var(--tgtop,0px)) 12px 0; }
+  #top a { color: var(--ink); text-decoration: none; font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12); padding: 6px 12px; border-radius: 8px; white-space: nowrap; }
+  #shx { padding: 6px 10px; font: 700 12px system-ui, sans-serif; color: #fff; background: #1d9bf0; border: 0;
+    border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  #tabs { display: flex; gap: 8px; padding: 8px 12px 8px;
     overflow-x: auto; flex: 0 0 auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   #tabs::-webkit-scrollbar { display: none; }
   .tab { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -96,6 +102,7 @@
 </head>
 <body>
 <div id="stage">
+  <div id="top"><a href="index.html">← Hub</a><button id="shx" type="button">𝕏 Compartir</button></div>
   <div id="tabs"></div>
 
   <div id="main">
@@ -286,6 +293,14 @@
 
   window.addEventListener('resize', drawSpark);
 
+  const sh = document.getElementById('shx');
+  if (window.innerWidth < 420) sh.textContent = '𝕏';
+  sh.onclick = () => {
+    const t = 'Precio de ' + current.sym + ' y de las principales criptos en directo. Míralo';
+    const u = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(t) + '&url=' + encodeURIComponent('https://dashboard482.github.io/dashboard/');
+    try { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) { Telegram.WebApp.openLink(u); return; } } catch (e) {}
+    window.open(u, '_blank');
+  };
   buildTabs();
   document.body.classList.add('is-btc');
   badgeEl.style.setProperty('--c1', current.c1);
@@ -295,5 +310,6 @@
   connect(current.pair);
 })();
 </script>
+<script src="telegram.js" defer></script>
 </body>
 </html>
