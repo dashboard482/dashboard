@@ -43,10 +43,16 @@
     justify-content: space-between;
     gap: 12px;
     padding: 10px 16px 4px;
-    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-top: 8px;
     flex-wrap: wrap;
     flex: 0 0 auto;
   }
+  #top { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: max(10px, env(safe-area-inset-top,0px), var(--tgtop,0px)) 16px 0; }
+  #top a { color: var(--ink); text-decoration: none; font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.14); padding: 6px 12px; border-radius: 8px; white-space: nowrap; }
+  #shx { padding: 6px 10px; font: 700 12px system-ui, sans-serif; color: #fff; background: #1d9bf0; border: 0;
+    border-radius: 8px; cursor: pointer; white-space: nowrap; }
   .brand {
     font-size: 13px;
     letter-spacing: 0.02em;
@@ -201,6 +207,7 @@
 </head>
 <body>
 <div id="stage">
+  <div id="top"><a href="index.html">← Hub</a><button id="shx" type="button">𝕏 Compartir</button></div>
   <header>
     <div class="brand"><span id="statusDot" class="status-dot"></span><span id="statusText">conectando…</span></div>
     <div class="controls">
@@ -632,9 +639,19 @@
 
   window.addEventListener('resize', drawChart);
 
+  const sh = document.getElementById('shx');
+  if (window.innerWidth < 420) sh.textContent = '𝕏';
+  sh.onclick = function () {
+    const t = 'Presión de compra y venta de ' + symbolSelect.value.replace('usdt','').toUpperCase() + ' en directo. Míralo';
+    const u = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(t) + '&url=' + encodeURIComponent('https://dashboard482.github.io/dashboard/');
+    try { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) { Telegram.WebApp.openLink(u); return; } } catch (e) {}
+    window.open(u, '_blank');
+  };
+
   connect(symbolSelect.value);
   setInterval(tick, 300);
 })();
 </script>
+<script src="telegram.js" defer></script>
 </body>
 </html>
