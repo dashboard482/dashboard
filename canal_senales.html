@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Canal de señales</title>
+<script src="telegram.js" defer></script>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--ink:#f8fafc;--mut:#94a3b8;--acc:#38bdf8;--bd:rgba(255,255,255,.08);--warn:#f59e0b}
+@media (prefers-color-scheme:light){:root{--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--mut:#475569;--acc:#0369a1;--bd:rgba(0,0,0,.1);--warn:#b45309}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.55}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;padding:12px 14px;padding-top:max(12px,env(safe-area-inset-top),var(--tgtop,0px));background:var(--bg);border-bottom:1px solid var(--bd)}
+header a{color:var(--acc);text-decoration:none;font-weight:700;font-size:14px;white-space:nowrap}
+header h1{flex:1;margin:0;font-size:16px;text-align:center}
+#shx{flex:none;padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap}
+main{max-width:640px;margin:0 auto;padding:14px 14px 40px}
+.note{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 8px}
+p{margin:0 0 8px;font-size:14px}
+ul{margin:0;padding-left:18px;font-size:14px}li{margin-bottom:5px}
+.mut{color:var(--mut)}
+.dyor{border-color:rgba(245,158,11,.5)}.dyor h2{color:var(--warn)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.btns a,.btns button{flex:1;min-width:140px;text-align:center;padding:11px;border-radius:10px;font:700 14px system-ui,sans-serif;text-decoration:none;border:0;cursor:pointer}
+.b1{background:#1d9bf0;color:#fff}.b2{background:#22c55e;color:#04210f}
+</style>
+</head>
+<body>
+<header><a href="index.html">← Hub</a><h1>Canal de señales</h1><button id="shx" type="button" aria-label="Compartir en X">𝕏</button></header>
+<main>
+<div class="note">📣 Un canal público de Telegram, gratis y sin registros. Entras, y el bot hace el resto.</div>
+
+<section><h2>👋 Qué es</h2>
+<p>El canal donde el Hub Financiero te avisa cuando pasa algo importante en BTC y te manda un resumen del mercado cada día.</p>
+<p class="mut">Sin spam: lo importante suena y lo demás llega en silencio.</p>
+<div class="btns"><a class="b1" id="join" href="https://t.me/hubfinanciero_senales" target="_blank" rel="noopener">📣 Unirme al canal</a></div></section>
+
+<section><h2>🔔 Qué recibes</h2>
+<ul>
+<li><b>Avisos con sonido:</b> movimientos fuertes de BTC (desde un 5 % en 4 horas), con un máximo de 4 al día.</li>
+<li><b>Avisos en silencio:</b> movimientos moderados de BTC (desde un 3 %).</li>
+<li><b>Resúmenes en silencio:</b> uno por la mañana (9:00) y otro por la tarde-noche (22:00), con el precio de BTC, su variación y el índice de miedo y codicia.</li>
+<li><b>De noche</b> (23:00 a 7:00) solo suena un movimiento extremo.</li>
+</ul></section>
+
+<section><h2>📱 Cómo funciona</h2>
+<ul>
+<li>Cada aviso trae un botón <b>"Abrir en el Hub"</b> para ver el contexto: ¿BTC caro o barato?, gráficos, liquidaciones…</li>
+<li>Nadie puede escribir en el canal: solo lo lees.</li>
+<li>¿Demasiados avisos? Silencia el canal en Telegram y lee solo los resúmenes.</li>
+</ul></section>
+
+<section class="dyor"><h2>⚠️ DYOR · Haz tu propia investigación</h2>
+<p>Nada de lo que publica el canal es asesoramiento financiero ni una recomendación de compra o venta.</p>
+<ul>
+<li>Los datos pueden tener errores o retrasos.</li>
+<li>Los avisos son orientativos, no predicciones.</li>
+<li>Investiga siempre por tu cuenta antes de decidir.</li>
+</ul></section>
+
+<section><h2>💬 Comparte el canal</h2>
+<p class="mut">Si te parece útil, cuéntaselo a alguien.</p>
+<div class="btns"><button class="b1" id="sh2" type="button">𝕏 Compartir el canal</button><a class="b2" href="index.html">← Volver al Hub</a></div></section>
+</main>
+<script>
+(function(){
+  var CANAL='https://t.me/hubfinanciero_senales';
+  var T='Canal gratis de señales del Hub Financiero: avisos de BTC y un resumen diario del mercado en Telegram. Lo importante suena y el resto llega en silencio 👇';
+  function sh(){var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(T)+'&url='+encodeURIComponent(CANAL);
+    try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+    window.open(u,'_blank');}
+  document.getElementById('shx').onclick=sh;document.getElementById('sh2').onclick=sh;
+  document.getElementById('join').onclick=function(e){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData&&Telegram.WebApp.openTelegramLink){e.preventDefault();Telegram.WebApp.openTelegramLink(CANAL)}}catch(x){}};
+})();
+</script>
+</body>
+</html>
