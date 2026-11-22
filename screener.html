@@ -56,7 +56,6 @@ h1{font-size:19px;margin:6px 2px 2px;color:var(--strong)}
 var SRC='https://s3.tradingview.com/external-embedding/embed-widget-screener.js';
 var $=function(i){return document.getElementById(i)};
 var MERC=[
- {id:'crypto',n:'Cripto',m:'crypto',t:'cripto'},
  {id:'usa',n:'Acciones EEUU',m:'america',t:'acc'},
  {id:'esp',n:'España',m:'spain',t:'acc'},
  {id:'ale',n:'Alemania',m:'germany',t:'acc'},
@@ -108,7 +107,7 @@ function cargar(){
   },400);
 }
 $('shx').onclick=function(){
-  var t='Buscador de activos: filtra y ordena acciones, cripto y divisas en directo. Míralo';
+  var t='Buscador de activos: filtra y ordena acciones y divisas en directo. Míralo';
   var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
   try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
   window.open(u,'_blank');
