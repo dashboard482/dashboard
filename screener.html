@@ -40,6 +40,8 @@ h1{font-size:19px;margin:6px 2px 2px;color:var(--strong)}
 
   <div class="lbl">Mercado</div>
   <div class="tabs" id="tabs"></div>
+  <div class="lbl" id="odl">Mostrar primero</div>
+  <div class="tabs" id="od"></div>
   <div class="lbl">Vista</div>
   <div class="tabs" id="vs"></div>
 
@@ -58,8 +60,6 @@ var MERC=[
  {id:'usa',n:'Acciones EEUU',m:'america',t:'acc'},
  {id:'esp',n:'España',m:'spain',t:'acc'},
  {id:'ale',n:'Alemania',m:'germany',t:'acc'},
- {id:'fra',n:'Francia',m:'france',t:'acc'},
- {id:'uk',n:'Reino Unido',m:'uk',t:'acc'},
  {id:'fx',n:'Divisas',m:'forex',t:'fx'}
 ];
 var VISTAS={
@@ -71,27 +71,33 @@ var VISTAS={
  moving_averages:{n:'Medias móviles',d:'<b>Medias móviles:</b> precio frente a sus medias de 10, 20, 50, 100 y 200 periodos. Un activo por encima de la media de 200 suele estar en tendencia alcista.'}
 };
 var ORD={acc:['overview','performance','valuation','dividends','oscillators','moving_averages'],cripto:['overview','performance','oscillators','moving_averages'],fx:['overview','performance','oscillators','moving_averages']};
-var cur='usa',vis='overview';
-try{var g=localStorage.getItem('scr.m');if(g&&MERC.some(function(x){return x.id===g}))cur=g;var gv=localStorage.getItem('scr.v');if(gv&&VISTAS[gv])vis=gv}catch(e){}
+var SORTS=[['most_capitalized','Mayor tamaño'],['top_gainers','Más suben hoy'],['top_losers','Más bajan hoy'],['general','Sin orden']];
+var cur='usa',vis='overview',ord='most_capitalized';
+try{var g=localStorage.getItem('scr.m');if(g&&MERC.some(function(x){return x.id===g}))cur=g;var go=localStorage.getItem('scr.s');if(go&&SORTS.some(function(x){return x[0]===go}))ord=go;var gv=localStorage.getItem('scr.v');if(gv&&VISTAS[gv])vis=gv}catch(e){}
 function merc(){return MERC.filter(function(x){return x.id===cur})[0]}
 function oscuro(){return !(window.matchMedia&&matchMedia('(prefers-color-scheme:light)').matches)}
 function alto(){return Math.max(440,Math.min(820,window.innerHeight-250))}
-function guarda(){try{localStorage.setItem('scr.m',cur);localStorage.setItem('scr.v',vis)}catch(e){}}
+function guarda(){try{localStorage.setItem('scr.m',cur);localStorage.setItem('scr.v',vis);localStorage.setItem('scr.s',ord)}catch(e){}}
 function pintaVistas(){
   var m=merc(),l=ORD[m.t];if(l.indexOf(vis)<0)vis='overview';
   var c=$('vs');c.innerHTML='';
   l.forEach(function(k){var b=document.createElement('button');b.textContent=VISTAS[k].n;if(k===vis)b.className='on';b.onclick=function(){vis=k;guarda();pintaVistas();cargar()};c.appendChild(b)});
 }
+function pintaOrden(){
+  var fx=merc().t==='fx';$('od').style.display=$('odl').style.display=fx?'none':'';
+  var c=$('od');c.innerHTML='';
+  SORTS.forEach(function(k){var b=document.createElement('button');b.textContent=k[1];if(k[0]===ord)b.className='on';b.onclick=function(){ord=k[0];guarda();pintaOrden();cargar()};c.appendChild(b)});
+}
 function pintaMercados(){
   var c=$('tabs');c.innerHTML='';
-  MERC.forEach(function(m){var b=document.createElement('button');b.textContent=m.n;if(m.id===cur)b.className='on';b.onclick=function(){cur=m.id;guarda();pintaMercados();pintaVistas();cargar()};c.appendChild(b)});
+  MERC.forEach(function(m){var b=document.createElement('button');b.textContent=m.n;if(m.id===cur)b.className='on';b.onclick=function(){cur=m.id;guarda();pintaMercados();pintaOrden();pintaVistas();cargar()};c.appendChild(b)});
   var on=c.querySelector('.on');if(on&&on.scrollIntoView)try{on.scrollIntoView({inline:'center',block:'nearest'})}catch(e){}
 }
 function cargar(){
   var m=merc(),box=$('w');box.innerHTML='';
   var cont=document.createElement('div');cont.className='tradingview-widget-container';
   var inner=document.createElement('div');inner.className='tradingview-widget-container__widget';cont.appendChild(inner);
-  var cfg={width:'100%',height:alto(),defaultColumn:vis,defaultScreen:'general',market:m.m,showToolbar:true,colorTheme:oscuro()?'dark':'light',locale:'es',isTransparent:true};
+  var cfg={width:'100%',height:alto(),defaultColumn:vis,defaultScreen:(m.t==='fx'?'general':ord),market:m.m,showToolbar:true,colorTheme:oscuro()?'dark':'light',locale:'es',isTransparent:true};
   var s=document.createElement('script');s.type='text/javascript';s.async=true;s.src=SRC;s.text=JSON.stringify(cfg);
   cont.appendChild(s);box.appendChild(cont);box.style.minHeight=alto()+'px';
   $('msg').style.display='flex';$('msg').textContent='Cargando '+m.n+'…';
@@ -108,7 +114,7 @@ $('shx').onclick=function(){
   window.open(u,'_blank');
 };
 if(window.innerWidth<420)$('shx').textContent='𝕏';
-pintaMercados();pintaVistas();cargar();
+pintaMercados();pintaOrden();pintaVistas();cargar();
 if(window.matchMedia)try{matchMedia('(prefers-color-scheme:light)').addEventListener('change',cargar)}catch(e){}
 var rt,w0=window.innerWidth;addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){if(innerWidth!==w0){w0=innerWidth;cargar()}},300)});
 })();
