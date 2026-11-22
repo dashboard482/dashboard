@@ -57,7 +57,7 @@ footer{font-size:11px;color:var(--mu);text-align:center;line-height:1.55;margin-
 <section class="card" id="c_sta"></section>
 <section class="card" id="c_dom"></section>
 
-<footer>Datos de <b>Yahoo Finance</b> (dólar y VIX), <b>DefiLlama</b> (stablecoins) y <b>CoinGecko</b> (dominancia). El resumen es solo una lectura orientativa que combina el dólar, el VIX y las stablecoins; la dominancia es informativa.<br>Solo informativo, no es asesoramiento financiero (DYOR).</footer>
+<footer>Datos del <b>BCE</b> vía Frankfurter (dólar), <b>Yahoo Finance</b>, <b>Cboe</b> y <b>FRED</b> (VIX), <b>DefiLlama</b> (stablecoins) y <b>CoinGecko</b> (dominancia). El resumen es solo una lectura orientativa que combina el dólar, el VIX y las stablecoins; la dominancia es informativa.<br>Solo informativo, no es asesoramiento financiero (DYOR).</footer>
 
 <script src="telegram.js" defer></script>
 <script>
@@ -74,11 +74,12 @@ function lee(){try{var o=JSON.parse(localStorage.getItem(LS)||'{}');if(o.d){for(
 function carrera(urls,parse){
   return new Promise(function(ok,ko){
     var fin=0,fall=0,tm=[];
-    urls.forEach(function(u,i){
+    urls.forEach(function(it,i){
+      var u=typeof it==='string'?it:it.u,pf=typeof it==='string'?parse:it.p;
       tm.push(setTimeout(function(){
         if(fin)return;
         var ac=window.AbortController?new AbortController():null,to=setTimeout(function(){ac&&ac.abort()},14000);
-        fetch(u,ac?{signal:ac.signal}:{}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(parse).then(function(d){
+        fetch(u,ac?{signal:ac.signal}:{}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(pf).then(function(d){
           clearTimeout(to);if(fin)return;fin=1;tm.forEach(clearTimeout);ok(d);
         }).catch(function(){clearTimeout(to);if(++fall===urls.length&&!fin){fin=1;ko()}});
       },i*1300));
@@ -105,14 +106,46 @@ function parseLl(t){
   }
   if(o.length<40)throw 0;return o.slice(-200);
 }
+function parseCsv(t){ // FRED: fecha,valor
+  var L=t.trim().split(/\r?\n/),o=[];
+  for(var i=1;i<L.length;i++){var p=L[i].split(',');var v=parseFloat(p[1]);if(!isNaN(v)&&/^\d{4}-\d\d-\d\d/.test(p[0]))o.push([Date.parse(p[0]),v])}
+  if(o.length<20)throw 0;return o.slice(-200);
+}
+function parseCboe(t){ // Cboe: DATE(MM/DD/YYYY),OPEN,HIGH,LOW,CLOSE
+  var L=t.trim().split(/\r?\n/),o=[];
+  for(var i=1;i<L.length;i++){var p=L[i].split(','),m=/^(\d\d)\/(\d\d)\/(\d{4})/.exec(p[0]),v=parseFloat(p[4]);if(m&&!isNaN(v))o.push([Date.UTC(+m[3],+m[1]-1,+m[2]),v])}
+  if(o.length<20)throw 0;return o.slice(-200);
+}
+function parseFx(t){ // dólar DXY calculado con tipos del BCE (fórmula oficial del índice)
+  var r=JSON.parse(t).rates,o=[],k;
+  for(k in r){
+    var x=r[k];
+    if(!(x.EUR&&x.JPY&&x.GBP&&x.CAD&&x.SEK&&x.CHF))continue;
+    var v=50.14348112*Math.pow(x.EUR,0.576)*Math.pow(x.JPY,0.136)*Math.pow(x.GBP,0.119)*Math.pow(x.CAD,0.091)*Math.pow(x.SEK,0.042)*Math.pow(x.CHF,0.036);
+    o.push([Date.parse(k),v]);
+  }
+  o.sort(function(a,b){return a[0]-b[0]});
+  if(o.length<20)throw 0;return o;
+}
+function iso(d){return d.toISOString().slice(0,10)}
+function fxUrls(){
+  var f=new Date(),i=new Date(Date.now()-190*864e5),q=iso(i)+'..'+iso(f),s='EUR,JPY,GBP,CAD,SEK,CHF';
+  return [{u:'https://api.frankfurter.dev/v1/'+q+'?base=USD&symbols='+s,p:parseFx},{u:'https://api.frankfurter.app/'+q+'?from=USD&to='+s,p:parseFx}];
+}
+function vixUrls(){
+  var y=yUrls('^VIX').map(function(u){return {u:u,p:parseY}});
+  var cb='https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv',fr='https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS';
+  var c=function(u,p){return {u:u,p:p}};
+  return [y[0],c(cb,parseCboe),y[1],c('https://corsproxy.io/?'+enc(fr),parseCsv),y[2],c('https://corsproxy.io/?'+enc(cb),parseCboe),y[3],c('https://api.allorigins.win/raw?url='+enc(fr),parseCsv),y[4],c('https://api.allorigins.win/raw?url='+enc(cb),parseCboe),y[5]];
+}
 function parseCg(t){
   var m=JSON.parse(t).data.market_cap_percentage;
   if(!(m&&m.btc>0))throw 0;
   return {btc:m.btc,usdt:m.usdt||0,eth:m.eth||0};
 }
 var FUENTES={
-  dxy:function(){return carrera(yUrls('DX-Y.NYB'),parseY)},
-  vix:function(){return carrera(yUrls('^VIX'),parseY)},
+  dxy:function(){return carrera(fxUrls(),parseFx).catch(function(){return carrera(yUrls('DX-Y.NYB'),parseY)})},
+  vix:function(){return carrera(vixUrls(),parseY)},
   sta:function(){return carrera(conProxy('https://stablecoins.llama.fi/stablecoincharts/all'),parseLl)},
   usdt:function(){return carrera(conProxy('https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1'),parseLl)},
   dom:function(){return carrera(conProxy('https://api.coingecko.com/api/v3/global'),parseCg)}
@@ -149,7 +182,7 @@ function cargando(id,tit,k){
 }
 function expl(t){return '<details><summary>¿Qué es y cómo se lee?</summary>'+t+'</details>'}
 var TXT={
- dxy:'<p>El <b>DXY</b> mide la fuerza del dólar frente a una cesta de monedas (euro, yen, libra…).</p><p>Cuando el dólar se fortalece, el dinero se vuelve más caro y escaso en todo el mundo, y los activos de riesgo (bolsa, BTC) suelen sufrir. Cuando el dólar baja, suele haber más margen.</p><p>Aquí miramos el cambio en 30 días: baja de más de un 1 % = favorable · sube de más de un 1 % = apretada.</p>',
+ dxy:'<p>El <b>DXY</b> mide la fuerza del dólar frente a una cesta de monedas (euro, yen, libra…). Aquí se calcula con los tipos de cambio del BCE y la fórmula oficial del índice, así que puede diferir unas décimas del que ves en otras webs.</p><p>Cuando el dólar se fortalece, el dinero se vuelve más caro y escaso en todo el mundo, y los activos de riesgo (bolsa, BTC) suelen sufrir. Cuando el dólar baja, suele haber más margen.</p><p>Aquí miramos el cambio en 30 días: baja de más de un 1 % = favorable · sube de más de un 1 % = apretada.</p>',
  vix:'<p>El <b>VIX</b> mide cuánto miedo hay en la bolsa de EEUU: es la volatilidad que esperan los inversores para el S&amp;P 500.</p><p>Por debajo de 20: calma. Entre 20 y 30: nervios. Por encima de 30: estrés, y suele haber ventas fuertes.</p><p>No mide liquidez directamente, pero un VIX alto suele ir con menos ganas de asumir riesgo.</p>',
  sta:'<p>Las <b>stablecoins</b> (USDT, USDC…) son dólares digitales que se usan para comprar cripto. Es el «combustible» del mercado cripto.</p><p>Si su suma crece, está entrando dinero nuevo; si baja, está saliendo. Miramos el cambio en 30 días: sube más de un 0,5 % = entra dinero · baja más de un 0,5 % = sale dinero.</p><p>Tether (USDT) es la mayor, por eso la mostramos aparte.</p>',
  dom:'<p><b>BTC.D</b> es el porcentaje del valor total de cripto que representa Bitcoin. Si sube, el dinero se refugia en BTC; si baja, suele fluir hacia las altcoins.</p><p><b>USDT.D</b> es el porcentaje que representa USDT. Si sube, la gente se refugia en dólares digitales (suele indicar cautela); si baja, ese dinero se está invirtiendo.</p><p>Aquí solo mostramos el dato de hoy, así que no entra en el resumen de arriba.</p>'
@@ -188,10 +221,11 @@ function resumen(){
   $('chips').innerHTML=h;
   var t,c,s;
   if(!n){t='Cargando…';c='';s='Calculando con el dólar, el VIX y las stablecoins.'}
+  else if(n<2){t='Faltan datos';c='';s='Hace falta al menos 2 de los 3 indicadores para dar un resumen. Reintenta abajo los que no hayan cargado.'}
   else{
     var sc=g-r;
-    if(sc>=2||(n<3&&sc>=1)){t='💧 Liquidez favorable';c='up'}
-    else if(sc<=-2||(n<3&&sc<=-1)){t='🏜️ Liquidez apretada';c='dn'}
+    if(sc>=2){t='💧 Liquidez favorable';c='up'}
+    else if(sc<=-2){t='🏜️ Liquidez apretada';c='dn'}
     else{t='⚖️ Liquidez mixta';c='am'}
     s='Resumen con '+n+' de 3 indicadores (dólar, VIX y stablecoins): '+g+' a favor, '+r+' en contra. Es solo una lectura orientativa.';
   }
