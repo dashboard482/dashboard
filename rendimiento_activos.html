@@ -110,18 +110,21 @@ function estado(){
   if(busy)$('est').textContent='Actualizando datos… '+n+' de '+A.length;
   else if(f)$('est').innerHTML='No se han podido descargar '+f+' activos. <button class="rt" id="rt">Reintentar</button>';
   else $('est').textContent='Datos actualizados · '+new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
-  if($('rt'))$('rt').onclick=function(){FAIL={};carga()};
+  if($('rt'))$('rt').onclick=function(){FAIL={};carga(true)};
 }
 var busy=false;
-function carga(){
+function carga(soloFaltan){
   busy=true;estado();
-  var cola=A.map(function(a){return a[0]}),w=0;
+  var cola=A.map(function(a){return a[0]}).filter(function(s){return soloFaltan!==true||!DATA[s]});
   function uno(){
     if(!cola.length)return Promise.resolve();
     var s=cola.shift();
     return yh(s).catch(function(){return espera(1500).then(function(){return yh(s)})}).then(function(d){DATA[s]=d;FAIL[s]=0;guarda()},function(){FAIL[s]=1}).then(function(){pinta();estado();return uno()});
   }
-  return Promise.all([uno(),uno()]).then(function(){busy=false;estado()});
+  return Promise.all([uno(),uno()]).then(function(){
+    var f=A.filter(function(a){return !DATA[a[0]]});
+    if(f.length&&!carga.rep){carga.rep=1;FAIL={};return espera(4000).then(function(){return carga(true)})}
+    busy=false;estado()});
 }
 $('shx').onclick=function(){
   var t='Qué clase de activo ha rendido más cada año desde 2011: bolsa, bonos, oro, cripto… en el Hub Financiero. Míralo';
