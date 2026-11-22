@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Liquidez del mercado</title>
+<style>
+:root{--bg:#0d1117;--panel:#131722;--p2:#1a1e29;--bd:#2a2e39;--mu:#8a93a6;--tx:#e6e9f0;--ac:#3b82f6;--up:#26a69a;--dn:#ef5350;--am:#f7a600}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--p2:#eef1f6;--bd:#dde2ea;--mu:#667085;--tx:#10151f}}
+*{box-sizing:border-box}
+body{margin:0 auto;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;max-width:900px;padding:max(12px,var(--tgtop,0px),env(safe-area-inset-top)) 16px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.top a{color:var(--tx);text-decoration:none;font-size:13px;background:var(--p2);border:1px solid var(--bd);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.x{padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap}
+h1{font-size:19px;margin:4px 0 4px}.sub{font-size:13px;color:var(--mu);line-height:1.5;margin-bottom:12px}
+.up{color:var(--up)}.dn{color:var(--dn)}.am{color:var(--am)}
+.resumen{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:14px}
+.veredicto{font-size:20px;font-weight:800;margin:0 0 4px}
+.veredicto small{display:block;font-size:12px;font-weight:500;color:var(--mu);margin-top:4px;line-height:1.45}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{flex:1 1 calc(50% - 8px);min-width:130px;flex-wrap:wrap;text-decoration:none;color:var(--tx);background:var(--p2);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.chip i{font-style:normal;font-size:11px;font-weight:800;border-radius:6px;padding:2px 7px;white-space:nowrap}
+.pill{font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;white-space:nowrap}
+.pill.up,.chip i.up{background:rgba(38,166,154,.16)}.pill.dn,.chip i.dn{background:rgba(239,83,80,.16)}.pill.am,.chip i.am{background:rgba(247,166,0,.16)}.pill.gr,.chip i.gr{background:var(--bd);color:var(--mu)}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:14px;scroll-margin-top:12px}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hd h2{font-size:16px;margin:0}
+.big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:10px 0 4px}
+.big b{font-size:30px;font-variant-numeric:tabular-nums}.big span{font-size:13px;font-weight:700}
+.dos{display:flex;gap:10px;margin:10px 0 4px}.dos div{flex:1;background:var(--p2);border:1px solid var(--bd);border-radius:10px;padding:10px}
+.dos i{display:block;font-style:normal;font-size:11px;color:var(--mu);margin-bottom:3px}.dos b{font-size:22px;font-variant-numeric:tabular-nums}
+svg.sp{width:100%;height:64px;display:block;margin:6px 0}
+.lec{font-size:13px;line-height:1.5;margin:6px 0}
+.sec{font-size:12px;color:var(--mu);margin:2px 0 6px}
+details{margin-top:8px;background:var(--p2);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
+summary{cursor:pointer;font-size:13px;font-weight:700}
+details p{font-size:13px;line-height:1.55;margin:8px 0 2px;color:var(--tx)}
+.msg{padding:18px 6px;text-align:center;color:var(--mu);font-size:13px}
+.msg button,.bt{margin-top:8px;background:var(--p2);border:1px solid var(--bd);color:var(--tx);font-size:13px;font-weight:700;padding:7px 14px;border-radius:8px;cursor:pointer}
+.act{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 12px;font-size:12px;color:var(--mu)}
+footer{font-size:11px;color:var(--mu);text-align:center;line-height:1.55;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="top"><a href="index.html">← Hub</a><button class="x" id="shx" type="button">𝕏 Compartir</button></div>
+<h1>💧 Liquidez del mercado</h1>
+<div class="sub">¿Entra o sale dinero del mercado? Cuatro datos clave, cada uno con su explicación, y un resumen arriba. Los datos pueden tardar unos segundos en cargar.</div>
+
+<div class="resumen">
+  <div class="veredicto" id="ver">Cargando…<small>Calculando con el dólar, el VIX y las stablecoins.</small></div>
+  <div class="chips" id="chips"></div>
+</div>
+<div class="act"><span id="upd"></span><button class="bt" id="rec" type="button" style="margin:0">↻ Actualizar</button></div>
+
+<section class="card" id="c_dxy"></section>
+<section class="card" id="c_vix"></section>
+<section class="card" id="c_sta"></section>
+<section class="card" id="c_dom"></section>
+
+<footer>Datos de <b>Yahoo Finance</b> (dólar y VIX), <b>DefiLlama</b> (stablecoins) y <b>CoinGecko</b> (dominancia). El resumen es solo una lectura orientativa que combina el dólar, el VIX y las stablecoins; la dominancia es informativa.<br>Solo informativo, no es asesoramiento financiero (DYOR).</footer>
+
+<script src="telegram.js" defer></script>
+<script>
+var $=function(i){return document.getElementById(i)};
+var LS='liq.v1',D={},FAIL={};
+function nf(v,d){return v.toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function pc(v){return (v>0?'+':v<0?'−':'')+nf(Math.abs(v),1)+' %'}
+function mm(v){return nf(v/1e9,1)+' mil millones $'}
+function enc(u){return encodeURIComponent(u)}
+function guarda(){try{localStorage.setItem(LS,JSON.stringify({d:D,t:Date.now()}))}catch(e){}}
+function lee(){try{var o=JSON.parse(localStorage.getItem(LS)||'{}');if(o.d){for(var k in o.d)D[k]=o.d[k]}}catch(e){}}
+
+/* ---- descargas: se lanzan escalonadas (una cada 1,3 s) y gana la primera que responde ---- */
+function carrera(urls,parse){
+  return new Promise(function(ok,ko){
+    var fin=0,fall=0,tm=[];
+    urls.forEach(function(u,i){
+      tm.push(setTimeout(function(){
+        if(fin)return;
+        var ac=window.AbortController?new AbortController():null,to=setTimeout(function(){ac&&ac.abort()},14000);
+        fetch(u,ac?{signal:ac.signal}:{}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(parse).then(function(d){
+          clearTimeout(to);if(fin)return;fin=1;tm.forEach(clearTimeout);ok(d);
+        }).catch(function(){clearTimeout(to);if(++fall===urls.length&&!fin){fin=1;ko()}});
+      },i*1300));
+    });
+  });
+}
+function conProxy(u){return [u,'https://corsproxy.io/?'+enc(u),'https://api.allorigins.win/raw?url='+enc(u),'https://api.codetabs.com/v1/proxy?quest='+enc(u)]}
+function yUrls(sym){
+  var p='/v8/finance/chart/'+enc(sym)+'?range=6mo&interval=1d',a='https://query1.finance.yahoo.com'+p,b='https://query2.finance.yahoo.com'+p;
+  return ['https://corsproxy.io/?'+enc(a),'https://api.allorigins.win/raw?url='+enc(a),'https://api.codetabs.com/v1/proxy?quest='+enc(a),'https://corsproxy.io/?'+enc(b),'https://api.allorigins.win/raw?url='+enc(b),a];
+}
+function parseY(t){
+  var j=JSON.parse(t),r=j.chart.result[0],ts=r.timestamp,c=r.indicators.quote[0].close,o=[];
+  for(var i=0;i<ts.length;i++)if(c[i]!=null)o.push([ts[i]*1000,c[i]]);
+  if(o.length<20)throw 0;return o;
+}
+function parseLl(t){
+  var j=JSON.parse(t),o=[];
+  for(var i=0;i<j.length;i++){
+    var e=j[i],v=e.totalCirculatingUSD&&e.totalCirculatingUSD.peggedUSD;
+    if(v==null&&e.totalCirculating)v=e.totalCirculating.peggedUSD;
+    var d=parseInt(e.date,10)*1000;
+    if(isFinite(v)&&isFinite(d))o.push([d,v]);
+  }
+  if(o.length<40)throw 0;return o.slice(-200);
+}
+function parseCg(t){
+  var m=JSON.parse(t).data.market_cap_percentage;
+  if(!(m&&m.btc>0))throw 0;
+  return {btc:m.btc,usdt:m.usdt||0,eth:m.eth||0};
+}
+var FUENTES={
+  dxy:function(){return carrera(yUrls('DX-Y.NYB'),parseY)},
+  vix:function(){return carrera(yUrls('^VIX'),parseY)},
+  sta:function(){return carrera(conProxy('https://stablecoins.llama.fi/stablecoincharts/all'),parseLl)},
+  usdt:function(){return carrera(conProxy('https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1'),parseLl)},
+  dom:function(){return carrera(conProxy('https://api.coingecko.com/api/v3/global'),parseCg)}
+};
+function espera(ms){return new Promise(function(ok){setTimeout(ok,ms)})}
+function baja(k){
+  var f=FUENTES[k];
+  return f().catch(function(){return espera(1500).then(f)}).then(function(d){D[k]=d;FAIL[k]=0;guarda()}).catch(function(){FAIL[k]=1});
+}
+
+/* ---- cálculos ---- */
+function ult(s){return s[s.length-1]}
+function cambio(s,dias){
+  var l=ult(s),lim=l[0]-dias*864e5,b=s[0];
+  for(var i=s.length-1;i>=0;i--){if(s[i][0]<=lim){b=s[i];break}}
+  return (l[1]-b[1])/b[1]*100;
+}
+function spark(s,cl){
+  var p=s.slice(-90),mn=Infinity,mx=-Infinity,i;
+  for(i=0;i<p.length;i++){mn=Math.min(mn,p[i][1]);mx=Math.max(mx,p[i][1])}
+  var W=300,H=64,r=(mx-mn)||1,pts=[];
+  for(i=0;i<p.length;i++)pts.push((i/(p.length-1)*W).toFixed(1)+','+(H-4-(p[i][1]-mn)/r*(H-8)).toFixed(1));
+  var col=cl==='up'?'#26a69a':cl==='dn'?'#ef5350':'#f7a600';
+  return '<svg class="sp" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none"><polyline points="'+pts.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>';
+}
+/* veredictos: c = up (favorable) · am (neutral) · dn (apretada) */
+function vDxy(s){var c=cambio(s,30);return c<-1?{c:'up',t:'Favorable',l:'El dólar baja: suele dar más margen a la bolsa y a BTC.'}:c>1?{c:'dn',t:'Apretada',l:'El dólar sube: el dinero se encarece y los activos de riesgo suelen sufrir.'}:{c:'am',t:'Neutral',l:'El dólar apenas se mueve: no aporta una señal clara.'}}
+function vVix(s){var v=ult(s)[1];return v<20?{c:'up',t:'Calma',l:'Poco miedo en la bolsa: ambiente tranquilo.'}:v<30?{c:'am',t:'Nervios',l:'El mercado está inquieto, aunque sin pánico.'}:{c:'dn',t:'Estrés',l:'Miedo alto en la bolsa: suele coincidir con ventas fuertes.'}}
+function vSta(s){var c=cambio(s,30);return c>0.5?{c:'up',t:'Entra dinero',l:'La cantidad de stablecoins crece: llega dinero nuevo al mercado cripto.'}:c<-0.5?{c:'dn',t:'Sale dinero',l:'Las stablecoins se reducen: se está retirando dinero de cripto.'}:{c:'am',t:'Estable',l:'Las stablecoins apenas cambian: ni entra ni sale dinero de forma clara.'}}
+
+/* ---- pintado ---- */
+function cargando(id,tit,k){
+  $(id).innerHTML='<div class="hd"><h2>'+tit+'</h2></div><div class="msg">'+(FAIL[k]?'No he podido cargar este dato.<br><button onclick="reint(\''+k+'\')">Reintentar</button>':'Cargando…')+'</div>';
+}
+function expl(t){return '<details><summary>¿Qué es y cómo se lee?</summary>'+t+'</details>'}
+var TXT={
+ dxy:'<p>El <b>DXY</b> mide la fuerza del dólar frente a una cesta de monedas (euro, yen, libra…).</p><p>Cuando el dólar se fortalece, el dinero se vuelve más caro y escaso en todo el mundo, y los activos de riesgo (bolsa, BTC) suelen sufrir. Cuando el dólar baja, suele haber más margen.</p><p>Aquí miramos el cambio en 30 días: baja de más de un 1 % = favorable · sube de más de un 1 % = apretada.</p>',
+ vix:'<p>El <b>VIX</b> mide cuánto miedo hay en la bolsa de EEUU: es la volatilidad que esperan los inversores para el S&amp;P 500.</p><p>Por debajo de 20: calma. Entre 20 y 30: nervios. Por encima de 30: estrés, y suele haber ventas fuertes.</p><p>No mide liquidez directamente, pero un VIX alto suele ir con menos ganas de asumir riesgo.</p>',
+ sta:'<p>Las <b>stablecoins</b> (USDT, USDC…) son dólares digitales que se usan para comprar cripto. Es el «combustible» del mercado cripto.</p><p>Si su suma crece, está entrando dinero nuevo; si baja, está saliendo. Miramos el cambio en 30 días: sube más de un 0,5 % = entra dinero · baja más de un 0,5 % = sale dinero.</p><p>Tether (USDT) es la mayor, por eso la mostramos aparte.</p>',
+ dom:'<p><b>BTC.D</b> es el porcentaje del valor total de cripto que representa Bitcoin. Si sube, el dinero se refugia en BTC; si baja, suele fluir hacia las altcoins.</p><p><b>USDT.D</b> es el porcentaje que representa USDT. Si sube, la gente se refugia en dólares digitales (suele indicar cautela); si baja, ese dinero se está invirtiendo.</p><p>Aquí solo mostramos el dato de hoy, así que no entra en el resumen de arriba.</p>'
+};
+function pintaSerie(id,tit,k,ver,valTxt,extra){
+  var s=D[k];
+  if(!s){cargando(id,tit,k);return null}
+  var v=ver(s);
+  $(id).innerHTML='<div class="hd"><h2>'+tit+'</h2><span class="pill '+v.c+'">'+v.t+'</span></div>'+
+   '<div class="big"><b>'+valTxt(s)+'</b><span class="'+v.c+'">'+pc(cambio(s,30))+' en 30 días</span></div>'+
+   spark(s,v.c)+'<div class="lec">'+v.l+'</div>'+(extra||'')+expl(TXT[k]);
+  return v;
+}
+var VER={};
+function pinta(){
+  VER.dxy=pintaSerie('c_dxy','💵 Dólar (DXY)','dxy',vDxy,function(s){return nf(ult(s)[1],2)});
+  VER.vix=pintaSerie('c_vix','😨 VIX (miedo en bolsa)','vix',vVix,function(s){return nf(ult(s)[1],1)});
+  var ex='';
+  if(D.sta&&D.usdt)ex='<div class="sec">Tether (USDT): <b>'+mm(ult(D.usdt)[1])+'</b> · '+pc(cambio(D.usdt,30))+' en 30 días</div>';
+  VER.sta=pintaSerie('c_sta','🪙 Stablecoins (dólares digitales)','sta',vSta,function(s){return mm(ult(s)[1])},ex);
+  if(D.dom){
+    $('c_dom').innerHTML='<div class="hd"><h2>📊 Dominancia cripto</h2><span class="pill gr">Informativo</span></div>'+
+     '<div class="dos"><div><i>BTC.D · Bitcoin</i><b>'+nf(D.dom.btc,1)+' %</b></div><div><i>USDT.D · Tether</i><b>'+nf(D.dom.usdt,1)+' %</b></div></div>'+
+     '<div class="lec">Porcentaje del valor total del mercado cripto. Sirve para ver hacia dónde se mueve el dinero dentro de cripto.</div>'+expl(TXT.dom);
+  }else cargando('c_dom','📊 Dominancia cripto','dom');
+  resumen();
+}
+function resumen(){
+  var L=[['dxy','Dólar','#c_dxy'],['vix','VIX','#c_vix'],['sta','Stablecoins','#c_sta']],g=0,r=0,n=0,h='';
+  L.forEach(function(e){
+    var v=VER[e[0]];
+    h+='<a class="chip" href="'+e[2]+'">'+e[1]+(v?'<i class="'+v.c+'">'+v.t+'</i>':'<i class="gr">…</i>')+'</a>';
+    if(v){n++;if(v.c==='up')g++;if(v.c==='dn')r++}
+  });
+  h+='<a class="chip" href="#c_dom">Dominancia<i class="gr">'+(D.dom?nf(D.dom.btc,1)+' %':'…')+'</i></a>';
+  $('chips').innerHTML=h;
+  var t,c,s;
+  if(!n){t='Cargando…';c='';s='Calculando con el dólar, el VIX y las stablecoins.'}
+  else{
+    var sc=g-r;
+    if(sc>=2||(n<3&&sc>=1)){t='💧 Liquidez favorable';c='up'}
+    else if(sc<=-2||(n<3&&sc<=-1)){t='🏜️ Liquidez apretada';c='dn'}
+    else{t='⚖️ Liquidez mixta';c='am'}
+    s='Resumen con '+n+' de 3 indicadores (dólar, VIX y stablecoins): '+g+' a favor, '+r+' en contra. Es solo una lectura orientativa.';
+  }
+  $('ver').className='veredicto '+c;
+  $('ver').innerHTML=t+'<small>'+s+'</small>';
+  var ts=0;try{ts=JSON.parse(localStorage.getItem(LS)||'{}').t||0}catch(e){}
+  $('upd').textContent=ts?'Actualizado: '+new Date(ts).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+}
+var COLA=Promise.resolve();
+function encola(f){COLA=COLA.then(f,f);return COLA}
+function reint(k){FAIL[k]=0;pinta();encola(function(){return baja(k).then(pinta)})}
+function arranca(){
+  ['dxy','vix','sta','usdt','dom'].forEach(function(k){encola(function(){return baja(k).then(pinta)})});
+}
+$('rec').onclick=function(){D={};try{localStorage.removeItem(LS)}catch(e){}FAIL={};VER={};pinta();arranca()};
+$('shx').onclick=function(){
+  var t='¿Entra o sale dinero del mercado? Dólar, VIX, stablecoins y dominancia cripto con explicación y un resumen claro. Míralo gratis';
+  var u='https://twitter.com/intent/tweet?text='+enc(t)+'&url='+enc('https://dashboard482.github.io/dashboard/');
+  try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+  window.open(u,'_blank');
+};
+if(innerWidth<420)$('shx').textContent='𝕏';
+lee();pinta();arranca();
+</script>
+</body>
+</html>
