@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rentabilidad por activos</title>
+<script src="telegram.js" defer></script>
+<style>
+:root{--bg:#0f1218;--p:#171b24;--p2:#1f2430;--tx:#e8ecf3;--mu:#8b94a7;--bd:#2a3140;--up:34,197,94;--dn:239,68,68}
+@media (prefers-color-scheme:light){:root{--bg:#f1f5f9;--p:#fff;--p2:#eef2f7;--tx:#0f172a;--mu:#5b6578;--bd:#d5dbe5}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:max(12px,env(safe-area-inset-top),var(--tgtop,0px)) 12px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.top a{color:var(--tx);text-decoration:none;font-size:13px;background:var(--p2);border:1px solid var(--bd);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.x{padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap}
+h1{font-size:19px;margin:4px 0 4px}
+.sub{font-size:13px;color:var(--mu);line-height:1.45;margin-bottom:8px}
+#est{font-size:12px;color:var(--mu);margin:0 0 8px}
+.wrap{overflow:auto;border:1px solid var(--bd);border-radius:10px;background:var(--p);max-height:78vh;-webkit-overflow-scrolling:touch}
+table{border-collapse:separate;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--bd)}
+thead th{position:sticky;top:0;z-index:3;background:var(--p2);font-size:11px;cursor:pointer;color:var(--mu)}
+thead th.on{color:var(--tx)}
+th.n,td.n{position:sticky;left:0;z-index:2;text-align:left;background:var(--p);border-right:1px solid var(--bd);min-width:150px;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+thead th.n{z-index:4;background:var(--p2)}
+td.n b{display:block;font-size:12px}td.n small{color:var(--mu);font-size:10.5px}
+td.ytd{font-weight:700}
+td.na{color:var(--mu)}
+tfoot td{font-size:11px;color:var(--mu);background:var(--p2);font-weight:600}
+tfoot td.n{background:var(--p2)}
+.note{font-size:11px;color:var(--mu);line-height:1.5;margin-top:10px}
+button.rt{padding:8px 14px;border:0;border-radius:8px;background:#3b82f6;color:#fff;font-weight:700;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="top"><a href="index.html">← Hub</a><button class="x" id="shx" type="button">𝕏 Compartir</button></div>
+<h1>🏆 Rentabilidad por activos</h1>
+<div class="sub">Qué ha rendido más cada año desde 2011: bolsa, bonos, oro, materias primas, inmobiliario y bitcoin. Rentabilidad total (con dividendos). Toca una columna para ordenar.</div>
+<div id="est">Cargando datos…</div>
+<div class="wrap"><table id="t"></table></div>
+<div class="note">Datos de <b>Yahoo Finance</b> mediante ETFs representativos de cada clase de activo (en dólares). El año en curso es lo que va de año. Bitcoin solo tiene datos completos desde 2015 (su acumulado cuenta desde entonces). Los datos pueden tener retrasos o errores. Solo informativo, no es asesoramiento financiero.</div>
+<script>
+var A=[
+['DBC','Materias primas'],['IWD','Valor EEUU'],['VNQ','Inmobiliario EEUU (REITs)'],['IWM','Small caps EEUU'],['MDY','Mid caps EEUU'],
+['BIL','Efectivo EEUU'],['SPY','Large caps EEUU (S&P 500)'],['EFA','Internacional desarrollado'],['TIP','Bonos TIPS (inflación)'],['BND','Bonos EEUU (total)'],
+['HYG','Bonos high yield'],['QQQ','Nasdaq 100'],['CWB','Bonos convertibles'],['LQD','Bonos grado inversión'],['EMB','Bonos emergentes ($)'],
+['TLT','Tesoro largo plazo'],['VWO','Mercados emergentes'],['PFF','Acciones preferentes'],['IWF','Crecimiento EEUU'],['GLD','Oro'],['BTC-USD','Bitcoin']];
+var $=function(i){return document.getElementById(i)},DATA={},FAIL={},LS='rend.v1',SORT='ytd',NOW=new Date(),Y1=NOW.getFullYear();
+var PX=[function(u){return u},function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u)},function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u)},function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)}];
+var BASE=[[1,'query1'],[2,'query1'],[3,'query1'],[1,'query2'],[2,'query2'],[0,'query1']];
+function cands(){var l=BASE.slice(),p=-1;try{p=+localStorage.getItem('bono.px')}catch(e){}if(p>=0&&p<l.length){l.unshift(l.splice(p,1)[0])}return l}
+function parseY(t){
+  var j=JSON.parse(t),r=j.chart.result[0],ts=r.timestamp,ind=r.indicators,c=(ind.adjclose&&ind.adjclose[0]&&ind.adjclose[0].adjclose)||ind.quote[0].close,o=[];
+  for(var i=0;i<ts.length;i++)if(c[i]!=null)o.push([ts[i]*1000,c[i]]);
+  if(o.length<6)throw 0;return o;
+}
+function yh(sym){
+  return new Promise(function(ok,ko){
+    var L=cands(),fin=0,fall=0,tm=[];
+    L.forEach(function(c,i){
+      tm.push(setTimeout(function(){
+        if(fin)return;
+        var u='https://'+c[1]+'.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?range=16y&interval=1mo&events=div%2Csplit';
+        var ac=window.AbortController?new AbortController():null,to=setTimeout(function(){ac&&ac.abort()},14000);
+        fetch(PX[c[0]](u),ac?{signal:ac.signal}:{}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(parseY).then(function(d){
+          clearTimeout(to);if(fin)return;fin=1;tm.forEach(clearTimeout);
+          try{localStorage.setItem('bono.px',String(BASE.findIndex(function(z){return z[0]===c[0]&&z[1]===c[1]})))}catch(e){}
+          ok(d);
+        }).catch(function(){clearTimeout(to);if(++fall===L.length&&!fin){fin=1;tm.forEach(clearTimeout);ko()}});
+      },i*1300));
+    });
+  });
+}
+function espera(ms){return new Promise(function(ok){setTimeout(ok,ms)})}
+function guarda(){try{localStorage.setItem(LS,JSON.stringify({t:Date.now(),d:DATA}))}catch(e){}}
+function lee(){try{var o=JSON.parse(localStorage.getItem(LS)||'{}');if(o.d)for(var k in o.d)DATA[k]=o.d[k];return o.t||0}catch(e){return 0}}
+// último valor de cada año (la barra de diciembre trae el cierre del 31-dic; la del año en curso, el último precio)
+function ultimos(d){var m={};d.forEach(function(p){m[new Date(p[0]).getUTCFullYear()]=p});return m}
+function calc(sym){
+  var d=DATA[sym];if(!d)return null;var u=ultimos(d),r={},ok={};
+  Object.keys(u).forEach(function(y){y=+y;ok[y]=(y===Y1)||new Date(u[y][0]).getUTCMonth()===11});
+  for(var y=2011;y<=Y1;y++)if(ok[y]&&ok[y-1])r[y]=u[y][1]/u[y-1][1]-1;
+  var by=null;for(var k=2010;k<=Y1;k++)if(ok[k]&&k<Y1){by=k;break}
+  var l=d[d.length-1],cum=null,ann=null;
+  if(by!==null&&ok[Y1]){cum=l[1]/u[by][1]-1;var yrs=(l[0]-u[by][0])/(365.25*864e5);ann=yrs>0?Math.pow(1+cum,1/yrs)-1:null}
+  return {r:r,cum:cum,ann:ann};
+}
+function pc(v,dec){if(v==null||!isFinite(v))return '—';var s=(v*100).toFixed(dec===undefined?1:dec).replace('.',',');if(Math.abs(v)>=100)s=Math.round(v*100).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');return s+' %'}
+function col(v){if(v==null)return '';var a=Math.min(.55,Math.abs(v)*1.6+.08);return 'background:rgba('+(v>=0?'var(--up)':'var(--dn)')+','+a.toFixed(2)+')'}
+function pinta(){
+  var yrs=[];for(var y=Y1;y>=2011;y--)yrs.push(y);
+  var R=A.map(function(a){return {s:a[0],n:a[1],c:calc(a[0])}});
+  var key=function(x){if(!x.c)return -1e9;if(SORT==='cum')return x.c.cum==null?-1e9:x.c.cum;if(SORT==='ann')return x.c.ann==null?-1e9:x.c.ann;var v=x.c.r[SORT==='ytd'?Y1:SORT];return v==null?-1e9:v};
+  R.sort(function(a,b){return key(b)-key(a)});
+  var th=function(k,t,c){return '<th data-k="'+k+'" class="'+(c||'')+(SORT===k?' on':'')+'">'+t+(SORT===k?' ▼':'')+'</th>'};
+  var h='<thead><tr><th class="n">Activo</th>'+yrs.map(function(y){return th(y===Y1?'ytd':y,y===Y1?y+' · hoy':y)}).join('')+th('cum','Acumulado')+th('ann','Anual medio')+'</tr></thead><tbody>';
+  R.forEach(function(x){
+    h+='<tr><td class="n"><b>'+x.s.replace('-USD','')+'</b><small>'+x.n+'</small></td>';
+    yrs.forEach(function(y){var v=x.c?x.c.r[y]:null;h+='<td class="'+(y===Y1?'ytd ':'')+(v==null?'na':'')+'" style="'+col(v)+'">'+(x.c?pc(v):'…')+'</td>'});
+    h+='<td style="'+col(x.c&&x.c.cum!=null?Math.sign(x.c.cum)*.1:null)+'">'+(x.c?pc(x.c.cum,0):'…')+'</td><td>'+(x.c?pc(x.c.ann):'…')+'</td></tr>';
+  });
+  h+='</tbody><tfoot><tr><td class="n">Mejor del año</td>'+yrs.map(function(y){var b=null;R.forEach(function(x){var v=x.c&&x.c.r[y];if(v!=null&&(!b||v>b.v))b={v:v,s:x.s}});return '<td>'+(b?b.s.replace('-USD',''):'—')+'</td>'}).join('')+'<td></td><td></td></tr>'+
+    '<tr><td class="n">Peor del año</td>'+yrs.map(function(y){var b=null;R.forEach(function(x){var v=x.c&&x.c.r[y];if(v!=null&&(!b||v<b.v))b={v:v,s:x.s}});return '<td>'+(b?b.s.replace('-USD',''):'—')+'</td>'}).join('')+'<td></td><td></td></tr>'+
+    '<tr><td class="n">% en positivo</td>'+yrs.map(function(y){var n=0,p=0;R.forEach(function(x){var v=x.c&&x.c.r[y];if(v!=null){n++;if(v>0)p++}});return '<td>'+(n?Math.round(p/n*100)+' %':'—')+'</td>'}).join('')+'<td></td><td></td></tr></tfoot>';
+  $('t').innerHTML=h;
+  Array.prototype.forEach.call(document.querySelectorAll('thead th[data-k]'),function(e){e.onclick=function(){SORT=e.dataset.k;if(/^\d+$/.test(SORT))SORT=+SORT;pinta()}});
+}
+function estado(){
+  var n=Object.keys(DATA).length,f=Object.keys(FAIL).filter(function(k){return FAIL[k]&&!DATA[k]}).length;
+  if(busy)$('est').textContent='Actualizando datos… '+n+' de '+A.length;
+  else if(f)$('est').innerHTML='No se han podido descargar '+f+' activos. <button class="rt" id="rt">Reintentar</button>';
+  else $('est').textContent='Datos actualizados · '+new Date().toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
+  if($('rt'))$('rt').onclick=function(){FAIL={};carga()};
+}
+var busy=false;
+function carga(){
+  busy=true;estado();
+  var cola=A.map(function(a){return a[0]}),w=0;
+  function uno(){
+    if(!cola.length)return Promise.resolve();
+    var s=cola.shift();
+    return yh(s).catch(function(){return espera(1500).then(function(){return yh(s)})}).then(function(d){DATA[s]=d;FAIL[s]=0;guarda()},function(){FAIL[s]=1}).then(function(){pinta();estado();return uno()});
+  }
+  return Promise.all([uno(),uno()]).then(function(){busy=false;estado()});
+}
+$('shx').onclick=function(){
+  var t='Qué clase de activo ha rendido más cada año desde 2011: bolsa, bonos, oro, cripto… en el Hub Financiero. Míralo';
+  var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
+  try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+  window.open(u,'_blank');
+};
+if(innerWidth<420)$('shx').textContent='𝕏';
+var t0=lee();pinta();
+if(Date.now()-t0>3*3600e3||Object.keys(DATA).length<A.length)carga();else estado();
+</script>
+</body>
+</html>
