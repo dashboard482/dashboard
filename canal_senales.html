@@ -33,15 +33,17 @@ ul{margin:0;padding-left:18px;font-size:14px}li{margin-bottom:5px}
 <div class="note">📣 Un canal público de Telegram, gratis y sin registros. Entras, y el bot hace el resto.</div>
 
 <section><h2>👋 Qué es</h2>
-<p>El canal donde el Hub Financiero te avisa cuando pasa algo importante en BTC y te manda un resumen del mercado cada día.</p>
+<p>El canal donde el Hub Financiero te avisa cuando pasa algo importante en BTC, en la bolsa o en las noticias, y te manda un resumen del mercado cada día.</p>
 <p class="mut">Sin spam: lo importante suena y lo demás llega en silencio.</p>
 <div class="btns"><a class="b1" id="join" href="https://t.me/hubfinanciero_senales" target="_blank" rel="noopener">📣 Unirme al canal</a></div></section>
 
 <section><h2>🔔 Qué recibes</h2>
 <ul>
-<li><b>Avisos con sonido:</b> movimientos fuertes de BTC (desde un 5 % en 4 horas), con un máximo de 4 al día.</li>
-<li><b>Avisos en silencio:</b> movimientos moderados de BTC (desde un 3 %).</li>
-<li><b>Resúmenes en silencio:</b> uno por la mañana (9:00) y otro por la tarde-noche (22:00), con el precio de BTC, su variación y el índice de miedo y codicia.</li>
+<li><b>Avisos con sonido:</b> movimientos fuertes de BTC (desde un 5 % en 4 horas) o de la bolsa (desde un 3 % en el día), con un máximo de 4 al día.</li>
+<li><b>BTC en silencio:</b> un aviso cada 1.000 $ que se mueve y los movimientos moderados (desde un 3 %).</li>
+<li><b>Bolsa y oro en silencio:</b> S&amp;P 500, Nasdaq, IBEX 35, DAX y oro avisan si se mueven más de un 2 % en el día (un aviso por activo y día, solo de lunes a viernes).</li>
+<li><b>Noticias importantes en silencio:</b> como máximo 3 al día, con la fuente y el enlace. Son titulares automáticos, sin verificar.</li>
+<li><b>Resúmenes en silencio:</b> uno por la mañana (9:00) y otro por la tarde-noche (22:00), con BTC, la bolsa y el oro (entre semana) y el índice de miedo y codicia.</li>
 <li><b>De noche</b> (23:00 a 7:00) solo suena un movimiento extremo.</li>
 </ul></section>
 
@@ -67,7 +69,7 @@ ul{margin:0;padding-left:18px;font-size:14px}li{margin-bottom:5px}
 <script>
 (function(){
   var CANAL='https://t.me/hubfinanciero_senales';
-  var T='Canal gratis de señales del Hub Financiero: avisos de BTC y un resumen diario del mercado en Telegram. Lo importante suena y el resto llega en silencio 👇';
+  var T='Canal gratis de señales del Hub Financiero: avisos de BTC, bolsa, oro y noticias importantes, más un resumen diario del mercado en Telegram. Lo importante suena y el resto llega en silencio 👇';
   function sh(){var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(T)+'&url='+encodeURIComponent(CANAL);
     try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
     window.open(u,'_blank');}
