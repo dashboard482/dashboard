@@ -127,6 +127,13 @@ function parseFx(t){ // dólar DXY calculado con tipos del BCE (fórmula oficial
   o.sort(function(a,b){return a[0]-b[0]});
   if(o.length<20)throw 0;return o;
 }
+function botVix(){ // el bot guarda el VIX en mercados.json (mismo sitio que el Hub, sin bloqueos)
+  return fetch('mercados.json?t='+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+    if(!j.vix||!(j.vix.p>0))throw 0;
+    return {bot:1,p:j.vix.p,c:j.vix.c||0,c20:j.vix.c20||0,t:(j.t||0)*1000};
+  });
+}
+function hace(t){var h=(Date.now()-t)/36e5;return h<1?'hace menos de 1 h':h<48?'hace '+Math.round(h)+' h':'hace '+Math.round(h/24)+' días'}
 function iso(d){return d.toISOString().slice(0,10)}
 function fxUrls(){
   var f=new Date(),i=new Date(Date.now()-190*864e5),q=iso(i)+'..'+iso(f),s='EUR,JPY,GBP,CAD,SEK,CHF';
@@ -145,7 +152,7 @@ function parseCg(t){
 }
 var FUENTES={
   dxy:function(){return carrera(fxUrls(),parseFx).catch(function(){return carrera(yUrls('DX-Y.NYB'),parseY)})},
-  vix:function(){return carrera(vixUrls(),parseY)},
+  vix:function(){return botVix().catch(function(){return carrera(vixUrls(),parseY)})},
   sta:function(){return carrera(conProxy('https://stablecoins.llama.fi/stablecoincharts/all'),parseLl)},
   usdt:function(){return carrera(conProxy('https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1'),parseLl)},
   dom:function(){return carrera(conProxy('https://api.coingecko.com/api/v3/global'),parseCg)}
@@ -173,7 +180,8 @@ function spark(s,cl){
 }
 /* veredictos: c = up (favorable) · am (neutral) · dn (apretada) */
 function vDxy(s){var c=cambio(s,30);return c<-1?{c:'up',t:'Favorable',l:'El dólar baja: suele dar más margen a la bolsa y a BTC.'}:c>1?{c:'dn',t:'Apretada',l:'El dólar sube: el dinero se encarece y los activos de riesgo suelen sufrir.'}:{c:'am',t:'Neutral',l:'El dólar apenas se mueve: no aporta una señal clara.'}}
-function vVix(s){var v=ult(s)[1];return v<20?{c:'up',t:'Calma',l:'Poco miedo en la bolsa: ambiente tranquilo.'}:v<30?{c:'am',t:'Nervios',l:'El mercado está inquieto, aunque sin pánico.'}:{c:'dn',t:'Estrés',l:'Miedo alto en la bolsa: suele coincidir con ventas fuertes.'}}
+function vVix(s){return vVixN(ult(s)[1])}
+function vVixN(v){return v<20?{c:'up',t:'Calma',l:'Poco miedo en la bolsa: ambiente tranquilo.'}:v<30?{c:'am',t:'Nervios',l:'El mercado está inquieto, aunque sin pánico.'}:{c:'dn',t:'Estrés',l:'Miedo alto en la bolsa: suele coincidir con ventas fuertes.'}}
 function vSta(s){var c=cambio(s,30);return c>0.5?{c:'up',t:'Entra dinero',l:'La cantidad de stablecoins crece: llega dinero nuevo al mercado cripto.'}:c<-0.5?{c:'dn',t:'Sale dinero',l:'Las stablecoins se reducen: se está retirando dinero de cripto.'}:{c:'am',t:'Estable',l:'Las stablecoins apenas cambian: ni entra ni sale dinero de forma clara.'}}
 
 /* ---- pintado ---- */
@@ -199,7 +207,13 @@ function pintaSerie(id,tit,k,ver,valTxt,extra){
 var VER={};
 function pinta(){
   VER.dxy=pintaSerie('c_dxy','💵 Dólar (DXY)','dxy',vDxy,function(s){return nf(ult(s)[1],2)});
-  VER.vix=pintaSerie('c_vix','😨 VIX (miedo en bolsa)','vix',vVix,function(s){return nf(ult(s)[1],1)});
+  if(D.vix&&D.vix.bot){
+    var vv=vVixN(D.vix.p);
+    $('c_vix').innerHTML='<div class="hd"><h2>😨 VIX (miedo en bolsa)</h2><span class="pill '+vv.c+'">'+vv.t+'</span></div>'+
+     '<div class="big"><b>'+nf(D.vix.p,1)+'</b><span class="'+vv.c+'">'+pc(D.vix.c20)+' en 20 sesiones</span></div>'+
+     '<div class="lec">'+vv.l+'</div><div class="sec">Dato del bot, actualizado '+hace(D.vix.t)+'.</div>'+expl(TXT.vix);
+    VER.vix=vv;
+  }else VER.vix=pintaSerie('c_vix','😨 VIX (miedo en bolsa)','vix',vVix,function(s){return nf(ult(s)[1],1)});
   var ex='';
   if(D.sta&&D.usdt)ex='<div class="sec">Tether (USDT): <b>'+mm(ult(D.usdt)[1])+'</b> · '+pc(cambio(D.usdt,30))+' en 30 días</div>';
   VER.sta=pintaSerie('c_sta','🪙 Stablecoins (dólares digitales)','sta',vSta,function(s){return mm(ult(s)[1])},ex);
