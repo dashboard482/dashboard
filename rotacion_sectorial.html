@@ -120,11 +120,20 @@ function baja(sym){
 }
 function guarda(){try{var o={ts:TS,d:{}};for(var k in DATA)o.d[k]=DATA[k].slice(-260);localStorage.setItem(LS,JSON.stringify(o))}catch(e){}}
 function lee(){try{var o=JSON.parse(localStorage.getItem(LS)||'null');if(o&&o.d){for(var k in o.d)if(o.d[k]&&o.d[k].length>30)DATA[k]=o.d[k];TS=o.ts||0}}catch(e){}}
-function arranca(){
-  var syms=['SPY'].concat(SEC.map(function(s){return s[0]})),i=0,act=0,fin=0;
+function arranca(pase){
+  pase=pase||0;
+  var todos=['SPY'].concat(SEC.map(function(s){return s[0]}));
+  var syms=pase===0?todos:todos.filter(function(s){return FALLA[s]});
+  if(!syms.length){$('ref').disabled=false;return}
+  var i=0,act=0,fin=0;
   $('ref').disabled=true;
   function sig(){
-    while(act<3&&i<syms.length){act++;baja(syms[i++]).then(function(){act--;fin++;if(fin===syms.length){$('ref').disabled=false;pinta()}else sig()})}
+    while(act<2&&i<syms.length){act++;baja(syms[i++]).then(function(){act--;fin++;
+      if(fin===syms.length){
+        pinta();
+        var quedan=todos.some(function(s){return FALLA[s]});
+        if(quedan&&pase<2){setTimeout(function(){arranca(pase+1)},3500)}else{$('ref').disabled=false}
+      }else sig()})}
   }
   sig();
 }
@@ -172,9 +181,15 @@ function pinta(){
     h+='<div class="term"><b>Termómetro ataque / defensa:</b> <b class="'+lec[1]+'">'+lec[0]+'</b>'+
        '<div class="bar"><i style="left:'+pos+'%"></i></div><div class="lab"><span>🛡️ Defensa</span><span>⚔️ Ataque</span></div>'+
        '<div style="margin-top:6px;color:var(--mu)">Ataque '+pc(A)+' · Defensa '+pc(D)+'. '+lec[2]+'</div></div>';
+  } else {
+    h+='<div class="term" style="color:var(--mu)"><b style="color:var(--tx)">Termómetro ataque / defensa:</b> todavía no se puede calcular, faltan sectores por cargar.</div>';
   }
   $('res').innerHTML=h;
   $('lst').innerHTML=lista(R);estado();
+}
+function faltan(){
+  var m=SEC.filter(function(s){return !DATA[s[0]]}).map(function(s){return s[1]});
+  return m.length?'<div class="msg" style="padding:10px 4px 0">Faltan por cargar: '+m.join(', ')+'. Pulsa «Actualizar» para reintentar.</div>':'';
 }
 function lista(R){
   var f=R.f;if(!f.length)return '<div class="msg">…</div>';
@@ -182,7 +197,7 @@ function lista(R){
   var h='';
   if(R.spy!=null)h+=fila('S&amp;P 500','referencia',R.spy,mx,false,true);
   f.forEach(function(x){h+=fila(x.n,x.t,x.v,mx,x.w,false)});
-  return h;
+  return h+faltan();
 }
 function fila(n,t,v,mx,w,ref){
   var ancho=Math.max(3,Math.abs(v)/mx*100);
