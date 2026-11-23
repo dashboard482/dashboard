@@ -71,9 +71,9 @@ function finde(){var w=new Date().getDay();return w===0||w===6}
 
 /* ---- 1) archivos que se guardan solos (hora real) ---- */
 var BOTS=[
- {f:'mercados.json',n:'Resumen de mercados, VIX y sectores',d:'Lo publica el bot del Hub cada 2 h (9:00–22:00). Lo usan: Ticker de mercados, Liquidez del mercado y Sectores de la bolsa. Si falta, esas páginas piden los datos a Yahoo, más lento.',lim:function(){return 15},h404:'el bot aún no lo ha publicado'},
- {f:'cotizaciones.json',n:'Cotizaciones de bolsa',d:'Yahoo Finance, guardado por GitHub. Está programado cada 10 min entre semana, pero GitHub lo ejecuta solo unas 3–4 veces al día. Lo usa: Ticker de mercados.',lim:function(){return 12}},
- {f:'senales.json',n:'Señales de mercado (nota 0–100)',d:'Calculado con Yahoo Finance. Programado cada 2 h entre semana, pero GitHub lo ejecuta unas 3–4 veces al día. Lo usa: Señales de Mercado.',lim:function(){return 14}}
+ {f:'mercados.json',n:'Resumen de mercados, VIX y sectores',d:'Lo publica el bot del Hub cada 2 h (9:00–22:00). Lo usan: Ticker de mercados, Liquidez del mercado y Sectores de la bolsa. Si falta, esas páginas piden los datos a Yahoo, más lento.',fresh:function(){var h=new Date().getHours();return h>=9&&h<=23?3:12},lim:function(){return 15},h404:'el bot aún no lo ha publicado'},
+ {f:'cotizaciones.json',n:'Cotizaciones de bolsa',d:'Yahoo Finance, guardado por GitHub. Está programado cada 10 min entre semana, pero GitHub lo ejecuta solo unas 3–4 veces al día. Lo usa: Ticker de mercados.',fresh:function(){return 1},lim:function(){return 12}},
+ {f:'senales.json',n:'Señales de mercado (nota 0–100)',d:'Calculado con Yahoo Finance. Programado cada 2 h entre semana, pero GitHub lo ejecuta unas 3–4 veces al día. Lo usa: Señales de Mercado.',fresh:function(){return 4},lim:function(){return 14}}
 ];
 function pedir(u,ms){
   return new Promise(function(ok,ko){
@@ -90,8 +90,9 @@ function pintaBots(){
     }).then(function(txt){
       var j;try{j=JSON.parse(txt)}catch(e){throw new Error('json')}
       var t=(j.t||0)*1000;if(!t)throw new Error('sin hora');
-      var h=(Date.now()-t)/36e5,ok=h<=b.lim();
-      $('b'+i).querySelector('.st').innerHTML='<span class="'+(ok?'ok':'warn')+'">'+(ok?'✅ al día':'⚠️ con retraso')+'</span><small>'+hace(t)+' · '+dd(t)+' '+hh(t)+'</small>';
+      var h=(Date.now()-t)/36e5,n=h<=b.fresh()?0:h<=b.lim()?1:2;
+      var cls=['ok','warn','bad'][n],txt=['✅ al día','⚠️ no reciente','❌ muy atrasado'][n];
+      $('b'+i).querySelector('.st').innerHTML='<span class="'+cls+'">'+txt+'</span><small>'+hace(t)+' · '+dd(t)+' '+hh(t)+'</small>';
     }).catch(function(e){
       var m=e&&e.message||'',why=/^HTTP 404/.test(m)?(b.h404||'el archivo no existe (404)'):/^HTTP/.test(m)?'error del servidor ('+m.slice(5)+')':m==='json'?'el archivo está corrupto o vacío':m==='sin hora'?'el archivo no trae hora':m==='tiempo'?'tarda demasiado en responder':'sin conexión con el archivo';
       $('b'+i).querySelector('.st').innerHTML='<span class="bad">❌ sin dato</span><small>'+why+'</small>';
@@ -107,7 +108,7 @@ var LIVE=[
  ['CoinGecko','https://api.coingecko.com/api/v3/ping','Dominancia, capitalización y precios de respaldo'],
  ['Fear &amp; Greed','https://api.alternative.me/fng/?limit=1','Miedo y codicia cripto'],
  ['Frankfurter (BCE)','https://api.frankfurter.dev/v1/latest','Divisas y dólar (DXY)'],
- ['DefiLlama','https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1','Stablecoins en circulación (suele tardar más que el resto)',20000],
+ ['DefiLlama (por proxy)',['https://corsproxy.io/?'+encodeURIComponent('https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1'),'https://api.allorigins.win/raw?url='+encodeURIComponent('https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1')],'Stablecoins en circulación. El navegador no puede pedirla directa, así que la página de liquidez la pide por un proxy; aquí se prueba igual',20000],
  ['mempool.space','https://mempool.space/api/blocks/tip/height','Datos de la red Bitcoin']
 ];
 function pintaLive(){
@@ -115,8 +116,10 @@ function pintaLive(){
   var fin=0,t0=Date.now();
   LIVE.forEach(function(s,i){
     var ini=Date.now();
-    var lim=s[3]||8000;
-    pedir(s[1],lim).then(function(o){
+    var lim=s[3]||8000,urls=[].concat(s[1]);
+    (function intenta(k){
+      return pedir(urls[k],lim).then(function(o){if(!o.r.ok&&k+1<urls.length){try{o.ac&&o.ac.abort()}catch(e){}return intenta(k+1)}return o}).catch(function(e){if(k+1<urls.length)return intenta(k+1);throw e});
+    })(0).then(function(o){
       var ms=Date.now()-ini,ok=o.r.ok;
       try{o.ac&&o.ac.abort()}catch(e){}
       $('l'+i).querySelector('.st').innerHTML=ok?'<span class="ok">✅ responde</span><small>'+ms+' ms</small>':'<span class="bad">❌ error '+o.r.status+'</span><small>no disponible</small>';
