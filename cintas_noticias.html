@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Cintas de noticias · Hub Financiero</title>
+<style>
+:root{--bg:#0d1117;--pn:#131722;--p2:#1a1e29;--bd:#2a2e39;--ink:#d1d4dc;--st:#f0f3fa;--dim:#787b86;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--pn:#fff;--p2:#eef1f7;--bd:#dde1ea;--ink:#363a45;--st:#0e1117;--dim:#6b6f7c;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px) + var(--tgtop,0px)) 12px calc(28px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--bd)}
+.btn{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--p2);color:var(--st);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.x{background:#000;color:#fff;border-color:#333}
+.mid{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+.live{width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981}
+.tools{display:flex;align-items:center;justify-content:space-between;margin:10px 0 0;font-size:11px;color:var(--dim)}
+.gt{display:flex;align-items:center;gap:10px;margin:22px 0 8px;font-size:12px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.gt:after{content:"";flex:1;height:1px;background:var(--bd)}
+.cinta{overflow:hidden;white-space:nowrap;background:var(--pn);border:1px solid var(--bd);border-radius:12px;height:58px;display:flex;align-items:center}
+.cinta .tr{display:inline-flex;flex:none;animation:mv var(--dur,120s) linear infinite}
+.cinta.pausa .tr{animation-play-state:paused}
+@keyframes mv{to{transform:translateX(-50%)}}
+.it{display:inline-flex;align-items:center;gap:8px;padding:0 22px;border-right:1px solid var(--bd);text-decoration:none;color:var(--st);font-size:15px;font-weight:600;height:58px}
+.it b{font-size:11px;text-transform:uppercase;color:var(--c);letter-spacing:.03em}
+.it i{font-style:normal;font-size:11px;color:var(--dim);font-weight:500}
+.vacia{padding:0 16px;color:var(--dim);font-size:13px}
+.foot{font-size:11px;color:var(--dim);line-height:1.5;margin-top:22px;text-align:center}
+</style></head><body>
+<div class="wrap">
+<header><a class="btn" href="index.html">← Hub</a><div class="mid"><span class="live"></span>Cintas de noticias</div><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
+<div class="tools"><span id="st">cargando…</span><button class="btn" id="rf" type="button">↻</button></div>
+<div id="cs"></div>
+<div class="foot">Titulares de unas 30 fuentes (RSS vía rss2json y CryptoCompare), los mismos de «Última hora en directo». Mantén pulsada una cinta para pararla; toca un titular para abrir la noticia. Las fuentes 🏛️ oficiales publican poco, por eso se muestran hasta 3 días. Informativo, no es consejo financiero.</div>
+</div>
+<script src="telegram.js" defer></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const KEY='nd.v2';
+const COL={cripto:'#f7a600',mercados:'#2196f3','españa':'#ef5350',mundo:'#e11d48','tecnología':'#8b5cf6',oficial:'#10b981'};
+const SRC=[
+ {n:'Cointelegraph',c:'cripto',rss:'https://cointelegraph.com/rss'},
+ {n:'CoinDesk',c:'cripto',rss:'https://www.coindesk.com/arc/outboundfeeds/rss/'},
+ {n:'The Block',c:'cripto',rss:'https://www.theblock.co/rss.xml'},
+ {n:'Bitcoin Magazine',c:'cripto',rss:'https://bitcoinmagazine.com/feed'},
+ {n:'BeInCrypto',c:'cripto',rss:'https://beincrypto.com/feed/'},
+ {n:'CriptoNoticias',c:'cripto',rss:'https://www.criptonoticias.com/feed/'},
+ {n:'CryptoCompare',c:'cripto',cc:true},
+ {n:'Yahoo Finance',c:'mercados',rss:'https://finance.yahoo.com/news/rssindex'},
+ {n:'CNBC',c:'mercados',rss:'https://www.cnbc.com/id/10000664/device/rss/rss.html'},
+ {n:'Expansión',c:'españa',rss:'https://e00-expansion.uecdn.es/rss/mercados.xml'},
+ {n:'Cinco Días',c:'españa',rss:'https://feeds.elpais.com/mrss-s/pages/ep/site/cincodias.elpais.com/portada'},
+ {n:'Investing.com',c:'españa',rss:'https://es.investing.com/rss/news.rss'},
+ {n:'CNN',c:'mundo',rss:'http://rss.cnn.com/rss/edition.rss'},
+ {n:'BBC',c:'mundo',rss:'https://feeds.bbci.co.uk/news/rss.xml'},
+ {n:'Al Jazeera',c:'mundo',rss:'https://www.aljazeera.com/xml/rss/all.xml'},
+ {n:'El País',c:'mundo',rss:'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada'},
+ {n:'BleepingComputer',c:'tecnología',rss:'https://www.bleepingcomputer.com/feed/'},
+ {n:'The Hacker News',c:'tecnología',rss:'https://feeds.feedburner.com/TheHackersNews'},
+ {n:'The Verge',c:'tecnología',rss:'https://www.theverge.com/rss/index.xml'},
+{n:'Decrypt',c:'cripto',rss:'https://decrypt.co/feed'},
+ {n:'CryptoSlate',c:'cripto',rss:'https://cryptoslate.com/feed/'},
+ {n:'Cointelegraph ES',c:'cripto',rss:'https://es.cointelegraph.com/rss'},
+ {n:'MarketWatch',c:'mercados',rss:'https://feeds.content.dowjones.io/public/rss/mw_topstories'},
+ {n:'WSJ Mercados',c:'mercados',rss:'https://feeds.a.dj.com/rss/RSSMarketsMain.xml'},
+ {n:'Bloomberg',c:'mercados',rss:'https://feeds.bloomberg.com/markets/news.rss'},
+ {n:'The Guardian',c:'mercados',rss:'https://www.theguardian.com/business/rss'},
+ {n:'El Economista',c:'españa',rss:'https://www.eleconomista.es/rss/rss-mercados.php'},
+ {n:'Europa Press',c:'españa',rss:'https://www.europapress.es/rss/rss.aspx?ch=69'},
+ {n:'🏛️ Casa Blanca',c:'oficial',rss:'https://www.whitehouse.gov/presidential-actions/feed/'},
+ {n:'🏛️ Casa Blanca',c:'oficial',rss:'https://www.whitehouse.gov/briefings-statements/feed/'},
+ {n:'🏛️ Reserva Federal',c:'oficial',rss:'https://www.federalreserve.gov/feeds/press_all.xml'},
+ {n:'🏛️ BCE',c:'oficial',rss:'https://www.ecb.europa.eu/rss/press.xml'},
+ {n:'🏛️ SEC',c:'oficial',rss:'https://www.sec.gov/news/pressreleases.rss'}
+];
+const CINTAS=[['mundo','Última hora · mundo'],['cripto','Cripto'],['mercados','Mercados'],['españa','España'],['tecnología','Tech y hackeos'],['oficial','🏛️ Oficial · Casa Blanca, Fed, BCE, SEC']];
+let S={items:[],t:0};
+try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&Array.isArray(r.items)){S.items=r.items;S.t=r.t||0}}catch(e){}
+const plain=h=>{try{return (new DOMParser().parseFromString(h||'','text/html').body.textContent||'').replace(/\s+/g,' ').trim()}catch(e){return ''}};
+const ago=t=>{const m=Math.max(0,Math.round((Date.now()-t)/6e4));return m<1?'ahora':m<60?m+' min':m<1440?Math.round(m/60)+' h':Math.round(m/1440)+' d'};
+const fold=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const okUrl=u=>/^https?:\/\//i.test(u||'');
+async function viaRss(s){
+  const r=await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(s.rss));
+  const j=await r.json();
+  if(j.status!=='ok'||!Array.isArray(j.items))throw 0;
+  return j.items.map(i=>({s:s.n,c:s.c,t:plain(i.title),u:i.link,d:Date.parse(String(i.pubDate).replace(' ','T')+'Z'),x:'',i:''}));
+}
+async function viaCC(s){
+  const r=await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN');
+  const j=await r.json();
+  if(!Array.isArray(j.Data))throw 0;
+  return j.Data.map(i=>({s:(i.source_info&&i.source_info.name)||i.source||s.n,c:s.c,t:plain(i.title),u:i.url,d:(i.published_on||0)*1000,x:'',i:''}));
+}
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function pinta(){
+  const box=$('cs');box.textContent='';
+  const now=Date.now();
+  CINTAS.forEach(([k,lab])=>{
+    const lim=now-(k==='oficial'?3:1)*864e5;
+    const list=S.items.filter(x=>x.c===k&&x.d>=lim).sort((a,b)=>b.d-a.d).slice(0,24);
+    box.append(el('div','gt',lab));
+    const c=el('div','cinta');
+    if(!list.length){c.append(el('div','vacia',S.t?'Sin titulares recientes de esta fuente ahora mismo':'Cargando…'));box.append(c);return}
+    const tr=el('div','tr');
+    for(let n=0;n<2;n++)list.forEach(x=>{
+      const a=el('a','it');a.href=x.u;a.target='_blank';a.rel='noopener noreferrer';a.style.setProperty('--c',COL[k]);
+      a.append(el('b',null,x.s),document.createTextNode(x.t),el('i',null,ago(x.d)));
+      tr.append(a);
+    });
+    const chars=list.reduce((s,x)=>s+x.t.length+x.s.length+14,0);
+    tr.style.setProperty('--dur',Math.max(50,Math.round(chars*0.32))+'s');
+    c.append(tr);
+    const on=()=>c.classList.add('pausa'),off=()=>c.classList.remove('pausa');
+    c.addEventListener('touchstart',on,{passive:true});c.addEventListener('touchend',off);c.addEventListener('touchcancel',off);
+    c.addEventListener('mouseenter',on);c.addEventListener('mouseleave',off);
+    box.append(c);
+  });
+  $('st').textContent=S.t?('Actualizado '+new Date(S.t).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})):'cargando…';
+}
+async function load(force){
+  if(!force&&S.t&&Date.now()-S.t<150000){pinta();return}
+  $('rf').disabled=true;$('st').textContent='actualizando…';
+  const res=await Promise.allSettled(SRC.map(s=>s.cc?viaCC(s):viaRss(s)));
+  const all=[];res.forEach(r=>{if(r.status==='fulfilled')r.value.forEach(x=>all.push(x))});
+  const uniq=[],seen=new Set();
+  all.filter(x=>x.t&&okUrl(x.u)&&isFinite(x.d)&&x.d<=Date.now()+36e5).sort((a,b)=>b.d-a.d).forEach(x=>{
+    const k=fold(x.t).slice(0,70);if(seen.has(k))return;seen.add(k);uniq.push(x);
+  });
+  if(uniq.length){
+    S.items=uniq;S.t=Date.now();
+    try{const o=JSON.parse(localStorage.getItem(KEY)||'{}');localStorage.setItem(KEY,JSON.stringify({items:uniq.slice(0,160),t:S.t,f:o.f||'todo',seen:o.seen||0}))}catch(e){}
+  }
+  pinta();$('rf').disabled=false;
+}
+const WEB='https://dashboard482.github.io/dashboard/cintas_noticias.html';
+function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+$('shx').onclick=()=>abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('📡 Cintas de noticias en directo: última hora, cripto, mercados y fuentes oficiales\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB));
+$('rf').onclick=()=>load(true);
+pinta();load(false);
+setInterval(()=>{if(!document.hidden)load(false);else{}},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load(false)});
+})();
+</script></body></html>
