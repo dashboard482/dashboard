@@ -111,7 +111,7 @@ function pinta(){
       tr.append(a);
     });
     const chars=list.reduce((s,x)=>s+x.t.length+x.s.length+14,0);
-    tr.style.setProperty('--dur',Math.max(50,Math.round(chars*0.32))+'s');
+    tr.style.setProperty('--dur',Math.max(35,Math.round(chars*0.21))+'s');
     c.append(tr);
     const on=()=>c.classList.add('pausa'),off=()=>c.classList.remove('pausa');
     c.addEventListener('touchstart',on,{passive:true});c.addEventListener('touchend',off);c.addEventListener('touchcancel',off);
