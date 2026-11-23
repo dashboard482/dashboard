@@ -91,7 +91,7 @@ function pintaBots(){
       var j;try{j=JSON.parse(txt)}catch(e){throw new Error('json')}
       var t=(j.t||0)*1000;if(!t)throw new Error('sin hora');
       var h=(Date.now()-t)/36e5,n=h<=b.fresh()?0:h<=b.lim()?1:2;
-      var cls=['ok','warn','bad'][n],txt=['✅ al día','⚠️ no reciente','❌ muy atrasado'][n];
+      var cls=['ok','gr','bad'][n],txt=['✅ al día','🕒 última carga','❌ muy atrasado'][n];
       $('b'+i).querySelector('.st').innerHTML='<span class="'+cls+'">'+txt+'</span><small>'+hace(t)+' · '+dd(t)+' '+hh(t)+'</small>';
     }).catch(function(e){
       var m=e&&e.message||'',why=/^HTTP 404/.test(m)?(b.h404||'el archivo no existe (404)'):/^HTTP/.test(m)?'error del servidor ('+m.slice(5)+')':m==='json'?'el archivo está corrupto o vacío':m==='sin hora'?'el archivo no trae hora':m==='tiempo'?'tarda demasiado en responder':'sin conexión con el archivo';
