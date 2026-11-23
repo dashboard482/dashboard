@@ -56,7 +56,7 @@ main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-i
  <div id="hero"></div>
  <div class="grid" id="grid"></div>
  <div class="vacio" id="vac">Cargando noticias…</div>
- <div class="note">Última hora mundial (CNN, BBC, Al Jazeera, El País), cripto, mercados, España y ciberseguridad, con imágenes (RSS vía rss2json y CryptoCompare). Cada tarjeta abre la noticia original. Se actualiza sola cada 2 minutos. Informativo, no es consejo financiero.</div>
+ <div class="note">Última hora mundial (CNN, BBC, Al Jazeera, El País), fuentes oficiales 🏛️ (Casa Blanca, Reserva Federal, BCE, SEC; si alguna no responde, simplemente no aparece), cripto, mercados, España y ciberseguridad, con imágenes (RSS vía rss2json y CryptoCompare). Cada tarjeta abre la noticia original. Se actualiza sola cada 2 minutos. Informativo, no es consejo financiero.</div>
 </main>
 <script src="telegram.js"></script>
 <script>
@@ -64,7 +64,7 @@ main{max-width:760px;margin:0 auto;padding:12px 14px calc(30px + env(safe-area-i
 'use strict';
 const $=id=>document.getElementById(id);
 const KEY='nd.v2';
-const COL={cripto:'#f7a600',mercados:'#2196f3','españa':'#ef5350',mundo:'#e11d48','tecnología':'#8b5cf6'};
+const COL={cripto:'#f7a600',mercados:'#2196f3','españa':'#ef5350',mundo:'#e11d48','tecnología':'#8b5cf6',oficial:'#10b981'};
 const SRC=[
  {n:'Cointelegraph',c:'cripto',rss:'https://cointelegraph.com/rss'},
  {n:'CoinDesk',c:'cripto',rss:'https://www.coindesk.com/arc/outboundfeeds/rss/'},
@@ -84,9 +84,23 @@ const SRC=[
  {n:'El País',c:'mundo',rss:'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada'},
  {n:'BleepingComputer',c:'tecnología',rss:'https://www.bleepingcomputer.com/feed/'},
  {n:'The Hacker News',c:'tecnología',rss:'https://feeds.feedburner.com/TheHackersNews'},
- {n:'The Verge',c:'tecnología',rss:'https://www.theverge.com/rss/index.xml'}
+ {n:'The Verge',c:'tecnología',rss:'https://www.theverge.com/rss/index.xml'},
+{n:'Decrypt',c:'cripto',rss:'https://decrypt.co/feed'},
+ {n:'CryptoSlate',c:'cripto',rss:'https://cryptoslate.com/feed/'},
+ {n:'Cointelegraph ES',c:'cripto',rss:'https://es.cointelegraph.com/rss'},
+ {n:'MarketWatch',c:'mercados',rss:'https://feeds.content.dowjones.io/public/rss/mw_topstories'},
+ {n:'WSJ Mercados',c:'mercados',rss:'https://feeds.a.dj.com/rss/RSSMarketsMain.xml'},
+ {n:'Bloomberg',c:'mercados',rss:'https://feeds.bloomberg.com/markets/news.rss'},
+ {n:'The Guardian',c:'mercados',rss:'https://www.theguardian.com/business/rss'},
+ {n:'El Economista',c:'españa',rss:'https://www.eleconomista.es/rss/rss-mercados.php'},
+ {n:'Europa Press',c:'españa',rss:'https://www.europapress.es/rss/rss.aspx?ch=69'},
+ {n:'🏛️ Casa Blanca',c:'oficial',rss:'https://www.whitehouse.gov/presidential-actions/feed/'},
+ {n:'🏛️ Casa Blanca',c:'oficial',rss:'https://www.whitehouse.gov/briefings-statements/feed/'},
+ {n:'🏛️ Reserva Federal',c:'oficial',rss:'https://www.federalreserve.gov/feeds/press_all.xml'},
+ {n:'🏛️ BCE',c:'oficial',rss:'https://www.ecb.europa.eu/rss/press.xml'},
+ {n:'🏛️ SEC',c:'oficial',rss:'https://www.sec.gov/news/pressreleases.rss'}
 ];
-const FILT=[['todo','Todo'],['mundo','Última hora'],['cripto','Cripto'],['mercados','Mercados'],['españa','España'],['tecnología','Tech y hackeos']];
+const FILT=[['todo','Todo'],['mundo','Última hora'],['cripto','Cripto'],['mercados','Mercados'],['españa','España'],['tecnología','Tech y hackeos'],['oficial','🏛️ Oficial']];
 let S={items:[],t:0,f:'todo',seen:0};
 try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&Array.isArray(r.items))S=Object.assign(S,r)}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({items:S.items.slice(0,120),t:S.t,f:S.f,seen:S.seen}))}catch(e){}};
@@ -141,8 +155,8 @@ function meta(x){
 function render(){
   const box=$('chips');box.textContent='';
   FILT.forEach(([k,l])=>{const b=el('button','chip'+(S.f===k?' on':''),l);b.onclick=()=>{S.f=k;save();render()};box.append(b)});
-  const lim=Date.now()-864e5;
-  const list=S.items.filter(x=>(S.f==='todo'||x.c===S.f)&&x.d>=lim);
+  const lim=Date.now()-864e5,limO=Date.now()-3*864e5;
+  const list=S.items.filter(x=>(S.f==='todo'||x.c===S.f)&&x.d>=(x.c==='oficial'?limO:lim));
   // cinta
   const tr=$('tr');tr.textContent='';
   list.slice(0,25).forEach(x=>{const a=enlace(x,null);a.append(el('b',null,x.s),document.createTextNode(x.t));tr.append(a)});
@@ -163,7 +177,7 @@ function render(){
     a.append(t);g.append(a);
   });
   $('vac').style.display=list.length?'none':'block';
-  if(!list.length)$('vac').textContent=S.t?'Sin noticias en las últimas 24 h':'Cargando noticias…';
+  if(!list.length)$('vac').textContent=S.t?'Sin noticias recientes':'Cargando noticias…';
   $('st').textContent=S.t?('Actualizado '+new Date(S.t).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+' · '+list.length+' noticias'):'cargando…';
 }
 async function load(){
