@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sectores de la bolsa — Hub Financiero</title>
+<style>
+:root{--bg:#0d1117;--panel:#131722;--p2:#1a1e29;--bd:#2a2e39;--mu:#8a93a6;--tx:#e6e9f0;--ac:#3b82f6;--up:#26a69a;--dn:#ef5350;--am:#f7a600}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--p2:#eef1f6;--bd:#dde2ea;--mu:#667085;--tx:#10151f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;max-width:760px;margin:0 auto;padding:max(12px,env(safe-area-inset-top),var(--tgtop,0px)) 14px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.top a{color:var(--tx);text-decoration:none;font-size:13px;background:var(--p2);border:1px solid var(--bd);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.x{padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap}
+h1{font-size:19px;margin:4px 0 2px}.sub{font-size:12.5px;color:var(--mu);margin-bottom:12px;line-height:1.5}
+.rng{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.rng button{flex:1;min-width:0;background:var(--panel);border:1px solid var(--bd);color:var(--mu);font-size:12.5px;font-weight:700;padding:9px 4px;border-radius:9px;cursor:pointer}
+.rng button.on{background:#1d2740;border-color:var(--ac);color:#fff}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{font-size:14px;margin:0 0 8px}
+.res b.v{display:block;font-size:19px;margin-bottom:6px}
+.res p{margin:5px 0;font-size:13.5px;line-height:1.5}
+.up{color:var(--up)}.dn{color:var(--dn)}.am{color:var(--am)}
+.term{margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);font-size:13px;line-height:1.5}
+.term .bar{position:relative;height:10px;border-radius:6px;background:linear-gradient(90deg,#3b82f6,#6b7280 50%,#f59e0b);margin:10px 0 4px}
+.term .bar i{position:absolute;top:-4px;width:6px;height:18px;border-radius:3px;background:#fff;border:1px solid #000;transform:translateX(-3px)}
+.term .lab{display:flex;justify-content:space-between;font-size:11px;color:var(--mu)}
+.row{display:grid;grid-template-columns:minmax(96px,32%) 1fr auto;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd)}
+.row:last-child{border-bottom:0}
+.nm{font-size:13.5px;font-weight:700;line-height:1.2}.nm small{display:block;font-size:10.5px;font-weight:600;color:var(--mu);margin-top:1px}
+.bw{height:14px;background:var(--p2);border-radius:7px;overflow:hidden}
+.bw i{display:block;height:100%;border-radius:7px}
+.pc{font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right;min-width:76px}
+.pc small{display:block;font-size:10px;font-weight:700;color:var(--mu)}
+.pc small.w{color:var(--up)}
+.ref{background:var(--p2);border-radius:8px;padding:7px 8px;margin-bottom:4px}
+.ref .nm{color:var(--mu)}
+.msg{padding:18px 6px;text-align:center;color:var(--mu);font-size:13px}
+.bar2{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--mu);margin:2px 0 12px}
+.bar2 button{background:var(--p2);border:1px solid var(--bd);color:var(--tx);font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer}
+details{background:var(--p2);border:1px solid var(--bd);border-radius:10px;margin-bottom:8px}
+summary{cursor:pointer;padding:11px 12px;font-size:13.5px;font-weight:700;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"▸ ";color:var(--mu)}details[open] summary:before{content:"▾ "}
+details p{margin:0;padding:0 12px 12px;font-size:13px;line-height:1.55;color:var(--mu)}
+details p b{color:var(--tx)}
+footer{font-size:11px;color:var(--mu);text-align:center;line-height:1.5;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="top"><a href="index.html">← Hub</a><button class="x" id="shx" type="button">𝕏 Compartir</button></div>
+<h1>🧭 Sectores de la bolsa</h1>
+<div class="sub">¿Qué parte del mercado de EEUU va mejor y cuál va peor? Elige el periodo y compara cada sector con el S&amp;P 500.</div>
+
+<div class="rng" id="rng"></div>
+
+<div class="card res" id="res"><div class="msg">Cargando sectores… puede tardar unos segundos.</div></div>
+
+<div class="card"><h2 id="lt">Sectores, del que mejor va al que peor</h2><div id="lst"></div></div>
+
+<div class="bar2"><span id="est">—</span><button id="ref" type="button">↻ Actualizar</button></div>
+
+<details><summary>¿Qué estoy viendo?</summary>
+<p>La bolsa de EEUU se reparte en <b>11 sectores</b> (tecnología, salud, energía…). Cada fila es un fondo cotizado (ETF) que agrupa las empresas de ese sector. La barra muestra <b>cuánto ha subido o bajado</b> en el periodo elegido. La marca <b>"gana al S&amp;P"</b> aparece cuando ese sector rinde más que el índice completo.</p></details>
+<details><summary>¿Qué es el termómetro "ataque o defensa"?</summary>
+<p>Compara dos grupos. <b>Ataque</b>: tecnología, consumo discrecional, comunicaciones y financiero, los que suelen liderar cuando hay ganas de arriesgar. <b>Defensa</b>: salud, consumo básico y utilities, los que aguantan mejor cuando hay miedo. Si el ataque rinde más que la defensa, el mercado muestra <b>apetito de riesgo</b>. Si pasa al revés, está <b>prudente</b>. Es solo una lectura del pasado reciente, no una predicción.</p></details>
+<details><summary>¿Cómo se usa?</summary>
+<p>Mira varios periodos a la vez. Si un sector lidera en <b>hoy</b> pero va mal en <b>3 meses</b>, puede ser solo un rebote. Si lidera en todos, la tendencia es más sólida. Los sectores no explican por sí solos qué comprar: sirven para ver <b>por dónde se está moviendo el dinero</b>.</p></details>
+
+<footer>Datos de <b>Yahoo Finance</b> (ETF sectoriales SPDR y SPY, cierres diarios). Pueden tener retraso. Solo informativo, no es asesoramiento financiero (DYOR).</footer>
+
+<script src="telegram.js" defer></script>
+<script>
+var $=function(i){return document.getElementById(i)};
+var SEC=[
+ ['XLK','Tecnología','A'],['XLC','Comunicaciones','A'],['XLY','Cons. discrecional','A'],['XLF','Financiero','A'],
+ ['XLV','Salud','D'],['XLP','Cons. básico','D'],['XLU','Utilities','D'],
+ ['XLI','Industria',''],['XLB','Materiales',''],['XLE','Energía',''],['XLRE','Inmobiliario','']
+];
+var RNG=[['Hoy',1,.3],['1 sem.',5,.6],['1 mes',21,1.2],['3 meses',63,2.5],['1 año',250,6]];
+var RI=0,DATA={},LS='sec.v1',TS=0,FALLA={};
+
+function nf(v,d){return v.toFixed(d==null?2:d).replace('.',',')}
+function pc(v){return (v>=0?'+':'−')+nf(Math.abs(v))+' %'}
+
+/* ---------- carga: candidatos escalonados, gana el primero ---------- */
+var PX=[function(u){return u},function(u){return 'https://corsproxy.io/?'+encodeURIComponent(u)},function(u){return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u)},function(u){return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)}];
+var BASE=[[1,'query1'],[2,'query1'],[3,'query1'],[1,'query2'],[2,'query2'],[0,'query1']];
+function cands(){var l=BASE.slice(),p=-1;try{p=+localStorage.getItem('sec.px')}catch(e){}
+  if(p>=0&&p<l.length){var x=l.splice(p,1)[0];l.unshift(x)}return l}
+function parseY(t){
+  var j=JSON.parse(t),r=j.chart.result[0],ts=r.timestamp,c=r.indicators.quote[0].close,o=[];
+  for(var i=0;i<ts.length;i++)if(c[i]!=null){var t2=ts[i]*1000,k=Math.floor(t2/864e5);
+    if(o.length&&Math.floor(o[o.length-1][0]/864e5)===k)o[o.length-1]=[t2,c[i]];else o.push([t2,c[i]])}
+  if(o.length<30)throw 0;return o;
+}
+function yh(sym){
+  return new Promise(function(ok,ko){
+    var L=cands(),fin=0,fall=0,tm=[];
+    function listo(){tm.forEach(clearTimeout)}
+    L.forEach(function(c,i){
+      tm.push(setTimeout(function(){
+        if(fin)return;
+        var u='https://'+c[1]+'.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?range=1y&interval=1d';
+        var ac=window.AbortController?new AbortController():null,to=setTimeout(function(){ac&&ac.abort()},14000);
+        fetch(PX[c[0]](u),ac?{signal:ac.signal}:{}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(parseY).then(function(d){
+          clearTimeout(to);if(fin)return;fin=1;listo();
+          try{localStorage.setItem('sec.px',String(BASE.findIndex(function(z){return z[0]===c[0]&&z[1]===c[1]})))}catch(e){}
+          ok(d);
+        }).catch(function(){clearTimeout(to);if(++fall===L.length&&!fin){fin=1;listo();ko()}});
+      },i*1300));
+    });
+  });
+}
+function espera(ms){return new Promise(function(ok){setTimeout(ok,ms)})}
+function baja(sym){
+  return yh(sym).catch(function(){return espera(1500).then(function(){return yh(sym)})})
+   .then(function(d){DATA[sym]=d;FALLA[sym]=0;TS=Date.now();guarda();pinta()})
+   .catch(function(){FALLA[sym]=1;pinta()});
+}
+function guarda(){try{var o={ts:TS,d:{}};for(var k in DATA)o.d[k]=DATA[k].slice(-260);localStorage.setItem(LS,JSON.stringify(o))}catch(e){}}
+function lee(){try{var o=JSON.parse(localStorage.getItem(LS)||'null');if(o&&o.d){for(var k in o.d)if(o.d[k]&&o.d[k].length>30)DATA[k]=o.d[k];TS=o.ts||0}}catch(e){}}
+function arranca(){
+  var syms=['SPY'].concat(SEC.map(function(s){return s[0]})),i=0,act=0,fin=0;
+  $('ref').disabled=true;
+  function sig(){
+    while(act<3&&i<syms.length){act++;baja(syms[i++]).then(function(){act--;fin++;if(fin===syms.length){$('ref').disabled=false;pinta()}else sig()})}
+  }
+  sig();
+}
+
+/* ---------- cálculo ---------- */
+function varia(d,n){ // % de cambio sobre n sesiones
+  if(!d||d.length<n+1)return null;
+  var a=d[d.length-1-n][1],b=d[d.length-1][1];return (b/a-1)*100;
+}
+function filas(){
+  var n=RNG[RI][1],spy=varia(DATA.SPY,n),o=[];
+  SEC.forEach(function(s){var v=varia(DATA[s[0]],n);if(v!=null)o.push({t:s[0],n:s[1],g:s[2],v:v,w:spy!=null&&v>spy})});
+  o.sort(function(a,b){return b.v-a.v});
+  return {spy:spy,f:o};
+}
+function media(a){return a.length?a.reduce(function(x,y){return x+y},0)/a.length:null}
+
+/* ---------- pintado ---------- */
+function pintaRng(){
+  $('rng').innerHTML=RNG.map(function(r,i){return '<button type="button" data-i="'+i+'" class="'+(i===RI?'on':'')+'">'+r[0]+'</button>'}).join('');
+  [].forEach.call($('rng').querySelectorAll('button'),function(b){b.onclick=function(){RI=+b.getAttribute('data-i');pintaRng();pinta()}});
+}
+function pinta(){
+  var R=filas(),f=R.f;
+  var nombre=['hoy','esta semana','este mes','estos 3 meses','este año'][RI];
+  $('lt').textContent='Sectores, del que mejor va al que peor ('+RNG[RI][0].toLowerCase()+')';
+  if(f.length<6){
+    var cuantos=f.length,fallo=Object.keys(FALLA).some(function(k){return FALLA[k]});
+    $('res').innerHTML='<div class="msg">'+(fallo&&!cuantos?'No he podido cargar los datos ahora mismo. Pulsa «Actualizar» en un momento.':'Cargando sectores… ('+cuantos+' de '+SEC.length+')')+'</div>';
+    $('lst').innerHTML=lista(R);estado();return;
+  }
+  var top=f.slice(0,2),bot=f.slice(-2).reverse();
+  var todoBaja=top[0].v<0,todoSube=bot[0].v>0;
+  var h='<b class="v">'+(todoBaja?'Todos los sectores bajan '+nombre:todoSube?'Todos los sectores suben '+nombre:'Esto es lo que lidera '+nombre)+'</b>'+
+   '<p><span class="'+(todoBaja?'am':'up')+'">'+(todoBaja?'▲ Caen menos:':'▲ Lideran:')+'</span> <b>'+top.map(function(x){return x.n+' ('+pc(x.v)+')'}).join(' y ')+'</b></p>'+
+   '<p><span class="dn">'+(todoSube?'▼ Suben menos:':todoBaja?'▼ Caen más:':'▼ Van peor:')+'</span> <b>'+bot.map(function(x){return x.n+' ('+pc(x.v)+')'}).join(' y ')+'</b></p>';
+  if(R.spy!=null)h+='<p>El S&amp;P 500: <b class="'+(R.spy>=0?'up':'dn')+'">'+pc(R.spy)+'</b>. '+f.filter(function(x){return x.w}).length+' de '+f.length+' sectores le ganan.</p>';
+  var A=media(f.filter(function(x){return x.g==='A'}).map(function(x){return x.v})),
+      D=media(f.filter(function(x){return x.g==='D'}).map(function(x){return x.v}));
+  if(A!=null&&D!=null){
+    var dif=A-D,th=RNG[RI][2],pos=Math.max(4,Math.min(96,50+dif/(th*3)*50)),
+        lec=dif>th?['Apetito de riesgo','up','Los sectores de ataque ganan a los defensivos: hay ganas de arriesgar.']:
+            dif<-th?['Prudencia','am','Los defensivos ganan a los de ataque: el dinero busca protección.']:
+            ['Equilibrado','','Ataque y defensa rinden parecido: el mercado no se decanta.'];
+    h+='<div class="term"><b>Termómetro ataque / defensa:</b> <b class="'+lec[1]+'">'+lec[0]+'</b>'+
+       '<div class="bar"><i style="left:'+pos+'%"></i></div><div class="lab"><span>🛡️ Defensa</span><span>⚔️ Ataque</span></div>'+
+       '<div style="margin-top:6px;color:var(--mu)">Ataque '+pc(A)+' · Defensa '+pc(D)+'. '+lec[2]+'</div></div>';
+  }
+  $('res').innerHTML=h;
+  $('lst').innerHTML=lista(R);estado();
+}
+function lista(R){
+  var f=R.f;if(!f.length)return '<div class="msg">…</div>';
+  var mx=Math.max.apply(null,f.map(function(x){return Math.abs(x.v)}).concat(R.spy!=null?[Math.abs(R.spy)]:[]))||1;
+  var h='';
+  if(R.spy!=null)h+=fila('S&amp;P 500','referencia',R.spy,mx,false,true);
+  f.forEach(function(x){h+=fila(x.n,x.t,x.v,mx,x.w,false)});
+  return h;
+}
+function fila(n,t,v,mx,w,ref){
+  var ancho=Math.max(3,Math.abs(v)/mx*100);
+  return '<div class="row'+(ref?' ref':'')+'"><div class="nm">'+n+'<small>'+t+'</small></div>'+
+    '<div class="bw"><i style="width:'+ancho+'%;background:'+(v>=0?'var(--up)':'var(--dn)')+'"></i></div>'+
+    '<div class="pc '+(v>=0?'up':'dn')+'">'+pc(v)+(w?'<small class="w">gana al S&amp;P</small>':'')+'</div></div>';
+}
+function estado(){
+  var ult=0;for(var k in DATA){var d=DATA[k];if(d&&d.length)ult=Math.max(ult,d[d.length-1][0])}
+  var s=[];
+  if(ult)s.push('Último cierre: '+new Date(ult).toLocaleDateString('es-ES',{day:'numeric',month:'short'}));
+  if(TS)s.push('actualizado '+new Date(TS).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}));
+  $('est').textContent=s.join(' · ')||'—';
+}
+$('ref').onclick=function(){FALLA={};arranca()};
+$('shx').onclick=function(){
+  var t='¿Qué sectores de la bolsa lideran hoy y cuáles van peor? Mapa sencillo con termómetro ataque/defensa, gratis en el Hub Financiero 👇';
+  var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
+  try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+  window.open(u,'_blank','noopener');
+};
+if(innerWidth<420)$('shx').textContent='𝕏';
+pintaRng();lee();pinta();arranca();
+</script>
+</body>
+</html>
