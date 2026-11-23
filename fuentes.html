@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fuentes de datos — Hub Financiero</title>
+<style>
+:root{--bg:#0d1117;--panel:#131722;--p2:#1a1e29;--bd:#2a2e39;--mu:#8a93a6;--tx:#e6e9f0;--ac:#3b82f6;--up:#26a69a;--dn:#ef5350;--am:#f7a600}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--panel:#fff;--p2:#eef1f6;--bd:#dde2ea;--mu:#667085;--tx:#10151f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;max-width:760px;margin:0 auto;padding:max(12px,env(safe-area-inset-top),var(--tgtop,0px)) 14px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.top a{color:var(--tx);text-decoration:none;font-size:13px;background:var(--p2);border:1px solid var(--bd);padding:6px 12px;border-radius:8px;white-space:nowrap}
+.x{padding:6px 10px;font:700 12px system-ui,sans-serif;color:#fff;background:#1d9bf0;border:0;border-radius:8px;cursor:pointer;white-space:nowrap}
+h1{font-size:19px;margin:4px 0 2px}.sub{font-size:12.5px;color:var(--mu);margin-bottom:12px;line-height:1.5}
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{font-size:14.5px;margin:0 0 4px}.card .n{font-size:12px;color:var(--mu);line-height:1.5;margin:0 0 8px}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd)}
+.row:last-of-type{border-bottom:0}
+.nm{font-size:13.5px;font-weight:700;line-height:1.3}.nm small{display:block;font-size:11.5px;font-weight:500;color:var(--mu);margin-top:2px;line-height:1.4}
+.st{font-size:12.5px;font-weight:700;text-align:right;white-space:nowrap;line-height:1.35}.st small{display:block;font-size:11px;font-weight:500;color:var(--mu)}
+.ok{color:var(--up)}.warn{color:var(--am)}.bad{color:var(--dn)}.gr{color:var(--mu)}
+.bar2{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--mu);margin:2px 0 12px}
+button.b{background:var(--p2);border:1px solid var(--bd);color:var(--tx);font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:8px;cursor:pointer}
+details{background:var(--p2);border:1px solid var(--bd);border-radius:10px;margin-bottom:8px}
+summary{cursor:pointer;padding:11px 12px;font-size:13.5px;font-weight:700;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"▸ ";color:var(--mu)}details[open] summary:before{content:"▾ "}
+details .in{padding:0 12px 10px}
+.it{padding:8px 0;border-top:1px solid var(--bd);font-size:12.5px;line-height:1.45}
+.it b{font-size:13px}.it span{color:var(--mu);display:block}
+.note{font-size:12px;color:var(--mu);line-height:1.5;background:var(--p2);border-radius:8px;padding:9px 10px;margin-top:8px}
+footer{font-size:11px;color:var(--mu);text-align:center;line-height:1.5;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="top"><a href="index.html">← Hub</a><button class="x" id="shx" type="button">𝕏 Compartir</button></div>
+<h1>🔎 Fuentes y estado de los datos</h1>
+<div class="sub">De dónde sale cada dato del Hub y a qué hora se actualizó por última vez. Sin adornos: si algo va con retraso, aquí se ve.</div>
+
+<div class="card">
+  <h2>🕒 Datos que se guardan solos</h2>
+  <p class="n">Estos archivos los actualiza un proceso automático (el bot del Hub o GitHub). La hora es la <b>real</b> de su última actualización.</p>
+  <div id="bots"><div class="row"><div class="nm gr">Cargando…</div></div></div>
+</div>
+
+<div class="card">
+  <h2>📡 ¿Responden las fuentes ahora?</h2>
+  <p class="n">Prueba hecha desde <b>tu móvil</b>, en este momento. ✅ quiere decir que la fuente contesta. No dice la hora del dato, solo que está disponible.</p>
+  <div id="live"><div class="row"><div class="nm gr">Comprobando…</div></div></div>
+</div>
+
+<div class="bar2"><span id="est">—</span><button class="b" id="ref" type="button">↻ Comprobar de nuevo</button></div>
+
+<div class="card">
+  <h2>🗂️ De dónde sale cada página</h2>
+  <p class="n">Resumen por secciones. Toca una para verla.</p>
+  <div id="map"></div>
+  <div class="note">Cada página pide sus datos desde el móvil de quien la abre, así que el Hub no puede saber a qué hora exacta los consultó cada usuario. Cuando hay una hora real (arriba), la muestra la propia página o esta.</div>
+</div>
+
+<footer>Solo informativo, no es asesoramiento financiero (DYOR). Los datos de terceros pueden tener errores o retrasos.</footer>
+
+<script src="telegram.js" defer></script>
+<script>
+var $=function(i){return document.getElementById(i)};
+function hh(t){var d=new Date(t);return d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}
+function dd(t){return new Date(t).toLocaleDateString('es-ES',{day:'numeric',month:'short'})}
+function hace(t){var m=Math.round((Date.now()-t)/6e4);if(m<2)return 'hace un momento';if(m<60)return 'hace '+m+' min';var h=m/60;if(h<48)return 'hace '+(h<10?(Math.round(h*10)/10+'').replace('.',','):Math.round(h))+' h';return 'hace '+Math.round(h/24)+' días'}
+function finde(){var w=new Date().getDay();return w===0||w===6}
+
+/* ---- 1) archivos que se guardan solos (hora real) ---- */
+var BOTS=[
+ {f:'mercados.json',n:'Resumen de mercados, VIX y sectores',d:'Lo publica el bot del Hub cada 2 h (9:00–22:00). Lo usan: Ticker de mercados, Liquidez del mercado y Sectores de la bolsa.',lim:function(){return 15}},
+ {f:'cotizaciones.json',n:'Cotizaciones de bolsa',d:'Yahoo Finance, guardado por GitHub cada 10 min entre semana y cada hora el fin de semana. Lo usa: Ticker de mercados.',lim:function(){return finde()?3:1}},
+ {f:'senales.json',n:'Señales de mercado (nota 0–100)',d:'Calculado con Yahoo Finance cada 2 h entre semana y cada 8 h el fin de semana. Lo usa: Señales de Mercado.',lim:function(){return finde()?12:5}},
+ {f:'movimientos.json',n:'Compras y ventas de empresas y ballenas',d:'Se busca en titulares de prensa cripto cada 30 min. Lo usa: Movimientos.',lim:function(){return 3}}
+];
+function pedir(u,ms){
+  return new Promise(function(ok,ko){
+    var ac=window.AbortController?new AbortController():null,tm=setTimeout(function(){ac&&ac.abort();ko(new Error('tiempo'))},ms||9000);
+    fetch(u,ac?{signal:ac.signal,cache:'no-store'}:{cache:'no-store'}).then(function(r){clearTimeout(tm);ok({r:r,ac:ac})}).catch(function(e){clearTimeout(tm);ko(e)});
+  });
+}
+function pintaBots(){
+  $('bots').innerHTML=BOTS.map(function(b,i){return '<div class="row" id="b'+i+'"><div class="nm">'+b.n+'<small>'+b.d+'</small></div><div class="st gr">…</div></div>'}).join('');
+  BOTS.forEach(function(b,i){
+    pedir(b.f+'?t='+Date.now(),9000).then(function(o){
+      if(!o.r.ok)throw new Error('http');return o.r.json();
+    }).then(function(j){
+      var t=(j.t||0)*1000;if(!t)throw new Error('sin hora');
+      var h=(Date.now()-t)/36e5,ok=h<=b.lim();
+      $('b'+i).querySelector('.st').innerHTML='<span class="'+(ok?'ok':'warn')+'">'+(ok?'✅ al día':'⚠️ con retraso')+'</span><small>'+hace(t)+' · '+dd(t)+' '+hh(t)+'</small>';
+    }).catch(function(){
+      $('b'+i).querySelector('.st').innerHTML='<span class="bad">❌ sin dato</span><small>no se ha podido leer</small>';
+    });
+  });
+}
+
+/* ---- 2) fuentes en directo ---- */
+var LIVE=[
+ ['Binance (precios)','https://api.binance.com/api/v3/ping','Precios y velas de casi todas las páginas cripto'],
+ ['Binance (respaldo)','https://data-api.binance.vision/api/v3/ping','Segundo servidor de Binance, por si el primero falla'],
+ ['Binance futuros','https://fapi.binance.com/fapi/v1/ping','Funding, liquidaciones, presión y muros'],
+ ['CoinGecko','https://api.coingecko.com/api/v3/ping','Dominancia, capitalización y precios de respaldo'],
+ ['Fear &amp; Greed','https://api.alternative.me/fng/?limit=1','Miedo y codicia cripto'],
+ ['Frankfurter (BCE)','https://api.frankfurter.dev/v1/latest','Divisas y dólar (DXY)'],
+ ['DefiLlama','https://stablecoins.llama.fi/stablecoincharts/all?stablecoin=1','Stablecoins en circulación'],
+ ['mempool.space','https://mempool.space/api/blocks/tip/height','Datos de la red Bitcoin']
+];
+function pintaLive(){
+  $('live').innerHTML=LIVE.map(function(s,i){return '<div class="row" id="l'+i+'"><div class="nm">'+s[0]+'<small>'+s[2]+'</small></div><div class="st gr">…</div></div>'}).join('');
+  var fin=0,t0=Date.now();
+  LIVE.forEach(function(s,i){
+    var ini=Date.now();
+    pedir(s[1],8000).then(function(o){
+      var ms=Date.now()-ini,ok=o.r.ok;
+      try{o.ac&&o.ac.abort()}catch(e){}
+      $('l'+i).querySelector('.st').innerHTML=ok?'<span class="ok">✅ responde</span><small>'+ms+' ms</small>':'<span class="bad">❌ error '+o.r.status+'</span><small>no disponible</small>';
+    }).catch(function(){
+      $('l'+i).querySelector('.st').innerHTML='<span class="bad">❌ no responde</span><small>desde tu conexión</small>';
+    }).then(function(){
+      if(++fin===LIVE.length){$('est').textContent='Comprobado a las '+hh(Date.now());$('ref').disabled=false}
+    });
+  });
+}
+
+/* ---- 3) mapa de fuentes por página ---- */
+var MAPA=[
+ ['🪙 Bitcoin y cripto',[
+  ['Panel Bitcoin','Binance (spot y futuros), CoinGecko, Alternative.me, blockchain.info, mempool.space y Deribit.'],
+  ['BTC ¿Caro o barato?','Binance, Alternative.me, Frankfurter (BCE), Wikimedia (interés de búsqueda) y DefiLlama.'],
+  ['Ciclo, Halvings, Compresión y Alerta BTC','Binance.'],
+  ['Dominancia: compra / venta','Binance y Alternative.me.'],
+  ['Coste de minar 1 BTC','CoinGecko, Binance y mempool.space.'],
+  ['M2 global vs BTC','Binance y datos del Tesoro de EEUU (FiscalData).'],
+  ['Avión BTC y BTC en 3D','CoinGecko y Binance.'],
+  ['Liquidaciones, Presión, Muros, Gráficos de calor, Guerra de liquidez y Ticker cripto','Binance en directo (WebSocket y futuros).'],
+  ['Mapa de calor cripto','Widget de TradingView.']]],
+ ['📈 Bolsa y macro',[
+  ['Ticker de mercados','Resumen del bot (mercados.json) y cotizaciones de Yahoo Finance guardadas por GitHub; cripto con Binance y CoinGecko.'],
+  ['Cintas de mercado, Mapas de mercado y Buscador de activos','Widgets de TradingView.'],
+  ['Calendarios macroeconómicos','Widget de TradingView.'],
+  ['Señales de Mercado','Yahoo Finance, calculado cada 2 h (senales.json).'],
+  ['Gráficos de tendencia, Bono 30 años y Rentabilidad por activos','Yahoo Finance. En los bonos hay además un enlace a la serie oficial de FRED.'],
+  ['Liquidez del mercado','Frankfurter (dólar), VIX del bot, DefiLlama (stablecoins) y CoinGecko (dominancia).'],
+  ['Sectores de la bolsa','ETF sectoriales de EEUU (SPDR) y SPY desde Yahoo Finance, recogidos por el bot.']]],
+ ['📰 Noticias y directos',[
+  ['Noticias del día y Última hora en directo','Titulares RSS de prensa económica y cripto (Cointelegraph, CoinDesk, Decrypt, BBC, CNN, Bloomberg, El País, Expansión, Investing…), con CryptoCompare en la cinta de última hora.'],
+  ['Movimientos','Titulares de prensa cripto, filtrados cada 30 min.'],
+  ['TV y radio en directo','Emisiones de YouTube y radios de economía.']]],
+ ['🎮 Juegos y otros',[
+  ['Street Rush 3D, Cruce del Puente y Wall Street Trivia','Sin datos externos: todo se calcula en tu móvil.'],
+  ['Canal de señales','Mensajes del bot del Hub; los precios vienen de Binance y Yahoo Finance.']]]
+];
+function pintaMapa(){
+  $('map').innerHTML=MAPA.map(function(g){
+    return '<details><summary>'+g[0]+'</summary><div class="in">'+g[1].map(function(x){return '<div class="it"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>'}).join('')+'</div></details>';
+  }).join('');
+}
+
+function todo(){$('ref').disabled=true;$('est').textContent='Comprobando…';pintaBots();pintaLive()}
+$('ref').onclick=todo;
+$('shx').onclick=function(){
+  var t='Transparencia total: el Hub Financiero te dice de dónde sale cada dato y a qué hora se actualizó. Gratis 👇';
+  var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
+  try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink){Telegram.WebApp.openLink(u);return}}catch(e){}
+  window.open(u,'_blank','noopener');
+};
+if(innerWidth<420)$('shx').textContent='𝕏';
+pintaMapa();todo();
+</script>
+</body>
+</html>
