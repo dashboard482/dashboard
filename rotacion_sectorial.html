@@ -67,7 +67,7 @@ footer{font-size:11px;color:var(--mu);text-align:center;line-height:1.5;margin-t
 <details><summary>¿Cómo se usa?</summary>
 <p>Mira varios periodos a la vez. Si un sector lidera en <b>hoy</b> pero va mal en <b>3 meses</b>, puede ser solo un rebote. Si lidera en todos, la tendencia es más sólida. Los sectores no explican por sí solos qué comprar: sirven para ver <b>por dónde se está moviendo el dinero</b>.</p></details>
 
-<footer>Datos de <b>Yahoo Finance</b> (ETF sectoriales SPDR y SPY, cierres diarios). Pueden tener retraso. Solo informativo, no es asesoramiento financiero (DYOR).</footer>
+<footer>Datos de <b>Yahoo Finance</b> (ETF sectoriales SPDR y SPY, cierres diarios), recogidos por el bot del Hub cada pocas horas. Pueden tener retraso. Solo informativo, no es asesoramiento financiero (DYOR).</footer>
 
 <script src="telegram.js" defer></script>
 <script>
@@ -78,7 +78,16 @@ var SEC=[
  ['XLI','Industria',''],['XLB','Materiales',''],['XLE','Energía',''],['XLRE','Inmobiliario','']
 ];
 var RNG=[['Hoy',1,.3],['1 sem.',5,.6],['1 mes',21,1.2],['3 meses',63,2.5],['1 año',250,6]];
-var RI=0,DATA={},LS='sec.v1',TS=0,FALLA={};
+var RI=0,DATA={},LS='sec.v1',TS=0,FALLA={},BOT=null;
+function tiene(s){return !!((BOT&&BOT.d[s])||DATA[s])}
+function hace(t){var h=(Date.now()-t)/36e5;return h<1?'hace menos de 1 h':h<48?'hace '+Math.round(h)+' h':'hace '+Math.round(h/24)+' días'}
+/* El bot publica los cambios de cada sector en mercados.json (sin proxies ni bloqueos) */
+function botSec(){
+  return fetch('mercados.json?t='+Date.now()).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+    if(!j.sec||!j.sec.SPY||Object.keys(j.sec).length<7)throw 0;
+    BOT={d:j.sec,t:(j.t||0)*1000};
+  });
+}
 
 function nf(v,d){return v.toFixed(d==null?2:d).replace('.',',')}
 function pc(v){return (v>=0?'+':'−')+nf(Math.abs(v))+' %'}
@@ -122,7 +131,7 @@ function guarda(){try{var o={ts:TS,d:{}};for(var k in DATA)o.d[k]=DATA[k].slice(
 function lee(){try{var o=JSON.parse(localStorage.getItem(LS)||'null');if(o&&o.d){for(var k in o.d)if(o.d[k]&&o.d[k].length>30)DATA[k]=o.d[k];TS=o.ts||0}}catch(e){}}
 function arranca(pase){
   pase=pase||0;
-  var todos=['SPY'].concat(SEC.map(function(s){return s[0]}));
+  var todos=['SPY'].concat(SEC.map(function(s){return s[0]})).filter(function(s){return !(BOT&&BOT.d[s])});
   var syms=pase===0?todos:todos.filter(function(s){return FALLA[s]});
   if(!syms.length){$('ref').disabled=false;return}
   var i=0,act=0,fin=0;
@@ -143,9 +152,13 @@ function varia(d,n){ // % de cambio sobre n sesiones
   if(!d||d.length<n+1)return null;
   var a=d[d.length-1-n][1],b=d[d.length-1][1];return (b/a-1)*100;
 }
+function val(sym,n){
+  if(BOT&&BOT.d[sym]&&BOT.d[sym]['d'+n]!=null)return BOT.d[sym]['d'+n];
+  return varia(DATA[sym],n);
+}
 function filas(){
-  var n=RNG[RI][1],spy=varia(DATA.SPY,n),o=[];
-  SEC.forEach(function(s){var v=varia(DATA[s[0]],n);if(v!=null)o.push({t:s[0],n:s[1],g:s[2],v:v,w:spy!=null&&v>spy})});
+  var n=RNG[RI][1],spy=val('SPY',n),o=[];
+  SEC.forEach(function(s){var v=val(s[0],n);if(v!=null)o.push({t:s[0],n:s[1],g:s[2],v:v,w:spy!=null&&v>spy})});
   o.sort(function(a,b){return b.v-a.v});
   return {spy:spy,f:o};
 }
@@ -188,7 +201,7 @@ function pinta(){
   $('lst').innerHTML=lista(R);estado();
 }
 function faltan(){
-  var m=SEC.filter(function(s){return !DATA[s[0]]}).map(function(s){return s[1]});
+  var m=SEC.filter(function(s){return !tiene(s[0])}).map(function(s){return s[1]});
   return m.length?'<div class="msg" style="padding:10px 4px 0">Faltan por cargar: '+m.join(', ')+'. Pulsa «Actualizar» para reintentar.</div>':'';
 }
 function lista(R){
@@ -206,13 +219,18 @@ function fila(n,t,v,mx,w,ref){
     '<div class="pc '+(v>=0?'up':'dn')+'">'+pc(v)+(w?'<small class="w">gana al S&amp;P</small>':'')+'</div></div>';
 }
 function estado(){
+  if(BOT){$('est').textContent='Dato del bot, actualizado '+hace(BOT.t);return}
   var ult=0;for(var k in DATA){var d=DATA[k];if(d&&d.length)ult=Math.max(ult,d[d.length-1][0])}
   var s=[];
   if(ult)s.push('Último cierre: '+new Date(ult).toLocaleDateString('es-ES',{day:'numeric',month:'short'}));
   if(TS)s.push('actualizado '+new Date(TS).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}));
   $('est').textContent=s.join(' · ')||'—';
 }
-$('ref').onclick=function(){FALLA={};arranca()};
+function carga(){
+  $('ref').disabled=true;
+  botSec().then(pinta).catch(function(){}).then(function(){arranca()});
+}
+$('ref').onclick=function(){FALLA={};carga()};
 $('shx').onclick=function(){
   var t='¿Qué sectores de la bolsa lideran hoy y cuáles van peor? Mapa sencillo con termómetro ataque/defensa, gratis en el Hub Financiero 👇';
   var u='https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent('https://dashboard482.github.io/dashboard/');
@@ -220,7 +238,7 @@ $('shx').onclick=function(){
   window.open(u,'_blank','noopener');
 };
 if(innerWidth<420)$('shx').textContent='𝕏';
-pintaRng();lee();pinta();arranca();
+pintaRng();lee();pinta();carga();
 </script>
 </body>
 </html>
