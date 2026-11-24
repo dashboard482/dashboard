@@ -21,10 +21,21 @@ jobs:
           def get(sym):
               for host in ("query1", "query2", "query1", "query2"):
                   try:
-                      u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?range=1d&interval=1d" % (host, urllib.parse.quote(sym))
+                      u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?range=5d&interval=1d" % (host, urllib.parse.quote(sym))
                       r = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=15)
-                      m = json.load(r)["chart"]["result"][0]["meta"]
-                      p = m.get("regularMarketPrice"); pv = m.get("chartPreviousClose") or m.get("previousClose")
+                      res = json.load(r)["chart"]["result"][0]
+                      m = res["meta"]
+                      p = m.get("regularMarketPrice")
+                      off = m.get("gmtoffset") or 0
+                      par = [(t, c) for t, c in zip(res.get("timestamp") or [], res["indicators"]["quote"][0].get("close") or []) if c]
+                      pv = None
+                      if par:
+                          dia = lambda t: time.strftime("%Y-%m-%d", time.gmtime(t + off))
+                          hoy = dia(m.get("regularMarketTime") or par[-1][0])
+                          if dia(par[-1][0]) == hoy and len(par) >= 2:
+                              pv = par[-2][1]
+                          else:
+                              pv = par[-1][1]
                       if p and pv:
                           return sym, {"p": p, "c": round((p - pv) / pv * 100, 4)}
                   except Exception as e:
