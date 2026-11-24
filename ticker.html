@@ -142,14 +142,14 @@ var jsonT=0;
 function cargarJson(){
   return ft('cotizaciones.json?t='+Date.now(),6000).then(function(j){
     if(!j||!j.d)return;jsonT=j.t||0;
-    TODOS.forEach(function(i){if(i.t==='yh'){var x=j.d[i.s];if(x&&x.p!=null){i.v={p:x.p,c:x.c};i.f=true}}});
+    TODOS.forEach(function(i){if(i.t==='yh'){var x=j.d[i.s];if(x&&x.p!=null&&!i.fb){i.v={p:x.p,c:x.c};i.f=true}}});
   }).catch(function(){});
 }
 var botT=0;
 function cargarBot(){
   return ft('mercados.json?t='+Date.now(),5000).then(function(j){
     if(!j||!j.d)return;botT=j.t||0;
-    TODOS.forEach(function(i){if(i.t==='yh'||i.t==='cg'){var x=j.d[i.n];if(x&&x.p!=null&&!i.f){i.v={p:x.p,c:x.c};i.f=true}}});
+    TODOS.forEach(function(i){if(i.t==='yh'||i.t==='cg'){var x=j.d[i.n];if(x&&x.p!=null){i.v={p:x.p,c:x.c};i.f=true;i.fb=true}}});
   }).catch(function(){});
 }
 function cargarYahoo(){
@@ -208,7 +208,7 @@ function pintar(){
   $('tit').textContent='RESUMEN DE MERCADOS — '+fecha();
   $('nota').textContent=eeuuAbierta()?'':'Acciones de EEUU, S&P 500 y Nasdaq: variación de la última sesión (bolsa de EEUU cerrada)';
   $('ordGrupo').classList.toggle('on',modo!=='pct');$('ordPct').classList.toggle('on',modo==='pct');
-  var bt=jsonT||botT;if(bt){var d=new Date(bt*1000),z=function(n){return ('0'+n).slice(-2)};var ed=Math.round((Date.now()-d)/60000);
+  var bt=Math.max(jsonT||0,botT||0);if(bt){var d=new Date(bt*1000),z=function(n){return ('0'+n).slice(-2)};var ed=Math.round((Date.now()-d)/60000);
     $('falta').textContent=($('falta').textContent?$('falta').textContent+' · ':'')+'Acciones, índices, divisas y materias primas: datos de las '+z(d.getHours())+':'+z(d.getMinutes())+(ed>180?' (desactualizados)':'')}
   var ok=con.length;$('dot').className='dot '+(ok?'on':'off');
   var fr=TODOS.filter(function(i){return i.f}).length;
