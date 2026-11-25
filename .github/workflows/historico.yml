@@ -1,0 +1,46 @@
+name: Historico
+on:
+  schedule:
+    - cron: "30 22 * * 0"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  historico:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar historia de Yahoo
+        run: |
+          mkdir -p historico
+          python3 - <<'PY'
+          import json, time, urllib.request, urllib.parse
+          SYMS = {"spx": "^GSPC", "ixic": "^IXIC", "ibex": "^IBEX", "dax": "^GDAXI", "oro": "GC=F", "btc": "BTC-USD"}
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
+          for nombre, sym in SYMS.items():
+              ok = False
+              for host in ("query1", "query2", "query1", "query2"):
+                  try:
+                      u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?range=max&interval=1d" % (host, urllib.parse.quote(sym))
+                      r = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=40)
+                      res = json.load(r)["chart"]["result"][0]
+                      cl = res["indicators"]["quote"][0]["close"]
+                      par = [(t, round(c, 2)) for t, c in zip(res["timestamp"], cl) if c]
+                      if len(par) < 1000:
+                          raise Exception("pocos datos %d" % len(par))
+                      json.dump({"s": sym, "t": [p[0] for p in par], "c": [p[1] for p in par]}, open("historico/%s.json" % nombre, "w"), separators=(",", ":"))
+                      print("ok", nombre, len(par))
+                      ok = True
+                      break
+                  except Exception as e:
+                      print("fallo", nombre, host, e)
+                      time.sleep(2)
+              if not ok:
+                  print("SIN DATOS", nombre)
+          PY
+      - name: Guardar
+        run: |
+          git config user.name "github-actions"
+          git add historico
+          git config user.email "actions@users.noreply.github.com"
+          git diff --cached --quiet || (git commit -m "historico" && git push)
