@@ -44,7 +44,7 @@ var TABS=[
  {n:'Balance de la Fed',s:'FRED:WALCL',cmp:true,q:'<b>Balance de la Reserva Federal</b> (WALCL): lo que la Fed tiene en activos. Sube cuando inyecta liquidez y baja cuando la retira. Dato semanal.'},
  {n:'Cuenta del Tesoro',s:'FRED:WTREGEN',cmp:true,q:'<b>Cuenta del Tesoro en la Fed</b> (TGA). Cuando sube, el Tesoro retira dinero del sistema; cuando baja, lo devuelve. Un TGA al alza suele apretar la liquidez.'},
  {n:'Repos inversos',s:'FRED:RRPONTSYD',cmp:true,q:'<b>Repos inversos (RRP)</b>: dinero aparcado en la Fed por bancos y fondos. Si baja, ese dinero vuelve al mercado.'},
- {n:'Dólar (DXY)',s:'TVC:DXY',cmp:true,q:'<b>Índice del dólar</b>. Un dólar fuerte suele apretar la liquidez global; uno débil, aliviarla.'}
+ {n:'Dólar',s:'FRED:DTWEXBGS',cmp:true,q:'<b>Índice amplio del dólar (Fed)</b>, que mide el dólar frente a las principales monedas con las que comercia EEUU. Un dólar fuerte suele apretar la liquidez global; uno débil, aliviarla.'}
 ];
 var cur=0;
 try{var g=parseInt(localStorage.getItem('lq.tv')||'0',10);if(g>=0&&g<TABS.length)cur=g}catch(e){}
