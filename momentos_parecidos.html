@@ -33,14 +33,16 @@ td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-
 .big{font-size:15px;color:var(--st);line-height:1.5}
 .warn{color:var(--warn)}
 .bar{height:8px;background:var(--p2);border-radius:4px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:var(--ac);width:0}
-.note{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:14px}
+.chip.s{font-size:12px;padding:5px 10px}.grp{font-size:11px;color:var(--dim);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.04em}.chips{display:flex;gap:5px;flex-wrap:wrap}.sig{border-width:2px}.sigtop{display:flex;gap:12px;align-items:center}.dot{font-size:34px;line-height:1}.sigt{font-size:18px;font-weight:700;color:var(--st)}.sigs{font-size:12.5px;color:var(--dim);margin-top:2px}.acc{margin-top:10px;font-size:14px;line-height:1.5;color:var(--st)}.acc b{font-size:20px}.badge{margin-top:10px;font-size:13px;font-weight:600;padding:8px 10px;border-radius:8px;line-height:1.4}.badge.ok{background:rgba(0,204,68,.12);color:var(--up)}.badge.no{background:rgba(255,184,77,.12);color:var(--warn)}.tr{cursor:pointer}.note{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:14px}
 </style></head><body>
 <div class="wrap">
 <header><a class="btn" href="index.html">← Hub</a><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
-<h1>🔍 Momentos parecidos · S&amp;P 500</h1>
-<div class="sub">Busca en la historia del S&amp;P 500 los momentos cuya forma de los últimos días se parece a la de hoy y enseña qué pasó después. <b>No es una predicción</b>: es contexto, y más abajo puedes comprobar si este método habría acertado en el pasado.</div>
+<h1 id="h1">🔍 Momentos parecidos</h1>
+<div class="sub">Busca en la historia los momentos cuya forma de los últimos días se parece a la de hoy y enseña qué pasó después. Da una señal y, <b>junto a ella, cuántas veces habría acertado en el pasado</b>. No es una predicción segura.</div>
+<div id="sel"></div>
 <div class="row"><small>Mirar los últimos</small><span id="vent"></span></div>
-<div class="sub" id="est" style="margin-top:8px">cargando la historia del S&amp;P 500…</div>
+<div class="sub" id="est" style="margin-top:8px">cargando la historia…</div>
+<div class="card sig" id="sg" style="display:none"></div>
 <div class="card" id="cg" style="display:none">
  <div class="leg"><span><i style="background:var(--ink)"></i>Hoy</span><span><i style="background:var(--an);opacity:.6"></i>Momentos parecidos</span><span><i style="background:var(--md)"></i>Caso mediano</span></div>
  <canvas id="cv"></canvas>
@@ -48,42 +50,58 @@ td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-
 </div>
 <div class="card" id="ct" style="display:none"><h2>¿Qué pasó después?</h2><table id="tb"></table><div class="sub" id="tbn" style="margin-top:8px"></div></div>
 <div class="card" id="cl" style="display:none"><h2>Los 8 momentos más parecidos</h2><div id="ls"></div></div>
-<div class="card" id="cb" style="display:none"><h2>🧪 ¿Habría funcionado en el pasado?</h2>
- <div class="sub">Para cada mes de la historia desde hace 10 años, el método solo ve lo anterior a ese día, hace su pronóstico a 1 mes y se compara con lo que pasó de verdad. Tarda unos segundos.</div>
- <div class="row"><button class="chip" id="bt" type="button">Probar ahora</button></div>
+<div class="card" id="cb" style="display:none"><h2>🧪 La prueba del pasado</h2>
+ <div class="sub" id="bsub">Para cada mes de la historia (a partir de los primeros años), el método solo ve lo anterior a ese día, hace su pronóstico y se compara con lo que pasó de verdad.</div>
  <div class="bar" id="pb" style="display:none"><i id="pi"></i></div>
  <div id="br" style="margin-top:10px"></div>
 </div>
-<div class="note">Datos: Yahoo Finance, cierres diarios del S&amp;P 500 desde 1927. La historia se guarda en el Hub cada semana y los últimos días se añaden al abrir la página. El pasado no garantiza el futuro: los mercados cambian y los parecidos son una ayuda para pensar, no una señal de compra o venta. Informativo, no es consejo financiero.</div>
+<div class="card" id="cs"><h2>📊 Todos los activos a la vez</h2>
+ <div class="sub">Calcula la señal y su acierto histórico para todos. Tarda un rato (hasta un minuto). Toca una fila para abrir ese activo.</div>
+ <div class="row"><button class="chip" id="bs" type="button">Calcular todos</button></div>
+ <div class="sub" id="ps" style="margin-top:8px"></div>
+ <table id="ts" style="margin-top:6px"></table>
+</div>
+<div class="note">Datos: Yahoo Finance (cierres diarios; algunos activos con Stooq de respaldo). La historia se guarda en el Hub cada día laborable y los últimos días se añaden al abrir la página. «Acierto» es el % de veces que, en el pasado, el método dio esa misma señal (subida o bajada a 1 mes) y el activo se movió de verdad en esa dirección. «Ventaja demostrada» solo se marca si supera claramente lo que se acertaría sin el método. Con tantos activos, alguno saldrá bien por pura casualidad: fíate solo de ventajas grandes y repetidas. El pasado no garantiza el futuro. Informativo, no es consejo financiero.</div>
 </div>
 <script src="telegram.js" defer></script>
 <script>
 (function(){
 'use strict';
 var $=function(i){return document.getElementById(i)};
-var K=20,HS=[[5,'1 semana'],[21,'1 mes'],[63,'3 meses']],HMAX=63;
-var st={W:60,T:null,L:null,n:0};
+var AS=[
+['spx','S&P 500','🇺🇸','^GSPC','Índices'],['ixic','Nasdaq','🇺🇸','^IXIC','Índices'],['dji','Dow Jones','🇺🇸','^DJI','Índices'],['rut','Russell 2000','🇺🇸','^RUT','Índices'],
+['ibex','IBEX 35','🇪🇸','^IBEX','Índices'],['dax','DAX','🇩🇪','^GDAXI','Índices'],['cac','CAC 40','🇫🇷','^FCHI','Índices'],['ftse','FTSE 100','🇬🇧','^FTSE','Índices'],['stoxx','Euro Stoxx 50','🇪🇺','^STOXX50E','Índices'],['n225','Nikkei','🇯🇵','^N225','Índices'],['hsi','Hang Seng','🇭🇰','^HSI','Índices'],
+['oro','Oro','🥇','GC=F','Materias primas'],['plata','Plata','🥈','SI=F','Materias primas'],['wti','Petróleo WTI','🛢️','CL=F','Materias primas'],['brent','Brent','🛢️','BZ=F','Materias primas'],['gas','Gas natural','🔥','NG=F','Materias primas'],['cobre','Cobre','🔶','HG=F','Materias primas'],
+['btc','Bitcoin','₿','BTC-USD','Cripto'],['eth','Ethereum','Ξ','ETH-USD','Cripto'],['sol','Solana','◎','SOL-USD','Cripto'],['xrp','XRP','✕','XRP-USD','Cripto'],
+['eurusd','EUR/USD','💶','EURUSD=X','Divisas y bonos'],['dxy','Dólar (DXY)','💵','DX-Y.NYB','Divisas y bonos'],['tnx','Bono EEUU 10 años','🏛️','^TNX','Divisas y bonos'],['vix','VIX','😨','^VIX','Divisas y bonos'],
+['nvda','Nvidia','🟩','NVDA','Acciones'],['aapl','Apple','🍎','AAPL','Acciones'],['msft','Microsoft','🪟','MSFT','Acciones'],['tsla','Tesla','🚗','TSLA','Acciones'],['amzn','Amazon','📦','AMZN','Acciones'],['googl','Alphabet','🔎','GOOGL','Acciones'],['meta','Meta','👤','META','Acciones']
+];
+var BY={};AS.forEach(function(a){BY[a[0]]=a});
+var K=20;
+var PS={a:{hs:[[5,'1 semana'],[21,'1 mes'],[63,'3 meses']],hmax:63,h:21},c:{hs:[[7,'1 semana'],[30,'1 mes'],[91,'3 meses']],hmax:91,h:30}};
+var st={W:60,k:'spx',D:null,P:PS.a,tok:0,btc:{},raw:{}};
 try{var w=parseInt(localStorage.getItem('mp.w')||'60',10);if([30,60,90].indexOf(w)>=0)st.W=w}catch(e){}
+try{var k0=localStorage.getItem('mp.a');if(k0&&BY[k0])st.k=k0}catch(e){}
+try{var q=new URLSearchParams(location.search).get('a');if(q&&BY[q])st.k=q}catch(e){}
 var fmt=function(n,d){return n.toLocaleString('es-ES',{minimumFractionDigits:d||0,maximumFractionDigits:d||0})};
 var pc=function(x,d){return(x>=0?'+':'')+fmt(x*100,d===undefined?1:d)+' %'};
 var cl=function(x){return x>=0?'up':'dn'};
 var fd=function(t){return new Date(t).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'})};
 function med(a){var b=a.slice().sort(function(x,y){return x-y}),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2}
 function pct(a,p){var b=a.slice().sort(function(x,y){return x-y});var i=(b.length-1)*p,f=Math.floor(i),c=Math.ceil(i);return b[f]+(b[c]-b[f])*(i-f)}
-
 /* ---------- datos ---------- */
 function timeout(ms){var ac=new AbortController();var id=setTimeout(function(){ac.abort()},ms);return{s:ac.signal,c:function(){clearTimeout(id)}}}
 function pedir(u,ms){var t=timeout(ms);return fetch(u,{signal:t.s,cache:'no-store'}).then(function(r){t.c();if(!r.ok)throw new Error('HTTP '+r.status);return r.text()},function(e){t.c();throw e})}
+var MIN=1500;
 function parseYahoo(txt){
   var j=JSON.parse(txt),r=j.chart.result[0],ts=r.timestamp,cl=r.indicators.quote[0].close,T=[],C=[];
   for(var i=0;i<ts.length;i++){if(cl[i]>0){T.push(ts[i]*1000);C.push(cl[i])}}
-  if(C.length<5000)throw new Error('pocos datos');return{T:T,C:C};
+  if(C.length<MIN)throw new Error('pocos datos');return{T:T,C:C};
 }
-function parseStooq(txt){
-  var L=String(txt).trim().split(/\r?\n/),T=[],C=[];
-  if(!/^date/i.test(L[0]))throw new Error('csv');
-  for(var i=1;i<L.length;i++){var p=L[i].split(',');var c=parseFloat(p[4]);var t=Date.parse(p[0]+'T00:00:00Z');if(c>0&&isFinite(t)){T.push(t);C.push(c)}}
-  if(C.length<5000)throw new Error('pocos datos');return{T:T,C:C};
+function parseJson(txt){
+  var j=JSON.parse(txt),T=[],C=[];
+  for(var i=0;i<j.t.length;i++){if(j.c[i]>0){T.push(j.t[i]*1000);C.push(j.c[i])}}
+  if(C.length<MIN)throw new Error('pocos datos');return{T:T,C:C};
 }
 function primera(cands,parse){
   return new Promise(function(res,rej){
@@ -95,15 +113,10 @@ function primera(cands,parse){
   });
 }
 function conProxy(u){var e=encodeURIComponent(u);return[u,'https://corsproxy.io/?'+e,'https://api.allorigins.win/raw?url='+e,'https://api.codetabs.com/v1/proxy?quest='+e]}
-function parseJson(txt){
-  var j=JSON.parse(txt),T=[],C=[];
-  for(var i=0;i<j.t.length;i++){if(j.c[i]>0){T.push(j.t[i]*1000);C.push(j.c[i])}}
-  if(C.length<5000)throw new Error('pocos datos');return{T:T,C:C};
-}
 var dia=function(ms){return Math.floor(ms/864e5)};
-/* añade los días recientes (Yahoo, 3 meses) a la historia guardada */
-function completa(d){
-  var yh='https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=3mo&interval=1d';
+function mk(d){var n=d.C.length,L=new Float64Array(n);for(var i=0;i<n;i++)L[i]=Math.log(d.C[i]);return{T:d.T,C:d.C,L:L,n:n,base:d.base,viejo:d.viejo}}
+function completa(d,ys){
+  var yh='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ys)+'?range=3mo&interval=1d';
   return primera(conProxy(yh),function(txt){
     var j=JSON.parse(txt),r=j.chart.result[0],ts=r.timestamp,cl=r.indicators.quote[0].close,n=0;
     if(!ts||ts.length<5)throw new Error('vacío');
@@ -114,25 +127,22 @@ function completa(d){
     return d;
   }).catch(function(){return d});
 }
-function carga(){
-  var cache=null;try{cache=JSON.parse(localStorage.getItem('mp.d')||'null')}catch(e){}
-  // 1) historia guardada en el propio Hub (rápida y fiable); 2) respaldo por proxy
-  return pedir('historico/spx.json?t='+Math.floor(Date.now()/36e5),20000).then(parseJson).then(function(d){
-    st.base=d.T[d.T.length-1];
-    return completa(d);
-  }).catch(function(){
-    var yh='https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=max&interval=1d';
-    return primera(conProxy(yh),parseYahoo).then(function(d){
-      try{localStorage.setItem('mp.d',JSON.stringify({t:Date.now(),d:d}))}catch(e){}return d;
-    },function(e){
-      if(cache&&cache.d&&cache.d.C&&cache.d.C.length>5000){st.viejo=cache.t;return cache.d}
-      throw e;
-    });
-  });
+function guardada(k){
+  if(st.raw[k])return Promise.resolve(st.raw[k]);
+  return pedir('historico/'+k+'.json?t='+Math.floor(Date.now()/36e5),20000).then(parseJson).then(function(d){d.base=d.T[d.T.length-1];st.raw[k]=d;return d});
+}
+function carga(k){
+  var a=BY[k];
+  return guardada(k).catch(function(){
+    var yh='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(a[3])+'?range=max&interval=1d';
+    return primera(conProxy(yh),parseYahoo);
+  }).then(function(d){
+    var c={T:d.T.slice(),C:d.C.slice(),base:d.base};
+    return completa(c,a[3]);
+  }).then(mk);
 }
 /* ---------- algoritmo ---------- */
 function dists(L,T,W,tmax,stride){
-  // distancia entre el recorrido de los W días que acaban en T y el de los que acaban en t
   var out=[],base=L[T-W],a=new Float64Array(W),j;
   for(j=1;j<=W;j++)a[j-1]=L[T-W+j]-base;
   for(var t=W;t<=tmax;t+=stride){
@@ -152,11 +162,47 @@ function elige(ds,W,k){
   return sel;
 }
 function fwd(C,t,h){return C[t+h]/C[t]-1}
+function ventaja(k,n,base){if(n<30)return false;var p=k/n,se=Math.sqrt(base*(1-base)/n);return p-base>Math.max(.03,2*se)}
+function stats(res){
+  var n=res.length,u=0,hit=0,nu=0,hu=0,nd=0,hd=0,sU=0,sD=0,sx=0,sy=0,sxx=0,syy=0,sxy=0;
+  res.forEach(function(r){var p=r[0],a=r[1];if(a>0)u++;if((p>0)===(a>0))hit++;if(p>0){nu++;sU+=a;if(a>0)hu++}else{nd++;sD+=a;if(a<0)hd++}sx+=p;sy+=a;sxx+=p*p;syy+=a*a;sxy+=p*a});
+  var bu=u/n;
+  return{n:n,hr:hit/n,bu:bu,nu:nu,hu:hu,nd:nd,hd:hd,mU:nu?sU/nu:0,mD:nd?sD/nd:0,cor:(n*sxy-sx*sy)/Math.sqrt((n*sxx-sx*sx)*(n*syy-sy*sy)||1),vU:ventaja(hu,nu,bu),vD:ventaja(hd,nd,1-bu)};
+}
+function backtest(D,W,P,prog,cb){
+  var n=D.n,h=P.h,T0=Math.min(2520,Math.max(750,Math.floor(n*.4))),tests=[],res=[];
+  for(var T=T0;T<n-1-h;T+=h)tests.push(T);
+  if(tests.length<20){cb(null);return}
+  var i=0;
+  (function paso(){
+    var fin=Math.min(tests.length,i+6);
+    for(;i<fin;i++){
+      var T=tests[i],sel=elige(dists(D.L,T,W,T-h,3),W,K);
+      var f=sel.map(function(s){return fwd(D.C,s[0],h)});
+      res.push([med(f),fwd(D.C,T,h)]);
+    }
+    if(prog)prog(i/tests.length);
+    if(i<tests.length){setTimeout(paso,0);return}
+    cb(stats(res));
+  })();
+}
+function hoy(D,W,P){
+  var T=D.n-1,sel=elige(dists(D.L,T,W,T-P.hmax,1),W,K);
+  var f=sel.map(function(s){return fwd(D.C,s[0],P.h)}),m=med(f);
+  return{sel:sel,pred:m>0,up:f.filter(function(x){return x>0}).length,k:sel.length,mdn:m};
+}
+/* la señal de hoy con su acierto histórico */
+function senal(H,B){
+  if(!B)return null;
+  var up=H.pred,n=up?B.nu:B.nd,k=up?B.hu:B.hd,base=up?B.bu:1-B.bu;
+  return{up:up,n:n,acc:n?k/n:0,base:base,v:up?B.vU:B.vD};
+}
 /* ---------- gráfico ---------- */
 function dibuja(sel,W){
+  var D=st.D,P=st.P,HMAX=P.hmax;
   var cv=$('cv'),cx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,r=cv.getBoundingClientRect(),w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
   cv.width=w;cv.height=h;cx.clearRect(0,0,w,h);
-  var C=st.C,T=st.n-1,pl=8*dpr,pr=42*dpr,pt=8*dpr,pb=20*dpr;
+  var C=D.C,T=D.n-1,pl=8*dpr,pr=42*dpr,pt=8*dpr,pb=20*dpr;
   var paths=sel.map(function(s){var a=[];for(var x=-W;x<=HMAX;x++)a.push(100*C[s[0]+x]/C[s[0]]);return a});
   var now=[];for(var x=-W;x<=0;x++)now.push(100*C[T+x]/C[T]);
   var mf=[];for(var i=0;i<=HMAX;i++)mf.push(med(paths.map(function(p){return p[W+i]})));
@@ -175,15 +221,25 @@ function dibuja(sel,W){
   lin(mf,0,gv('--md'),2.5,1);
   lin(now,-W,gv('--st'),2.5,1);
 }
-/* ---------- análisis actual ---------- */
+/* ---------- pantalla ---------- */
+function pintaSenal(){
+  var el=$('sg'),H=st.H,B=st.bt,a=BY[st.k],S=senal(H,B),hl=st.P.hs[1][1];
+  var ic=H.pred?'🟢':'🔴',tx=(H.pred?'Subida':'Bajada')+' a '+hl;
+  var h='<div class="sigtop"><span class="dot">'+ic+'</span><div><div class="sigt">'+a[2]+' '+a[1]+': '+tx+'</div><div class="sigs">'+H.up+' de '+H.k+' momentos parecidos subieron · mediana '+pc(H.mdn)+'</div></div></div>';
+  if(!B){h+=st.btBusy?'<div class="acc dim">Calculando cuántas veces habría acertado…</div>':'<div class="acc dim">Historia insuficiente para comprobar el acierto.</div>'}
+  else{
+    h+='<div class="acc"><b>'+fmt(S.acc*100,0)+' %</b> de acierto histórico cuando el método dio <b style="font-size:inherit">'+(H.pred?'subida':'bajada')+'</b> ('+S.n+' veces). Sin método, este activo '+(H.pred?'subió':'bajó')+' el '+fmt(S.base*100,0)+' % de los meses.</div>'+
+      (S.v?'<div class="badge ok">✅ Ventaja demostrada: acertó claramente más que sin método.</div>':'<div class="badge no">⚠️ Sin ventaja demostrada: no mejora lo que se acertaría sin el método. Úsalo como contexto, no como señal.</div>');
+  }
+  el.style.display='block';el.innerHTML=h;
+}
 function analiza(){
-  var W=st.W,L=st.L,C=st.C,T=st.n-1;
-  var sel=elige(dists(L,T,W,T-HMAX,1),W,K);
+  var D=st.D,W=st.W,P=st.P,C=D.C,T=D.n-1,a=BY[st.k];
+  var H=hoy(D,W,P);st.H=H;var sel=H.sel;
   $('cg').style.display=$('ct').style.display=$('cl').style.display=$('cb').style.display='block';
   dibuja(sel,W);
   var tb='<tr><th>Después de…</th><th>Subió</th><th>Mediana</th><th>Rango habitual</th></tr>';
-  var texto=[];
-  HS.forEach(function(hh){
+  P.hs.forEach(function(hh){
     var h=hh[0],f=sel.map(function(s){return fwd(C,s[0],h)});
     var up=f.filter(function(x){return x>0}).length;
     var all=[],upAll=0,cntAll=0;for(var t=W;t<T-h;t+=3){var v=fwd(C,t,h);all.push(v);cntAll++;if(v>0)upAll++}
@@ -191,67 +247,89 @@ function analiza(){
         '<tr><td class="dim">historia completa</td><td class="dim">'+fmt(upAll/cntAll*100,0)+' %</td><td class="dim">'+pc(med(all))+'</td><td class="dim">'+pc(pct(all,.1),0)+' a '+pc(pct(all,.9),0)+'</td></tr>';
   });
   $('tb').innerHTML=tb;
-  $('tbn').textContent='Cada «Subió» cuenta cuántos de los '+sel.length+' momentos parecidos acabaron más arriba. La fila gris es lo que pasa en cualquier momento de la historia: es la referencia para comparar, porque la bolsa suele subir con el tiempo.';
+  $('tbn').textContent='Cada «Subió» cuenta cuántos de los '+sel.length+' momentos parecidos acabaron más arriba. La fila gris es lo que pasa en cualquier momento de la historia, la referencia para comparar.';
   var ls='';
-  sel.slice(0,8).forEach(function(s){var f1=fwd(C,s[0],21),f3=fwd(C,s[0],63);
-    ls+='<div class="li"><span>'+fd(st.T[s[0]])+'</span><span class="dim">1 mes <b class="'+cl(f1)+'">'+pc(f1)+'</b> · 3 meses <b class="'+cl(f3)+'">'+pc(f3)+'</b></span></div>'});
+  sel.slice(0,8).forEach(function(s){var f1=fwd(C,s[0],P.hs[1][0]),f3=fwd(C,s[0],P.hs[2][0]);
+    ls+='<div class="li"><span>'+fd(D.T[s[0]])+'</span><span class="dim">'+P.hs[1][1]+' <b class="'+cl(f1)+'">'+pc(f1)+'</b> · '+P.hs[2][1]+' <b class="'+cl(f3)+'">'+pc(f3)+'</b></span></div>'});
   $('ls').innerHTML=ls;
-  var ch=(C[T]/C[T-W]-1);
-  $('cap').textContent='Hoy: el S&P 500 lleva '+pc(ch)+' en las últimas '+W+' sesiones. Cada línea celeste es un momento del pasado, alineado para acabar hoy.';
-  $('est').textContent='Datos hasta '+fd(st.T[T])+' · '+fmt(st.n,0)+' sesiones desde '+new Date(st.T[0]).getUTCFullYear()+(st.viejo?' · ⚠️ datos guardados, no se pudo actualizar':(st.base&&dia(st.T[st.n-1])<=dia(st.base)?' · última descarga semanal (los días recientes no se pudieron añadir)':''));
+  $('cap').textContent='Hoy: '+a[1]+' lleva '+pc(C[T]/C[T-W]-1)+' en las últimas '+W+' sesiones. Cada línea celeste es un momento del pasado, alineado para acabar hoy.';
+  $('est').textContent='Datos hasta '+fd(D.T[T])+' · '+fmt(D.n,0)+' sesiones desde '+new Date(D.T[0]).getUTCFullYear()+(D.base&&dia(D.T[D.n-1])<=dia(D.base)?' · de la última descarga guardada (los días recientes no se pudieron añadir)':'');
+  lanzaBt();
 }
-/* ---------- prueba histórica ---------- */
-var corriendo=false;
-function prueba(){
-  if(corriendo)return;corriendo=true;
-  var W=st.W,L=st.L,C=st.C,n=st.n,H=21,res=[],T0=2520,tests=[];
-  for(var T=T0;T<n-1-H;T+=21)tests.push(T);
-  $('pb').style.display='block';$('br').textContent='';$('bt').disabled=true;
-  var i=0;
-  (function paso(){
-    var fin=Math.min(tests.length,i+8);
-    for(;i<fin;i++){
-      var T=tests[i],sel=elige(dists(L,T,W,T-H,3),W,K);
-      var f=sel.map(function(s){return fwd(C,s[0],H)});
-      res.push([med(f),fwd(C,T,H)]);
-    }
-    $('pi').style.width=(i/tests.length*100)+'%';
-    if(i<tests.length){setTimeout(paso,0);return}
-    corriendo=false;$('bt').disabled=false;$('pb').style.display='none';muestra(res);
-  })();
+function lanzaBt(){
+  var D=st.D,key=st.k+'|'+st.W+'|'+D.n,tok=st.tok;
+  $('br').textContent='';
+  if(st.btc[key]!==undefined){st.bt=st.btc[key];st.btBusy=false;pintaSenal();pintaBt();return}
+  st.bt=null;st.btBusy=true;pintaSenal();$('pb').style.display='block';$('pi').style.width='0';
+  backtest(D,st.W,st.P,function(p){if(tok===st.tok)$('pi').style.width=(p*100)+'%'},function(B){
+    st.btc[key]=B;if(tok!==st.tok)return;
+    st.bt=B;st.btBusy=false;$('pb').style.display='none';pintaSenal();pintaBt();
+  });
 }
-function muestra(res){
-  var n=res.length,hit=0,up=0,sumU=0,nU=0,sumD=0,nD=0,sx=0,sy=0,sxx=0,syy=0,sxy=0;
-  res.forEach(function(r){var p=r[0],a=r[1];if((p>0)===(a>0))hit++;if(a>0)up++;if(p>0){sumU+=a;nU++}else{sumD+=a;nD++}sx+=p;sy+=a;sxx+=p*p;syy+=a*a;sxy+=p*a});
-  var hr=hit/n,base=up/n,cor=(n*sxy-sx*sy)/Math.sqrt((n*sxx-sx*sx)*(n*syy-sy*sy)||1);
-  var mU=nU?sumU/nU:0,mD=nD?sumD/nD:0;
-  var mejora=hr-base;
-  var v;
-  if(mejora>=0.03&&mU>mD)v='<span class="up">Algo de señal:</span> acertó más que «siempre sube» y las predicciones al alza rindieron más que las a la baja. Aun así, es una sola prueba y el futuro puede ser distinto.';
-  else v='<span class="warn">No mejora a «siempre sube».</span> En el pasado, este método no ha sido mejor que apostar siempre a que la bolsa sube. Úsalo como contexto, no como señal.';
-  $('br').innerHTML='<div class="big">'+v+'</div><table style="margin-top:8px">'+
-   '<tr><td>Meses probados</td><td>'+n+'</td></tr>'+
-   '<tr><td>Aciertos del método (sube/baja a 1 mes)</td><td><b>'+fmt(hr*100,1)+' %</b></td></tr>'+
-   '<tr><td>Aciertos apostando «siempre sube»</td><td>'+fmt(base*100,1)+' %</td></tr>'+
-   '<tr><td>Rendimiento medio cuando predijo subida ('+nU+')</td><td class="'+cl(mU)+'">'+pc(mU,2)+'</td></tr>'+
-   '<tr><td>Rendimiento medio cuando predijo bajada ('+nD+')</td><td class="'+cl(mD)+'">'+pc(mD,2)+'</td></tr>'+
-   '<tr><td>Correlación predicción–realidad</td><td>'+fmt(cor,2)+'</td></tr></table>'+
-   '<div class="sub" style="margin-top:8px">Referencia: lanzar una moneda da ~50 %. Si «siempre sube» ya acierta más, el método debe superar esa cifra para aportar algo. Con ventana de '+st.W+' días y '+K+' momentos parecidos.</div>';
+function pintaBt(){
+  var B=st.bt;if(!B){$('br').textContent='';return}
+  var d=st.P.hs[1][1];
+  $('br').innerHTML='<table>'+
+   '<tr><td>Meses probados</td><td>'+B.n+'</td></tr>'+
+   '<tr><td>Aciertos del método (sube/baja a '+d+')</td><td><b>'+fmt(B.hr*100,1)+' %</b></td></tr>'+
+   '<tr><td>Aciertos apostando «siempre sube»</td><td>'+fmt(B.bu*100,1)+' %</td></tr>'+
+   '<tr><td>Cuando predijo subida ('+B.nu+'): subió</td><td><b>'+fmt(B.nu?B.hu/B.nu*100:0,0)+' %</b> · medio <span class="'+cl(B.mU)+'">'+pc(B.mU,2)+'</span></td></tr>'+
+   '<tr><td>Cuando predijo bajada ('+B.nd+'): bajó</td><td><b>'+fmt(B.nd?B.hd/B.nd*100:0,0)+' %</b> · medio <span class="'+cl(B.mD)+'">'+pc(B.mD,2)+'</span></td></tr>'+
+   '<tr><td>Correlación predicción–realidad</td><td>'+fmt(B.cor,2)+'</td></tr></table>'+
+   '<div class="sub" style="margin-top:8px">Referencia: lanzar una moneda da ~50 %. Con ventana de '+st.W+' días y '+K+' momentos parecidos.</div>';
 }
-/* ---------- interfaz ---------- */
+function abre(k){
+  st.k=k;st.tok++;st.D=null;st.bt=null;st.P=(BY[k][4]==='Cripto')?PS.c:PS.a;
+  try{localStorage.setItem('mp.a',k)}catch(e){}
+  var a=BY[k];$('h1').textContent='🔍 Momentos parecidos · '+a[1];
+  chips();
+  $('cg').style.display=$('ct').style.display=$('cl').style.display=$('cb').style.display=$('sg').style.display='none';
+  $('est').textContent='cargando la historia de '+a[1]+'…';
+  var tok=st.tok;
+  carga(k).then(function(D){if(tok!==st.tok)return;st.D=D;analiza()},function(){if(tok!==st.tok)return;$('est').innerHTML='<span class="warn">No se pudo cargar la historia de '+a[1]+' ahora. Prueba otro activo o recarga en unos segundos.</span>'});
+}
+function chips(){
+  var b=$('sel');b.textContent='';var g='';var box=null;
+  AS.forEach(function(a){
+    if(a[4]!==g){g=a[4];var t=document.createElement('div');t.className='grp';t.textContent=g;b.appendChild(t);box=document.createElement('div');box.className='chips';b.appendChild(box)}
+    var c=document.createElement('button');c.type='button';c.className='chip s'+(a[0]===st.k?' on':'');c.textContent=a[2]+' '+a[1];c.onclick=function(){if(a[0]!==st.k)abre(a[0])};box.appendChild(c);
+  });
+}
 function ventanas(){
   var b=$('vent');b.textContent='';
-  [30,60,90].forEach(function(x){var c=document.createElement('button');c.className='chip'+(x===st.W?' on':'');c.textContent=x+' días';c.type='button';c.onclick=function(){st.W=x;try{localStorage.setItem('mp.w',String(x))}catch(e){}$('br').textContent='';ventanas();if(st.L)analiza()};b.appendChild(c)});
+  [30,60,90].forEach(function(x){var c=document.createElement('button');c.className='chip'+(x===st.W?' on':'');c.textContent=x+' días';c.type='button';c.onclick=function(){st.W=x;st.tok++;try{localStorage.setItem('mp.w',String(x))}catch(e){}ventanas();if(st.D)analiza()};b.appendChild(c)});
 }
-$('bt').onclick=prueba;
-window.addEventListener('resize',function(){if(st.L){/* redibuja con la selección actual */analiza()}});
+/* ---------- todos a la vez ---------- */
+var sumBusy=false,sumRows=[];
+function pintaSum(){
+  var rows=sumRows.slice().sort(function(a,b){return(b.v-a.v)||(b.acc-a.acc)});
+  var h='<tr><th>Activo</th><th>Señal</th><th>Acierto</th><th>Ventaja</th></tr>';
+  rows.forEach(function(r){h+='<tr class="tr" data-k="'+r.k+'"><td>'+BY[r.k][2]+' '+BY[r.k][1]+'</td><td>'+(r.up?'🟢 sube':'🔴 baja')+'</td><td>'+fmt(r.acc*100,0)+' % <span class="dim">(base '+fmt(r.base*100,0)+')</span></td><td>'+(r.v?'✅':'⚠️')+'</td></tr>'});
+  $('ts').innerHTML=h;
+  Array.prototype.forEach.call($('ts').querySelectorAll('tr[data-k]'),function(tr){tr.onclick=function(){abre(tr.getAttribute('data-k'));window.scrollTo(0,0)}});
+}
+function todos(){
+  if(sumBusy)return;sumBusy=true;sumRows=[];$('bs').disabled=true;
+  var i=0,W=st.W;
+  (function sig(){
+    if(i>=AS.length){sumBusy=false;$('bs').disabled=false;$('ps').textContent='Listo: '+sumRows.length+' activos con datos de la última descarga (ventana de '+W+' días, señal a 1 mes). ✅ = ventaja demostrada, ⚠️ = sin ventaja.';return}
+    var a=AS[i];$('ps').textContent='Calculando '+(i+1)+' de '+AS.length+': '+a[1]+'…';
+    guardada(a[0]).then(function(d){
+      var D=mk({T:d.T,C:d.C,base:d.base}),P=a[4]==='Cripto'?PS.c:PS.a,key=a[0]+'|'+W+'|'+D.n;
+      var H=hoy(D,W,P);
+      var fin=function(B){st.btc[key]=B;var S=senal(H,B);if(S)sumRows.push({k:a[0],up:S.up,acc:S.acc,base:S.base,v:S.v?1:0});pintaSum();i++;setTimeout(sig,0)};
+      if(st.btc[key]!==undefined)fin(st.btc[key]);else backtest(D,W,P,null,fin);
+    },function(){i++;setTimeout(sig,0)});
+  })();
+}
+$('bs').onclick=todos;
+window.addEventListener('resize',function(){if(st.D)dibuja(st.H.sel,st.W)});
 var WEB='https://dashboard482.github.io/dashboard/momentos_parecidos.html';
 function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
-$('shx').onclick=function(){abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('🔍 ¿Cuándo pasó algo parecido en el S&P 500? Momentos parecidos y prueba de si el método funciona\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB))};
-ventanas();
-carga().then(function(d){
-  st.T=d.T;st.C=d.C;st.n=d.C.length;st.L=new Float64Array(st.n);for(var i=0;i<st.n;i++)st.L[i]=Math.log(d.C[i]);
-  analiza();
-},function(){$('est').innerHTML='<span class="warn">No se pudo cargar la historia del S&amp;P 500 ahora. Recarga la página en unos segundos.</span>'});
+$('shx').onclick=function(){
+  var a=BY[st.k],t='🔍 Momentos parecidos · '+a[1];
+  if(st.H){var S=senal(st.H,st.bt);t+='\n'+(st.H.pred?'🟢 Subida':'🔴 Bajada')+' a 1 mes'+(S?' · '+fmt(S.acc*100,0)+' % de acierto histórico'+(S.v?' ✅':' (sin ventaja demostrada)'):'')}
+  abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent(t+'\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB))};
+ventanas();abre(st.k);
 })();
 </script></body></html>
