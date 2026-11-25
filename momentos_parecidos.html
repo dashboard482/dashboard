@@ -54,7 +54,7 @@ td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-
  <div class="bar" id="pb" style="display:none"><i id="pi"></i></div>
  <div id="br" style="margin-top:10px"></div>
 </div>
-<div class="note">Datos: Yahoo Finance (respaldo: Stooq), cierres diarios del S&amp;P 500 desde 1927/1950. El pasado no garantiza el futuro: los mercados cambian y los parecidos son una ayuda para pensar, no una señal de compra o venta. Informativo, no es consejo financiero.</div>
+<div class="note">Datos: Yahoo Finance, cierres diarios del S&amp;P 500 desde 1927. La historia se guarda en el Hub cada semana y los últimos días se añaden al abrir la página. El pasado no garantiza el futuro: los mercados cambian y los parecidos son una ayuda para pensar, no una señal de compra o venta. Informativo, no es consejo financiero.</div>
 </div>
 <script src="telegram.js" defer></script>
 <script>
@@ -95,15 +95,39 @@ function primera(cands,parse){
   });
 }
 function conProxy(u){var e=encodeURIComponent(u);return[u,'https://corsproxy.io/?'+e,'https://api.allorigins.win/raw?url='+e,'https://api.codetabs.com/v1/proxy?quest='+e]}
+function parseJson(txt){
+  var j=JSON.parse(txt),T=[],C=[];
+  for(var i=0;i<j.t.length;i++){if(j.c[i]>0){T.push(j.t[i]*1000);C.push(j.c[i])}}
+  if(C.length<5000)throw new Error('pocos datos');return{T:T,C:C};
+}
+var dia=function(ms){return Math.floor(ms/864e5)};
+/* añade los días recientes (Yahoo, 3 meses) a la historia guardada */
+function completa(d){
+  var yh='https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=3mo&interval=1d';
+  return primera(conProxy(yh),function(txt){
+    var j=JSON.parse(txt),r=j.chart.result[0],ts=r.timestamp,cl=r.indicators.quote[0].close,n=0;
+    if(!ts||ts.length<5)throw new Error('vacío');
+    var ult=dia(d.T[d.T.length-1]);
+    for(var i=0;i<ts.length;i++){if(!(cl[i]>0))continue;var t=ts[i]*1000,dd=dia(t);
+      if(dd===ult&&n===0){d.C[d.C.length-1]=cl[i];n++}
+      else if(dd>ult){d.T.push(t);d.C.push(cl[i]);ult=dd;n++}}
+    return d;
+  }).catch(function(){return d});
+}
 function carga(){
   var cache=null;try{cache=JSON.parse(localStorage.getItem('mp.d')||'null')}catch(e){}
-  var yh='https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=max&interval=1d';
-  var sq='https://stooq.com/q/d/l/?s=%5Espx&i=d';
-  return primera(conProxy(yh),parseYahoo).catch(function(){return primera(conProxy(sq),parseStooq)}).then(function(d){
-    try{localStorage.setItem('mp.d',JSON.stringify({t:Date.now(),d:d}))}catch(e){}return d;
-  },function(e){
-    if(cache&&cache.d&&cache.d.C&&cache.d.C.length>5000){st.viejo=cache.t;return cache.d}
-    throw e;
+  // 1) historia guardada en el propio Hub (rápida y fiable); 2) respaldo por proxy
+  return pedir('historico/spx.json?t='+Math.floor(Date.now()/36e5),20000).then(parseJson).then(function(d){
+    st.base=d.T[d.T.length-1];
+    return completa(d);
+  }).catch(function(){
+    var yh='https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=max&interval=1d';
+    return primera(conProxy(yh),parseYahoo).then(function(d){
+      try{localStorage.setItem('mp.d',JSON.stringify({t:Date.now(),d:d}))}catch(e){}return d;
+    },function(e){
+      if(cache&&cache.d&&cache.d.C&&cache.d.C.length>5000){st.viejo=cache.t;return cache.d}
+      throw e;
+    });
   });
 }
 /* ---------- algoritmo ---------- */
@@ -174,7 +198,7 @@ function analiza(){
   $('ls').innerHTML=ls;
   var ch=(C[T]/C[T-W]-1);
   $('cap').textContent='Hoy: el S&P 500 lleva '+pc(ch)+' en las últimas '+W+' sesiones. Cada línea celeste es un momento del pasado, alineado para acabar hoy.';
-  $('est').textContent='Datos hasta '+fd(st.T[T])+' · '+fmt(st.n,0)+' sesiones desde '+new Date(st.T[0]).getUTCFullYear()+(st.viejo?' · ⚠️ datos guardados, no se pudo actualizar':'');
+  $('est').textContent='Datos hasta '+fd(st.T[T])+' · '+fmt(st.n,0)+' sesiones desde '+new Date(st.T[0]).getUTCFullYear()+(st.viejo?' · ⚠️ datos guardados, no se pudo actualizar':(st.base&&dia(st.T[st.n-1])<=dia(st.base)?' · última descarga semanal (los días recientes no se pudieron añadir)':''));
 }
 /* ---------- prueba histórica ---------- */
 var corriendo=false;
