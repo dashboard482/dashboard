@@ -1,7 +1,7 @@
 name: Historico
 on:
   schedule:
-    - cron: "30 22 * * 0"
+    - cron: "30 22 * * 1-5"
   workflow_dispatch:
 permissions:
   contents: write
@@ -15,15 +15,26 @@ jobs:
           mkdir -p historico
           python3 - <<'PY'
           import json, time, sys, csv, io, calendar, urllib.request, urllib.parse
-          SYMS = {"spx": ("^GSPC", "^spx"), "ixic": ("^IXIC", "^ndq"), "ibex": ("^IBEX", "^ibex"), "dax": ("^GDAXI", "^dax"), "oro": ("GC=F", "xauusd"), "btc": ("BTC-USD", "btc.v")}
+          SYMS = {
+            "spx": ("^GSPC", "^spx"), "ixic": ("^IXIC", "^ndq"), "dji": ("^DJI", "^dji"), "rut": ("^RUT", None),
+            "ibex": ("^IBEX", "^ibex"), "dax": ("^GDAXI", "^dax"), "cac": ("^FCHI", "^cac"), "ftse": ("^FTSE", "^ukx"),
+            "stoxx": ("^STOXX50E", None), "n225": ("^N225", "^nkx"), "hsi": ("^HSI", "^hsi"),
+            "oro": ("GC=F", "xauusd"), "plata": ("SI=F", "xagusd"), "wti": ("CL=F", "cl.f"), "brent": ("BZ=F", None),
+            "gas": ("NG=F", "ng.f"), "cobre": ("HG=F", "hg.f"),
+            "btc": ("BTC-USD", "btc.v"), "eth": ("ETH-USD", "eth.v"), "sol": ("SOL-USD", None), "xrp": ("XRP-USD", "xrp.v"),
+            "eurusd": ("EURUSD=X", "eurusd"), "dxy": ("DX-Y.NYB", None), "tnx": ("^TNX", None), "vix": ("^VIX", "^vix"),
+            "nvda": ("NVDA", "nvda.us"), "aapl": ("AAPL", "aapl.us"), "msft": ("MSFT", "msft.us"), "tsla": ("TSLA", "tsla.us"),
+            "amzn": ("AMZN", "amzn.us"), "googl": ("GOOGL", "googl.us"), "meta": ("META", "meta.us"),
+          }
           UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36", "Accept": "*/*"}
+          MIN = 1500
           def get(u):
               return urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=40).read()
           def yahoo(sym, host):
               u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?period1=0&period2=%d&interval=1d" % (host, urllib.parse.quote(sym), int(time.time()) + 86400)
               res = json.loads(get(u))["chart"]["result"][0]
               cl = res["indicators"]["quote"][0]["close"]
-              return [(t, round(c, 2)) for t, c in zip(res["timestamp"], cl) if c]
+              return [(t, round(c, 4)) for t, c in zip(res["timestamp"], cl) if c and c > 0]
           def stooq(sym):
               txt = get("https://stooq.com/q/d/l/?s=%s&i=d" % urllib.parse.quote(sym)).decode("utf-8", "ignore")
               if not txt.startswith("Date"):
@@ -32,35 +43,39 @@ jobs:
               for row in csv.DictReader(io.StringIO(txt)):
                   try:
                       t = calendar.timegm(time.strptime(row["Date"], "%Y-%m-%d"))
-                      out.append((t, round(float(row["Close"]), 2)))
+                      c = float(row["Close"])
+                      if c > 0:
+                          out.append((t, round(c, 4)))
                   except Exception:
                       pass
               return out
           falta = []
           for nombre, (ys, ss) in SYMS.items():
               par = None
-              for i in range(4):
+              for i in range(3):
                   host = ("query1", "query2")[i % 2]
                   try:
                       par = yahoo(ys, host)
                       print("yahoo ok", nombre, len(par))
                       break
                   except Exception as e:
-                      print("yahoo fallo", nombre, host, repr(e)[:150])
+                      print("yahoo fallo", nombre, host, repr(e)[:120])
                       time.sleep(3)
-              if not par or len(par) < 1000:
+              if (not par or len(par) < MIN) and ss:
                   try:
                       par = stooq(ss)
                       print("stooq ok", nombre, len(par))
                   except Exception as e:
-                      print("stooq fallo", nombre, repr(e)[:150])
+                      print("stooq fallo", nombre, repr(e)[:120])
                       par = None
-              if par and len(par) >= 1000:
+              if par and len(par) >= MIN:
                   json.dump({"s": ys, "t": [p[0] for p in par], "c": [p[1] for p in par]}, open("historico/%s.json" % nombre, "w"), separators=(",", ":"))
               else:
                   falta.append(nombre)
+              time.sleep(1)
           if falta:
               print("SIN DATOS:", falta)
+          if len(falta) > 6 or "spx" in falta:
               sys.exit(1)
           PY
       - name: Guardar
