@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>M2 en TradingView · Hub Financiero</title>
+<style>
+:root{--bg:#0d1117;--pn:#131722;--p2:#1a1e29;--bd:#2a2e39;--ink:#d1d4dc;--st:#f0f3fa;--dim:#787b86;--ac:#2962ff;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--pn:#fff;--p2:#eef1f7;--bd:#dde1ea;--ink:#363a45;--st:#0e1117;--dim:#6b6f7c;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px) + var(--tgtop,0px)) 12px calc(28px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--p2);color:var(--st);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
+.btn.x{background:#000;color:#fff;border-color:#333}
+h1{font-size:17px;margin:14px 0 4px;color:var(--st)}
+.sub{font-size:12.5px;color:var(--dim);line-height:1.5}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:14px 0 10px;padding-bottom:2px}
+.tab{flex:none;font:inherit;font-size:13px;font-weight:600;border:1px solid var(--bd);background:var(--p2);color:var(--ink);border-radius:16px;padding:7px 13px;cursor:pointer}
+.tab.on{background:var(--ac);border-color:var(--ac);color:#fff}
+#box{height:min(70vh,520px);min-height:360px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--pn)}
+#box .tradingview-widget-container,#box .tradingview-widget-container__widget{height:100%;width:100%}
+.que{font-size:13px;color:var(--ink);line-height:1.55;margin-top:12px;background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+.que b{color:var(--st)}
+.note{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:12px}
+.note a{color:#8ab4ff}
+</style></head><body>
+<div class="wrap">
+<header><a class="btn" href="index.html">← Hub</a><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
+<h1>💧 M2 y liquidez en TradingView</h1>
+<div class="sub">Gráfico en directo de TradingView con el M2 de cada economía y Bitcoin al lado. Se actualiza solo y puedes tocar, ampliar y cambiar el periodo.</div>
+<div class="tabs" id="tabs"></div>
+<div id="box"></div>
+<div class="que" id="que"></div>
+<div class="note">Gráficos de <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>. El M2 es un dato oficial que se publica con retraso (normalmente mensual), así que la línea del M2 se mueve poco y a saltos; Bitcoin sí va en directo. Si alguna pestaña sale vacía, TradingView no permite mostrar ese dato fuera de su web: usa «Liquidez Fed vs BTC» del Hub. Informativo, no es consejo financiero.</div>
+</div>
+<script src="telegram.js" defer></script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var BTC={symbol:'BITSTAMP:BTCUSD',position:'NewPriceScale'};
+var TABS=[
+ {n:'M2 EEUU + BTC',s:'ECONOMICS:USM2',cmp:true,q:'<b>M2 de EEUU</b> (dinero en circulación en dólares) con <b>Bitcoin</b> superpuesto. Es la comparación clásica: cuando el M2 crece, suele haber más dinero disponible para activos de riesgo.'},
+ {n:'M2 Zona euro',s:'ECONOMICS:EUM2',cmp:true,q:'<b>M2 de la zona euro</b> con Bitcoin al lado.'},
+ {n:'M2 China',s:'ECONOMICS:CNM2',cmp:true,q:'<b>M2 de China</b> con Bitcoin al lado. China es una de las mayores fuentes de dinero del mundo.'},
+ {n:'M2 Japón',s:'ECONOMICS:JPM2',cmp:true,q:'<b>M2 de Japón</b> con Bitcoin al lado.'},
+ {n:'Balance de la Fed',s:'FRED:WALCL',cmp:true,q:'<b>Balance de la Reserva Federal</b> (WALCL): lo que la Fed tiene en activos. Sube cuando inyecta liquidez y baja cuando la retira.'},
+ {n:'Dólar (DXY)',s:'TVC:DXY',cmp:true,q:'<b>Índice del dólar</b>. Un dólar fuerte suele apretar la liquidez global; uno débil, aliviarla.'}
+];
+var cur=0;
+try{var g=parseInt(localStorage.getItem('lq.tv')||'0',10);if(g>=0&&g<TABS.length)cur=g}catch(e){}
+function tema(){return (window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'}
+function pinta(){
+  var t=TABS[cur];
+  var tb=$('tabs');tb.textContent='';
+  TABS.forEach(function(x,i){var b=document.createElement('button');b.className='tab'+(i===cur?' on':'');b.textContent=x.n;b.type='button';b.onclick=function(){cur=i;try{localStorage.setItem('lq.tv',String(i))}catch(e){}pinta()};tb.appendChild(b)});
+  $('que').innerHTML=t.q;
+  var box=$('box');box.textContent='';
+  var c=document.createElement('div');c.className='tradingview-widget-container';
+  var w=document.createElement('div');w.className='tradingview-widget-container__widget';c.appendChild(w);
+  var s=document.createElement('script');
+  s.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';s.async=true;
+  var cfg={autosize:true,symbol:t.s,interval:'W',range:'60M',timezone:'Europe/Madrid',theme:tema(),style:'2',locale:'es',allow_symbol_change:false,hide_side_toolbar:true,save_image:false,withdateranges:true,support_host:'https://www.tradingview.com'};
+  if(t.cmp)cfg.compareSymbols=[BTC];
+  s.text=JSON.stringify(cfg);
+  c.appendChild(s);box.appendChild(c);
+}
+var WEB='https://dashboard482.github.io/dashboard/liquidez_tv.html';
+function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+$('shx').onclick=function(){abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('💧 M2 y liquidez global vs Bitcoin en gráficos en directo\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB))};
+pinta();
+})();
+</script></body></html>
