@@ -10,37 +10,63 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Descargar historia de Yahoo
+      - name: Descargar historia
         run: |
           mkdir -p historico
           python3 - <<'PY'
-          import json, time, urllib.request, urllib.parse
-          SYMS = {"spx": "^GSPC", "ixic": "^IXIC", "ibex": "^IBEX", "dax": "^GDAXI", "oro": "GC=F", "btc": "BTC-USD"}
-          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
-          for nombre, sym in SYMS.items():
-              ok = False
-              for host in ("query1", "query2", "query1", "query2"):
+          import json, time, sys, csv, io, calendar, urllib.request, urllib.parse
+          SYMS = {"spx": ("^GSPC", "^spx"), "ixic": ("^IXIC", "^ndq"), "ibex": ("^IBEX", "^ibex"), "dax": ("^GDAXI", "^dax"), "oro": ("GC=F", "xauusd"), "btc": ("BTC-USD", "btc.v")}
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36", "Accept": "*/*"}
+          def get(u):
+              return urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=40).read()
+          def yahoo(sym, host):
+              u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?period1=0&period2=%d&interval=1d" % (host, urllib.parse.quote(sym), int(time.time()) + 86400)
+              res = json.loads(get(u))["chart"]["result"][0]
+              cl = res["indicators"]["quote"][0]["close"]
+              return [(t, round(c, 2)) for t, c in zip(res["timestamp"], cl) if c]
+          def stooq(sym):
+              txt = get("https://stooq.com/q/d/l/?s=%s&i=d" % urllib.parse.quote(sym)).decode("utf-8", "ignore")
+              if not txt.startswith("Date"):
+                  raise Exception("stooq respuesta: " + txt[:80].replace("\n", " "))
+              out = []
+              for row in csv.DictReader(io.StringIO(txt)):
                   try:
-                      u = "https://%s.finance.yahoo.com/v8/finance/chart/%s?range=max&interval=1d" % (host, urllib.parse.quote(sym))
-                      r = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=40)
-                      res = json.load(r)["chart"]["result"][0]
-                      cl = res["indicators"]["quote"][0]["close"]
-                      par = [(t, round(c, 2)) for t, c in zip(res["timestamp"], cl) if c]
-                      if len(par) < 1000:
-                          raise Exception("pocos datos %d" % len(par))
-                      json.dump({"s": sym, "t": [p[0] for p in par], "c": [p[1] for p in par]}, open("historico/%s.json" % nombre, "w"), separators=(",", ":"))
-                      print("ok", nombre, len(par))
-                      ok = True
+                      t = calendar.timegm(time.strptime(row["Date"], "%Y-%m-%d"))
+                      out.append((t, round(float(row["Close"]), 2)))
+                  except Exception:
+                      pass
+              return out
+          falta = []
+          for nombre, (ys, ss) in SYMS.items():
+              par = None
+              for i in range(4):
+                  host = ("query1", "query2")[i % 2]
+                  try:
+                      par = yahoo(ys, host)
+                      print("yahoo ok", nombre, len(par))
                       break
                   except Exception as e:
-                      print("fallo", nombre, host, e)
-                      time.sleep(2)
-              if not ok:
-                  print("SIN DATOS", nombre)
+                      print("yahoo fallo", nombre, host, repr(e)[:150])
+                      time.sleep(3)
+              if not par or len(par) < 1000:
+                  try:
+                      par = stooq(ss)
+                      print("stooq ok", nombre, len(par))
+                  except Exception as e:
+                      print("stooq fallo", nombre, repr(e)[:150])
+                      par = None
+              if par and len(par) >= 1000:
+                  json.dump({"s": ys, "t": [p[0] for p in par], "c": [p[1] for p in par]}, open("historico/%s.json" % nombre, "w"), separators=(",", ":"))
+              else:
+                  falta.append(nombre)
+          if falta:
+              print("SIN DATOS:", falta)
+              sys.exit(1)
           PY
       - name: Guardar
+        if: always()
         run: |
           git config user.name "github-actions"
-          git add historico
           git config user.email "actions@users.noreply.github.com"
+          git add historico
           git diff --cached --quiet || (git commit -m "historico" && git push)
