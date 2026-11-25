@@ -27,11 +27,11 @@ h1{font-size:17px;margin:14px 0 4px;color:var(--st)}
 <div class="wrap">
 <header><a class="btn" href="index.html">← Hub</a><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
 <h1>💧 M2 y liquidez en TradingView</h1>
-<div class="sub">Gráfico en directo de TradingView con el M2 de cada economía y Bitcoin al lado. Se actualiza solo y puedes tocar, ampliar y cambiar el periodo.</div>
+<div class="sub">Gráficos en directo de TradingView con el M2 de EEUU, el balance de la Fed, la cuenta del Tesoro, los repos inversos y el dólar, con Bitcoin al lado. Se actualiza solo y puedes tocar, ampliar y cambiar el periodo.</div>
 <div class="tabs" id="tabs"></div>
 <div id="box"></div>
 <div class="que" id="que"></div>
-<div class="note">Gráficos de <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>. El M2 es un dato oficial que se publica con retraso (normalmente mensual), así que la línea del M2 se mueve poco y a saltos; Bitcoin sí va en directo. Si alguna pestaña sale vacía, TradingView no permite mostrar ese dato fuera de su web: usa «Liquidez Fed vs BTC» del Hub. Informativo, no es consejo financiero.</div>
+<div class="note">Gráficos de <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>. El M2 es un dato oficial que se publica con retraso (normalmente mensual), así que la línea del M2 se mueve poco y a saltos; Bitcoin sí va en directo. TradingView no permite mostrar fuera de su web el M2 de la zona euro, China y Japón, por eso no están aquí. Informativo, no es consejo financiero.</div>
 </div>
 <script src="telegram.js" defer></script>
 <script>
@@ -40,11 +40,10 @@ h1{font-size:17px;margin:14px 0 4px;color:var(--st)}
 var $=function(i){return document.getElementById(i)};
 var BTC={symbol:'BITSTAMP:BTCUSD',position:'NewPriceScale'};
 var TABS=[
- {n:'M2 EEUU + BTC',s:'ECONOMICS:USM2',cmp:true,q:'<b>M2 de EEUU</b> (dinero en circulación en dólares) con <b>Bitcoin</b> superpuesto. Es la comparación clásica: cuando el M2 crece, suele haber más dinero disponible para activos de riesgo.'},
- {n:'M2 Zona euro',s:'ECONOMICS:EUM2',cmp:true,q:'<b>M2 de la zona euro</b> con Bitcoin al lado.'},
- {n:'M2 China',s:'ECONOMICS:CNM2',cmp:true,q:'<b>M2 de China</b> con Bitcoin al lado. China es una de las mayores fuentes de dinero del mundo.'},
- {n:'M2 Japón',s:'ECONOMICS:JPM2',cmp:true,q:'<b>M2 de Japón</b> con Bitcoin al lado.'},
- {n:'Balance de la Fed',s:'FRED:WALCL',cmp:true,q:'<b>Balance de la Reserva Federal</b> (WALCL): lo que la Fed tiene en activos. Sube cuando inyecta liquidez y baja cuando la retira.'},
+ {n:'M2 EEUU + BTC',s:'FRED:M2SL',cmp:true,q:'<b>M2 de EEUU</b> (efectivo, cuentas y fondos monetarios en dólares) con <b>Bitcoin</b> superpuesto. Es la comparación clásica: cuando el M2 crece, suele haber más dinero para activos de riesgo. Dato mensual de la Fed.'},
+ {n:'Balance de la Fed',s:'FRED:WALCL',cmp:true,q:'<b>Balance de la Reserva Federal</b> (WALCL): lo que la Fed tiene en activos. Sube cuando inyecta liquidez y baja cuando la retira. Dato semanal.'},
+ {n:'Cuenta del Tesoro',s:'FRED:WTREGEN',cmp:true,q:'<b>Cuenta del Tesoro en la Fed</b> (TGA). Cuando sube, el Tesoro retira dinero del sistema; cuando baja, lo devuelve. Un TGA al alza suele apretar la liquidez.'},
+ {n:'Repos inversos',s:'FRED:RRPONTSYD',cmp:true,q:'<b>Repos inversos (RRP)</b>: dinero aparcado en la Fed por bancos y fondos. Si baja, ese dinero vuelve al mercado.'},
  {n:'Dólar (DXY)',s:'TVC:DXY',cmp:true,q:'<b>Índice del dólar</b>. Un dólar fuerte suele apretar la liquidez global; uno débil, aliviarla.'}
 ];
 var cur=0;
