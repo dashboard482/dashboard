@@ -1,0 +1,114 @@
+name: Liquidez
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "40 22 * * 1-5"
+permissions:
+  contents: write
+jobs:
+  liquidez:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar fuentes
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
+          URLS = [
+            "https://fred.stlouisfed.org/graph/fredgraph.csv?id=WALCL",
+            "https://alfred.stlouisfed.org/graph/fredgraph.csv?id=WALCL",
+            "https://research.stlouisfed.org/fred2/data/WALCL.txt",
+            "https://api.stlouisfed.org/fred/series/observations?series_id=WALCL&file_type=json",
+            "https://www.federalreserve.gov/releases/h41/current/",
+            "https://www.federalreserve.gov/datadownload/Choose.aspx?rel=H41",
+            "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance?page[size]=1",
+            "https://markets.newyorkfed.org/api/rp/reverserepo/propositions/search.json?startDate=2025-01-02&endDate=2025-01-03",
+            "https://api.db.nomics.world/v22/providers/FED",
+          ]
+          for u in URLS:
+              try:
+                  r = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=12)
+                  b = r.read(300).decode("utf-8", "ignore").replace("\n", " ")
+                  print("OK", r.status, u[:80], "|", b[:90])
+              except urllib.error.HTTPError as e:
+                  print("HTTP", e.code, u[:80])
+              except Exception as e:
+                  print("FALLO", u[:80], repr(e)[:60])
+          PY
+      - name: Tesoro y repos inversos
+        continue-on-error: true
+        run: |
+          mkdir -p historico
+          python3 - <<'PY'
+          import json, time, sys, calendar, urllib.request, urllib.parse
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
+          def get(u):
+              return json.loads(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=40).read().decode("utf-8", "ignore"))
+          def ms(d):
+              return calendar.timegm(time.strptime(d, "%Y-%m-%d")) * 1000
+          out = {}
+          # Cuenta del Tesoro en la Fed (millones de $)
+          try:
+              tga = {}
+              base = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/dts/operating_cash_balance"
+              for page in range(1, 12):
+                  q = "?filter=record_date:gte:2019-12-01&sort=record_date&page[size]=10000&page[number]=%d&fields=record_date,account_type,open_today_bal,close_today_bal" % page
+                  j = get(base + q)
+                  rows = j.get("data", [])
+                  for r in rows:
+                      at = r.get("account_type", "")
+                      v = None
+                      if at.startswith("Treasury General Account (TGA) Closing"):
+                          v = r.get("open_today_bal")
+                      elif at == "Federal Reserve Account":
+                          v = r.get("close_today_bal")
+                      try:
+                          if v not in (None, "null"):
+                              tga[r["record_date"]] = float(v)
+                      except Exception:
+                          pass
+                  if len(rows) < 10000:
+                      break
+              pts = sorted([[ms(d), v] for d, v in tga.items()])
+              print("TGA puntos", len(pts), pts[-1:] )
+              if len(pts) > 100:
+                  out["WTREGEN"] = pts
+          except Exception as e:
+              print("TGA fallo", repr(e)[:150])
+          # Repos inversos de la Fed (miles de millones de $)
+          try:
+              rrp = {}
+              hoy = time.strftime("%Y-%m-%d")
+              for y0 in range(2019, 2027):
+                  u = "https://markets.newyorkfed.org/api/rp/reverserepo/propositions/search.json?startDate=%d-01-01&endDate=%d-12-31" % (y0, y0)
+                  j = get(u)
+                  ops = j.get("repo", {}).get("operations", [])
+                  for o in ops:
+                      d = o.get("operationDate")
+                      a = o.get("totalAmtAccepted")
+                      if d and a is not None:
+                          rrp[d] = rrp.get(d, 0) + float(a) / 1e9
+                  time.sleep(1)
+              pts = sorted([[ms(d), v] for d, v in rrp.items()])
+              print("RRP puntos", len(pts), pts[-1:])
+              if len(pts) > 100:
+                  out["RRPONTSYD"] = pts
+          except Exception as e:
+              print("RRP fallo", repr(e)[:150])
+          if out:
+              json.dump(out, open("historico/liquidez_extra.json", "w"), separators=(",", ":"))
+              print("guardado", list(out))
+          else:
+              print("NADA GUARDADO")
+              sys.exit(1)
+          PY
+      - name: Guardar
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add historico
+          git diff --cached --quiet || git commit -m "liquidez"
+          for i in 1 2 3; do git pull --rebase -X theirs origin main && git push && break; sleep 5; done
