@@ -33,7 +33,7 @@ td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-
 .big{font-size:15px;color:var(--st);line-height:1.5}
 .warn{color:var(--warn)}
 .bar{height:8px;background:var(--p2);border-radius:4px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:var(--ac);width:0}
-.chip.s{font-size:12px;padding:5px 10px}.grp{font-size:11px;color:var(--dim);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.04em}.chips{display:flex;gap:5px;flex-wrap:wrap}.sig{border-width:2px}.sigtop{display:flex;gap:12px;align-items:center}.dot{font-size:34px;line-height:1}.sigt{font-size:18px;font-weight:700;color:var(--st)}.sigs{font-size:12.5px;color:var(--dim);margin-top:2px}.acc{margin-top:10px;font-size:14px;line-height:1.5;color:var(--st)}.acc b{font-size:20px}.badge{margin-top:10px;font-size:13px;font-weight:600;padding:8px 10px;border-radius:8px;line-height:1.4}.badge.ok{background:rgba(0,204,68,.12);color:var(--up)}.badge.no{background:rgba(255,184,77,.12);color:var(--warn)}.ex summary{cursor:pointer;font-weight:700;color:var(--st);font-size:14px}.ex p{margin:8px 0 0;font-size:13px;line-height:1.55}.ex ol{margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.55}.tr{cursor:pointer}.note{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:14px}
+.chip.s{font-size:12px;padding:5px 10px}.grp{font-size:11px;color:var(--dim);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.04em}.chips{display:flex;gap:5px;flex-wrap:wrap}.sig{border-width:2px}.sigtop{display:flex;gap:12px;align-items:center}.dot{font-size:34px;line-height:1}.sigt{font-size:18px;font-weight:700;color:var(--st)}.sigs{font-size:12.5px;color:var(--dim);margin-top:2px}.acc{margin-top:10px;font-size:14px;line-height:1.5;color:var(--st)}.acc b{font-size:20px}.badge{margin-top:10px;font-size:13px;font-weight:600;padding:8px 10px;border-radius:8px;line-height:1.4}.badge.ok{background:rgba(0,204,68,.12);color:var(--up)}.badge.no{background:rgba(255,184,77,.12);color:var(--warn)}.ex summary{cursor:pointer;font-weight:700;color:var(--st);font-size:14px}.ex p{margin:8px 0 0;font-size:13px;line-height:1.55}.ex ol{margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.55}.pr{margin-top:6px}.pr .r{display:grid;grid-template-columns:118px 1fr 74px;gap:8px;align-items:center;padding:5px 0;font-size:12.5px}.pr .t{height:16px;background:var(--p2);border-radius:4px;position:relative;overflow:hidden}.pr .t i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}.pr .t u{position:absolute;top:0;bottom:0;width:2px;background:var(--st);opacity:.7}.pr .v{text-align:right;font-variant-numeric:tabular-nums}.tr{cursor:pointer}.note{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:14px}
 </style></head><body>
 <div class="wrap">
 <header><a class="btn" href="index.html">← Hub</a><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
@@ -55,6 +55,7 @@ td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-
  <canvas id="cv"></canvas>
  <div class="sub" id="cap" style="margin-top:6px"></div>
 </div>
+<div class="card" id="cp" style="display:none"><h2 id="cph">📊 Probabilidad de movimiento</h2><div class="pr" id="prb"></div><div class="sub" id="prn" style="margin-top:8px"></div></div>
 <div class="card" id="ct" style="display:none"><h2>¿Qué pasó después?</h2><table id="tb"></table><div class="sub" id="tbn" style="margin-top:8px"></div></div>
 <div class="card" id="cl" style="display:none"><h2>Los 8 momentos más parecidos</h2><div id="ls"></div></div>
 <div class="card" id="cb" style="display:none"><h2>🧪 La prueba del pasado</h2>
@@ -240,6 +241,23 @@ function pintaSenal(){
   }
   el.style.display='block';el.innerHTML=h;
 }
+function pintaProb(sel,all){
+  var P=st.P,h=P.h,f=sel.map(function(sx){return fwd(st.D.C,sx[0],h)});
+  var m=all.reduce(function(a,b){return a+b},0)/all.length,sd=Math.sqrt(all.reduce(function(a,b){return a+(b-m)*(b-m)},0)/all.length);
+  var e=[-sd,-sd/3,0,sd/3,sd],r=function(x){return fmt(Math.abs(x)*100,1)};
+  var lab=['Baja más de '+r(e[0])+' %','Baja '+r(e[1])+'–'+r(e[0])+' %','Baja hasta '+r(e[1])+' %','Sube hasta '+r(e[3])+' %','Sube '+r(e[3])+'–'+r(e[4])+' %','Sube más de '+r(e[4])+' %'];
+  var idx=function(x){return x<e[0]?0:x<e[1]?1:x<0?2:x<e[3]?3:x<e[4]?4:5};
+  var a=[0,0,0,0,0,0],b=[0,0,0,0,0,0];
+  f.forEach(function(x){a[idx(x)]++});all.forEach(function(x){b[idx(x)]++});
+  var pa=a.map(function(x){return x/f.length}),pb=b.map(function(x){return x/all.length});
+  var mx=Math.max.apply(null,pa.concat(pb))||1,h2='';
+  for(var i=0;i<6;i++){h2+='<div class="r"><span>'+lab[i]+'</span><div class="t"><i style="width:'+(pa[i]/mx*100)+'%;background:'+(i<3?'var(--dn)':'var(--up)')+';opacity:.85"></i><u style="left:'+Math.min(98,pb[i]/mx*100)+'%"></u></div><span class="v"><b>'+fmt(pa[i]*100,0)+' %</b> <span class="dim">('+fmt(pb[i]*100,0)+')</span></span></div>'}
+  var up=f.filter(function(x){return x>0}).length,upAll=all.filter(function(x){return x>0}).length;
+  $('cph').textContent='📊 Probabilidad de movimiento a '+P.hs[1][1];
+  $('prb').innerHTML=h2;
+  $('prn').textContent='Barras: en qué rango acabaron los '+f.length+' momentos parecidos ('+fmt(up/f.length*100,0)+' % acabó arriba, '+fmt((1-up/f.length)*100,0)+' % abajo). Entre paréntesis y raya blanca: lo que pasa en cualquier momento de la historia ('+fmt(upAll/all.length*100,0)+' % arriba). Con solo '+f.length+' casos, las cifras son aproximadas; si las barras se parecen a la raya blanca, el momento de hoy no cambia nada. Es una probabilidad histórica, no una promesa.';
+  $('cp').style.display='block';
+}
 function analiza(){
   var D=st.D,W=st.W,P=st.P,C=D.C,T=D.n-1,a=BY[st.k];
   var H=hoy(D,W,P);st.H=H;var sel=H.sel;
@@ -255,6 +273,7 @@ function analiza(){
   });
   $('tb').innerHTML=tb;
   $('tbn').textContent='Cada «Subió» cuenta cuántos de los '+sel.length+' momentos parecidos acabaron más arriba. La fila gris es lo que pasa en cualquier momento de la historia, la referencia para comparar.';
+  var allH=[];for(var t2=W;t2<T-P.h;t2+=3)allH.push(fwd(C,t2,P.h));pintaProb(sel,allH);
   var ls='';
   sel.slice(0,8).forEach(function(s){var f1=fwd(C,s[0],P.hs[1][0]),f3=fwd(C,s[0],P.hs[2][0]);
     ls+='<div class="li"><span>'+fd(D.T[s[0]])+'</span><span class="dim">'+P.hs[1][1]+' <b class="'+cl(f1)+'">'+pc(f1)+'</b> · '+P.hs[2][1]+' <b class="'+cl(f3)+'">'+pc(f3)+'</b></span></div>'});
@@ -290,7 +309,7 @@ function abre(k){
   try{localStorage.setItem('mp.a',k)}catch(e){}
   var a=BY[k];$('h1').textContent='🔍 Momentos parecidos · '+a[1];
   chips();
-  $('cg').style.display=$('ct').style.display=$('cl').style.display=$('cb').style.display=$('sg').style.display='none';
+  $('cg').style.display=$('ct').style.display=$('cl').style.display=$('cb').style.display=$('sg').style.display=$('cp').style.display='none';
   $('est').textContent='cargando la historia de '+a[1]+'…';
   var tok=st.tok;
   carga(k).then(function(D){if(tok!==st.tok)return;st.D=D;analiza()},function(){if(tok!==st.tok)return;$('est').innerHTML='<span class="warn">No se pudo cargar la historia de '+a[1]+' ahora. Prueba otro activo o recarga en unos segundos.</span>'});
