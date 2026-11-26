@@ -279,7 +279,7 @@ function velas(sel){
   function etq(key,col){var o=L[key],ch=o/px-1,t=(ch>=0?'▲ +':'▼ −')+fmt(Math.abs(ch)*100,1)+' %',xe=X(L.h),ye=Y(o);cx.fillStyle=col;cx.beginPath();cx.arc(xe,ye,3.5*dpr,0,6.3);cx.fill();cx.font='bold '+(11*dpr)+'px sans-serif';cx.textAlign='right';var yy=Math.max(pt+10*dpr,Math.min(h-pb-4*dpr,ye+(key==='p10'?14*dpr:key==='p90'?-6*dpr:4*dpr)));cx.fillText(t,xe-7*dpr,yy)}
   etq('p90',AZ);etq('p50',L.p50>=px?UP:DN);etq('p10','#f97316');
   // etiqueta de precio actual
-  var ty=Y(px);cx.fillStyle=gv('--st');cx.fillRect(w-pr+1,ty-9*dpr,pr-2,18*dpr);cx.fillStyle='#fff';cx.font='bold '+(11*dpr)+'px sans-serif';cx.textAlign='center';cx.fillText(fmt(px,dec),w-pr/2,ty+4*dpr);
+  var ty=Y(px);cx.fillStyle='#3b82f6';cx.fillRect(w-pr+1,ty-9*dpr,pr-2,18*dpr);cx.fillStyle='#fff';cx.font='bold '+(11*dpr)+'px sans-serif';cx.textAlign='center';cx.fillText(fmt(px,dec),w-pr/2,ty+4*dpr);
   cx.fillStyle=gv('--dim');cx.font=(11*dpr)+'px sans-serif';cx.fillText('hoy',X(0),h-5*dpr);cx.fillText('proyección +'+HM+' d',(X(0)+w-pr)/2,h-5*dpr);
   $('cv2n').innerHTML='Velas de la izquierda: el historial reciente (cada vela = '+g+' días, a partir de cierres). A la derecha, la zona sombreada es donde acabaron los '+sel.length+' momentos parecidos: la banda oscura cubre el 50 % central de los casos y la clara el 80 %. Líneas: <b style="color:'+AZ+'">azul</b> = caso optimista (percentil 90), <b style="color:'+(L.p50>=px?UP:DN)+'">punteada</b> = caso mediano, <b style="color:#f97316">naranja</b> = caso pesimista (percentil 10). A +'+HM+' días: mediana '+fmt(L.p50,dec)+' ('+pc(L.p50/px-1)+'), rango del 80 %: '+fmt(L.p10,dec)+' a '+fmt(L.p90,dec)+'. Es una zona histórica, no un objetivo de precio.';
 }
