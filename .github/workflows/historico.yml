@@ -86,28 +86,37 @@ jobs:
           import json, time, sys, calendar, urllib.request
           UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
           IDS = ["WALCL", "WTREGEN", "RRPONTSYD", "M2SL", "DTWEXBGS"]
+          def baja(i):
+              urls = ["https://fred.stlouisfed.org/graph/fredgraph.csv?id=%s&cosd=2015-01-01" % i, "https://fred.stlouisfed.org/data/%s.txt" % i]
+              for u in urls:
+                  try:
+                      txt = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=20).read().decode("utf-8", "ignore")
+                      pts = []
+                      for f in txt.splitlines():
+                          a = f.replace(",", " ").split()
+                          if len(a) >= 2 and len(a[0]) == 10 and a[0][4] == "-":
+                              try:
+                                  t = calendar.timegm(time.strptime(a[0], "%Y-%m-%d")) * 1000
+                                  v = float(a[1])
+                                  if t >= 1420070400000:
+                                      pts.append([t, v])
+                              except Exception:
+                                  pass
+                      if len(pts) >= 10:
+                          print("fred ok", i, u[-28:], len(pts))
+                          return pts
+                      print("fred pocos datos", i, len(pts))
+                  except Exception as e:
+                      print("fred fallo", i, u[:60], repr(e)[:100])
+              return None
           out = {}
           for i in IDS:
-              for intento in range(3):
-                  try:
-                      u = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=%s&cosd=2015-01-01" % i
-                      txt = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60).read().decode("utf-8", "ignore")
-                      pts = []
-                      for f in txt.strip().splitlines()[1:]:
-                          a = f.split(",")
-                          try:
-                              t = calendar.timegm(time.strptime(a[0], "%Y-%m-%d")) * 1000
-                              pts.append([t, float(a[1])])
-                          except Exception:
-                              pass
-                      if len(pts) < 10:
-                          raise Exception("pocos datos %d" % len(pts))
-                      out[i] = pts
-                      print("fred ok", i, len(pts))
-                      break
-                  except Exception as e:
-                      print("fred fallo", i, repr(e)[:120])
-                      time.sleep(3)
+              p = baja(i)
+              if p:
+                  out[i] = p
+              elif not out:
+                  print("FRED no responde desde GitHub, lo dejo")
+                  break
           if out:
               json.dump(out, open("historico/fred.json", "w"), separators=(",", ":"))
           if len(out) < 4:
@@ -120,4 +129,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
           git add historico
-          git diff --cached --quiet || (git commit -m "historico" && git push)
+          git diff --cached --quiet || git commit -m "historico"
+          for i in 1 2 3; do git pull --rebase -X theirs origin main && git push && break; sleep 5; done
