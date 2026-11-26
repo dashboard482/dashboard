@@ -1,0 +1,101 @@
+name: Balance Fed
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "50 22 * * 1-5"
+permissions:
+  contents: write
+jobs:
+  balance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Balance de la Fed (H.4.1)
+        continue-on-error: true
+        run: |
+          mkdir -p historico
+          python3 - <<'PY'
+          import json, re, os, time, calendar, datetime, urllib.request, urllib.error
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
+          RUTA = "historico/fed_balance.json"
+          pts = {}
+          if os.path.exists(RUTA):
+              try:
+                  for t, v in json.load(open(RUTA))["WALCL"]:
+                      pts[t] = v
+              except Exception:
+                  pass
+          ult = max(pts) if pts else 0
+          depurado = [0]
+          def texto(d):
+              u = "https://www.federalreserve.gov/releases/h41/%s/" % d.strftime("%Y%m%d")
+              h = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=25).read().decode("utf-8", "ignore")
+              h = re.sub(r"(?is)<(script|style).*?</\1>", " ", h)
+              h = re.sub(r"&nbsp;|&#160;|&#xA0;", " ", h)
+              return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", h))
+          def valor(t):
+              for m in re.finditer(r"[Tt]otal assets", t):
+                  trozo = t[m.end():m.end() + 80]
+                  n = re.search(r"(?<![0-9,])([0-9]{1,2},[0-9]{3},[0-9]{3})(?![0-9,])", trozo)
+                  if n:
+                      v = int(n.group(1).replace(",", ""))
+                      if 3000000 < v < 15000000:
+                          return v
+              return None
+          def pagina(d):
+              t = texto(d)
+              v = valor(t)
+              if v is None and depurado[0] < 2:
+                  depurado[0] += 1
+                  print("DEPURACION", d, "longitud", len(t))
+                  for m in list(re.finditer(r"[Tt]otal assets", t))[:3]:
+                      print("   ...", t[max(0, m.start() - 40):m.end() + 120])
+                  if not re.search(r"[Tt]otal assets", t):
+                      print("   (no aparece 'otal assets'); inicio:", t[:200])
+              return v
+          hoy = datetime.date.today()
+          d = hoy - datetime.timedelta(days=(hoy.weekday() - 3) % 7)
+          inicio = datetime.date(2019, 12, 5)
+          intentos = nuevos = seguidos = 0
+          while d >= inicio:
+              t = calendar.timegm((d - datetime.timedelta(days=1)).timetuple()) * 1000
+              if t <= ult:
+                  break
+              v = None
+              for off in (0, 1, -1):
+                  try:
+                      v = pagina(d + datetime.timedelta(days=off))
+                      if v:
+                          break
+                  except urllib.error.HTTPError:
+                      continue
+                  except Exception as e:
+                      print("fallo", d, repr(e)[:80])
+                      break
+              intentos += 1
+              if v:
+                  pts[t] = v; nuevos += 1; seguidos = 0
+              else:
+                  seguidos += 1
+              if nuevos == 0 and seguidos >= 6:
+                  print("NO RECONOZCO EL FORMATO; paro")
+                  break
+              time.sleep(0.3)
+              d -= datetime.timedelta(days=7)
+          lista = sorted([[t, v] for t, v in pts.items()])
+          print("WALCL puntos", len(lista), "nuevos", nuevos, "ultimos", lista[-3:])
+          if len(lista) > 100:
+              json.dump({"WALCL": lista}, open(RUTA, "w"), separators=(",", ":"))
+              print("guardado")
+          else:
+              print("POCOS DATOS")
+              raise SystemExit(1)
+          PY
+      - name: Guardar
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add historico
+          git diff --cached --quiet || git commit -m "balance fed"
+          for i in 1 2 3; do git pull --rebase -X theirs origin main && git push && break; sleep 5; done
