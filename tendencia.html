@@ -40,6 +40,7 @@ td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-
 <h1 id="h1">📈 Tendencia y probabilidad</h1>
 <div class="sub">Gráfico de tendencia, contexto de otros mercados (VIX, bonos, dólar, S&amp;P 500) y un modelo que combina todo para estimar la <b>probabilidad de que suba a 1 mes</b>. Siempre con su acierto real en el pasado.</div>
 <div id="sel"></div>
+<div class="row"><a class="btn" id="vm" href="momentos_parecidos.html">🔍 Ver también: momentos parecidos del pasado</a></div>
 <div class="sub" id="est" style="margin-top:8px">cargando…</div>
 <div class="card ex" id="ex"><details><summary>❓ Cómo funciona y cómo leerlo</summary>
 <p>El modelo mira 14 datos de hoy: lo que ha subido el activo en 1, 3, 6 y 12 meses, si está por encima o por debajo de sus medias de 50 y 200 días, el RSI, la volatilidad, cuánto cayó desde máximos, y el estado del VIX, los bonos, el dólar y el S&amp;P 500. Con eso calcula una <b>probabilidad de subida a 1 mes</b>.</p>
@@ -307,7 +308,7 @@ function pintaBt(){
 }
 function abre(k){
   st.k=k;st.tok++;st.P=null;st.bt=null;try{localStorage.setItem('tp.a',k)}catch(e){}
-  var a=BY[k];$('h1').textContent='📈 Tendencia y probabilidad · '+a[1];chips();
+  var a=BY[k];$('h1').textContent='📈 Tendencia y probabilidad · '+a[1];$('vm').href='momentos_parecidos.html?a='+k;chips();
   ['sg','ctc','ctr','cco','cb'].forEach(function(i){$(i).style.display='none'});
   $('est').textContent='cargando '+a[1]+'…';var tok=st.tok;
   Promise.all([guardada(k).catch(function(){return primera(conProxy('https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(a[3])+'?range=max&interval=1d'),function(t){var j=JSON.parse(t),r=j.chart.result[0],T=[],C=[];r.timestamp.forEach(function(x,i){var c=r.indicators.quote[0].close[i];if(c>0){T.push(x*1000);C.push(c)}});if(C.length<MINC)throw 0;return{T:T,C:C}})}),ctxs()]).then(function(r){
