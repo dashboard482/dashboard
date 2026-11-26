@@ -95,7 +95,15 @@ function klines(){
   function uno(h){return pedir('https://'+h+q,10000).then(function(t){var a=JSON.parse(t);if(!Array.isArray(a)||a.length<20)throw 0;return a.map(function(k){return[k[0],parseFloat(k[4])]})})}
   return uno('data-api.binance.vision').catch(function(){return uno('api.binance.com')});
 }
-function localFred(){return pedir('historico/fred.json?t='+Math.floor(Date.now()/36e5),15000).then(function(t){var j=JSON.parse(t),m={};['WALCL','WTREGEN','RRPONTSYD','M2SL'].forEach(function(k){if(j[k]&&j[k].length>=10)m[k]=j[k]});if(!(m.WALCL&&m.WTREGEN&&m.RRPONTSYD))throw new Error('fred.json incompleto');return m})}
+function localFred(){
+  var f=function(n){return pedir('historico/'+n+'.json?t='+Math.floor(Date.now()/36e5),15000).then(JSON.parse).catch(function(){return null})};
+  return Promise.all([f('fred'),f('liquidez_extra'),f('fed_balance')]).then(function(r){
+    var m={};
+    r.forEach(function(j){if(!j)return;['WALCL','WTREGEN','RRPONTSYD','M2SL'].forEach(function(k){if(j[k]&&j[k].length>=10)m[k]=j[k]})});
+    if(!(m.WALCL&&m.WTREGEN&&m.RRPONTSYD))throw new Error('faltan datos guardados');
+    return m;
+  });
+}
 function localBtc(){return pedir('historico/btc.json?t='+Math.floor(Date.now()/36e5),15000).then(function(t){var j=JSON.parse(t),d=Date.UTC(2019,11,1),o=[];for(var i=0;i<j.t.length;i++){var ms=j.t[i]*1000;if(ms>=d&&j.c[i]>0)o.push([ms,j.c[i]])}if(o.length<50)throw new Error('btc corto');return o})}
 function cargaTodo(){
   var cache=null;
