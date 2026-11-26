@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Tendencia y probabilidad · Hub Financiero</title>
+<style>
+:root{--bg:#0d1117;--pn:#131722;--p2:#1a1e29;--bd:#2a2e39;--ink:#d1d4dc;--st:#f0f3fa;--dim:#787b86;--ac:#2962ff;--an:#22d3ee;--md:#f7a600;--up:#00cc44;--dn:#ff3333;--warn:#ffb84d;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--pn:#fff;--p2:#eef1f7;--bd:#dde1ea;--ink:#363a45;--st:#0e1117;--dim:#6b6f7c;--an:#0891b2;--md:#d98200;--up:#0aa63a;--dn:#e02b2b;--warn:#b86e00;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px) + var(--tgtop,0px)) 12px calc(28px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--p2);color:var(--st);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
+.btn.x{background:#000;color:#fff;border-color:#333}
+h1{font-size:17px;margin:14px 0 4px;color:var(--st)}
+h2{font-size:14px;margin:0 0 8px;color:var(--st)}
+.sub{font-size:12.5px;color:var(--dim);line-height:1.5}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.row small{color:var(--dim);font-size:12px;margin-right:4px}
+.chip{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--bd);background:var(--p2);color:var(--ink);border-radius:16px;padding:6px 13px;cursor:pointer}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.card{margin-top:12px;background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:12px}
+canvas{display:block;width:100%;height:280px}
+.leg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-bottom:6px}
+.leg i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.03em;text-align:right;font-weight:600;padding:4px 4px}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-numeric:tabular-nums}
+.up{color:var(--up)}.dn{color:var(--dn)}.dim{color:var(--dim)}
+.li{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--bd);font-size:13px}
+.li:first-child{border-top:none}
+.big{font-size:15px;color:var(--st);line-height:1.5}
+.warn{color:var(--warn)}
+.bar{height:8px;background:var(--p2);border-radius:4px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:var(--ac);width:0}
+.chip.s{font-size:12px;padding:5px 10px}.grp{font-size:11px;color:var(--dim);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.04em}.chips{display:flex;gap:5px;flex-wrap:wrap}.sig{border-width:2px}.sigtop{display:flex;gap:12px;align-items:center}.dot{font-size:34px;line-height:1}.sigt{font-size:18px;font-weight:700;color:var(--st)}.sigs{font-size:12.5px;color:var(--dim);margin-top:2px}.acc{margin-top:10px;font-size:14px;line-height:1.5;color:var(--st)}.acc b{font-size:20px}.badge{margin-top:10px;font-size:13px;font-weight:600;padding:8px 10px;border-radius:8px;line-height:1.4}.badge.ok{background:rgba(0,204,68,.12);color:var(--up)}.badge.no{background:rgba(255,184,77,.12);color:var(--warn)}.ex summary{cursor:pointer;font-weight:700;color:var(--st);font-size:14px}.ex p{margin:8px 0 0;font-size:13px;line-height:1.55}.ex ol{margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.55}.pr{margin-top:6px}.pr .r{display:grid;grid-template-columns:118px 1fr 74px;gap:8px;align-items:center;padding:5px 0;font-size:12.5px}.pr .t{height:16px;background:var(--p2);border-radius:4px;position:relative;overflow:hidden}.pr .t i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}.pr .t u{position:absolute;top:0;bottom:0;width:2px;background:var(--st);opacity:.7}.pr .v{text-align:right;font-variant-numeric:tabular-nums}.tr{cursor:pointer}.kv{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--bd);font-size:13px}.kv:first-child{border-top:none}.ck{font-size:13px;line-height:1.7}.pbar{height:14px;background:var(--dn);border-radius:7px;overflow:hidden;margin-top:10px;opacity:.9}.pbar i{display:block;height:100%;background:var(--up)}.note{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:14px}
+</style></head><body>
+<div class="wrap">
+<header><a class="btn" href="index.html">← Hub</a><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
+<h1 id="h1">📈 Tendencia y probabilidad</h1>
+<div class="sub">Gráfico de tendencia, contexto de otros mercados (VIX, bonos, dólar, S&amp;P 500) y un modelo que combina todo para estimar la <b>probabilidad de que suba a 1 mes</b>. Siempre con su acierto real en el pasado.</div>
+<div id="sel"></div>
+<div class="sub" id="est" style="margin-top:8px">cargando…</div>
+<div class="card ex" id="ex"><details><summary>❓ Cómo funciona y cómo leerlo</summary>
+<p>El modelo mira 14 datos de hoy: lo que ha subido el activo en 1, 3, 6 y 12 meses, si está por encima o por debajo de sus medias de 50 y 200 días, el RSI, la volatilidad, cuánto cayó desde máximos, y el estado del VIX, los bonos, el dólar y el S&amp;P 500. Con eso calcula una <b>probabilidad de subida a 1 mes</b>.</p>
+<p><b>Cómo sabemos si sirve:</b> se prueba hacia atrás. Para cada tramo del pasado, el modelo solo aprende de lo anterior y predice lo siguiente, sin ver el futuro. Luego se compara con lo que pasó.</p>
+<p><b>Fiabilidad:</b> debajo de la probabilidad verás «cuando el modelo dijo algo parecido, subió el X % de las veces». Si ese X se parece a la probabilidad, el modelo está bien calibrado.</p>
+<p><b>✅ Ventaja demostrada</b> solo sale si acierta claramente más que sin modelo. <b>⚠️ Sin ventaja demostrada</b> = úsalo como contexto, no como señal.</p></details></div>
+<div class="card sig" id="sg" style="display:none"></div>
+<div class="card" id="ctc" style="display:none"><h2>📈 Gráfico de tendencia</h2>
+ <div class="row" style="margin-top:0"><span id="rng"></span></div>
+ <div class="leg" style="margin-top:8px"><span><i style="background:var(--st)"></i>Precio</span><span><i style="background:var(--md)"></i>Media 50 días</span><span><i style="background:var(--an)"></i>Media 200 días</span><span><i style="background:var(--ac);opacity:.5"></i>Canal de tendencia</span></div>
+ <canvas id="cv" style="height:260px"></canvas><div class="sub" id="cvn" style="margin-top:6px"></div></div>
+<div class="card" id="ctr" style="display:none"><h2>🧭 Estado de la tendencia</h2><div id="trd"></div></div>
+<div class="card" id="cco" style="display:none"><h2>🌍 Contexto de mercado y qué empuja la probabilidad</h2><div id="ctx"></div><div class="sub" id="ctn" style="margin-top:8px"></div></div>
+<div class="card" id="cb" style="display:none"><h2>🧪 La prueba del pasado</h2><div class="sub">Cada tramo se predice solo con datos anteriores.</div><div class="bar" id="pb" style="display:none"><i id="pi"></i></div><div id="br" style="margin-top:10px"></div></div>
+<div class="card" id="cs"><h2>📊 Todos los activos a la vez</h2>
+ <div class="sub">Calcula probabilidad y acierto histórico de todos. Tarda un rato. Toca una fila para abrirlo.</div>
+ <div class="row"><button class="chip" id="bs" type="button">Calcular todos</button></div>
+ <div class="sub" id="ps" style="margin-top:8px"></div><table id="ts" style="margin-top:6px"></table></div>
+<div class="note">Datos: Yahoo Finance (cierres diarios), guardados en el Hub cada día laborable. Modelo: regresión logística con regularización, reentrenada por tramos; solo usa datos anteriores a cada predicción. Con 32 activos, alguno saldrá bien por casualidad: fíate solo de ventajas grandes y repetidas. El pasado no garantiza el futuro. Informativo, no es consejo financiero.</div>
+</div>
+<script src="telegram.js" defer></script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var AS=[
+['spx','S&P 500','🇺🇸','^GSPC','Índices'],['ixic','Nasdaq','🇺🇸','^IXIC','Índices'],['dji','Dow Jones','🇺🇸','^DJI','Índices'],['rut','Russell 2000','🇺🇸','^RUT','Índices'],
+['ibex','IBEX 35','🇪🇸','^IBEX','Índices'],['dax','DAX','🇩🇪','^GDAXI','Índices'],['cac','CAC 40','🇫🇷','^FCHI','Índices'],['ftse','FTSE 100','🇬🇧','^FTSE','Índices'],['stoxx','Euro Stoxx 50','🇪🇺','^STOXX50E','Índices'],['n225','Nikkei','🇯🇵','^N225','Índices'],['hsi','Hang Seng','🇭🇰','^HSI','Índices'],
+['oro','Oro','🥇','GC=F','Materias primas'],['plata','Plata','🥈','SI=F','Materias primas'],['wti','Petróleo WTI','🛢️','CL=F','Materias primas'],['brent','Brent','🛢️','BZ=F','Materias primas'],['gas','Gas natural','🔥','NG=F','Materias primas'],['cobre','Cobre','🔶','HG=F','Materias primas'],
+['btc','Bitcoin','₿','BTC-USD','Cripto'],['eth','Ethereum','Ξ','ETH-USD','Cripto'],['sol','Solana','◎','SOL-USD','Cripto'],['xrp','XRP','✕','XRP-USD','Cripto'],
+['eurusd','EUR/USD','💶','EURUSD=X','Divisas y bonos'],['dxy','Dólar (DXY)','💵','DX-Y.NYB','Divisas y bonos'],['tnx','Bono EEUU 10 años','🏛️','^TNX','Divisas y bonos'],['vix','VIX','😨','^VIX','Divisas y bonos'],
+['nvda','Nvidia','🟩','NVDA','Acciones'],['aapl','Apple','🍎','AAPL','Acciones'],['msft','Microsoft','🪟','MSFT','Acciones'],['tsla','Tesla','🚗','TSLA','Acciones'],['amzn','Amazon','📦','AMZN','Acciones'],['googl','Alphabet','🔎','GOOGL','Acciones'],['meta','Meta','👤','META','Acciones']
+];
+var BY={};AS.forEach(function(a){BY[a[0]]=a});
+var FN=['Subida en 1 mes','Subida en 3 meses','Subida en 6 meses','Subida en 12 meses','Distancia a su media de 200 días','Distancia a su media de 50 días','RSI (fuerza reciente)','Volatilidad reciente','Caída desde máximos','Nivel del VIX','Cambio del VIX (1 mes)','Cambio de la rentabilidad del bono 10a (1 mes)','Dólar (3 meses)','S&P 500 (3 meses)'];
+var NF=FN.length,LAM=150,STR=5,MINC=1500;
+var st={k:'spx',rg:12,tok:0,raw:{},btc:{}};
+try{var k0=localStorage.getItem('tp.a');if(k0&&BY[k0])st.k=k0}catch(e){}
+try{var q=new URLSearchParams(location.search).get('a');if(q&&BY[q])st.k=q}catch(e){}
+try{var r0=parseInt(localStorage.getItem('tp.r')||'12',10);if([6,12,36,60].indexOf(r0)>=0)st.rg=r0}catch(e){}
+var fmt=function(n,d){return n.toLocaleString('es-ES',{minimumFractionDigits:d||0,maximumFractionDigits:d||0})};
+var pc=function(x,d){return(x>=0?'+':'')+fmt(x*100,d===undefined?1:d)+' %'};
+var cl=function(x){return x>=0?'up':'dn'};
+var fd=function(t){return new Date(t).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'})};
+var dia=function(ms){return Math.floor(ms/864e5)};
+var isC=function(k){return BY[k][4]==='Cripto'};
+var HZ=function(k){return isC(k)?30:21};
+/* ---------- datos ---------- */
+function timeout(ms){var ac=new AbortController();var id=setTimeout(function(){ac.abort()},ms);return{s:ac.signal,c:function(){clearTimeout(id)}}}
+function pedir(u,ms){var t=timeout(ms);return fetch(u,{signal:t.s,cache:'no-store'}).then(function(r){t.c();if(!r.ok)throw new Error('HTTP '+r.status);return r.text()},function(e){t.c();throw e})}
+function parseJson(txt){var j=JSON.parse(txt),T=[],C=[];for(var i=0;i<j.t.length;i++){if(j.c[i]>0){T.push(j.t[i]*1000);C.push(j.c[i])}}if(C.length<MINC)throw new Error('pocos');return{T:T,C:C}}
+function primera(cands,parse){return new Promise(function(res,rej){var fin=false,pend=cands.length,last=null;cands.forEach(function(c,i){setTimeout(function(){if(fin)return;pedir(c,20000).then(parse).then(function(d){if(!fin){fin=true;res(d)}},function(e){last=e;if(--pend===0&&!fin)rej(last)})},i*1500)})})}
+function conProxy(u){var e=encodeURIComponent(u);return[u,'https://corsproxy.io/?'+e,'https://api.allorigins.win/raw?url='+e,'https://api.codetabs.com/v1/proxy?quest='+e]}
+function guardada(k){if(st.raw[k])return Promise.resolve(st.raw[k]);return pedir('historico/'+k+'.json?t='+Math.floor(Date.now()/36e5),20000).then(parseJson).then(function(d){d.base=d.T[d.T.length-1];st.raw[k]=d;return d})}
+function completa(d,ys){
+  var yh='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ys)+'?range=3mo&interval=1d';
+  return primera(conProxy(yh),function(txt){
+    var j=JSON.parse(txt),r=j.chart.result[0],ts=r.timestamp,cl=r.indicators.quote[0].close,n=0;if(!ts||ts.length<5)throw new Error('vacío');
+    var ult=dia(d.T[d.T.length-1]);
+    for(var i=0;i<ts.length;i++){if(!(cl[i]>0))continue;var t=ts[i]*1000,dd=dia(t);if(dd===ult&&n===0){d.C[d.C.length-1]=cl[i];n++}else if(dd>ult){d.T.push(t);d.C.push(cl[i]);ult=dd;n++}}
+    return d}).catch(function(){return d});
+}
+/* serie alineada: último valor conocido de ctx en el día de cada fecha del activo */
+function alinea(T,ctx){
+  var o=new Float64Array(T.length),j=0,v=NaN;
+  for(var i=0;i<T.length;i++){var di=dia(T[i]);while(j<ctx.T.length&&dia(ctx.T[j])<=di){v=ctx.C[j];j++}o[i]=v}
+  return o;
+}
+function ctxs(){return Promise.all(['vix','tnx','dxy','spx'].map(function(k){return guardada(k).catch(function(){return null})}))}
+/* ---------- indicadores y características ---------- */
+function prepara(d,cx){
+  var T=d.T,C=d.C,n=C.length,i,j;
+  var P={T:T,C:C,n:n,ma50:new Float64Array(n).fill(NaN),ma200:new Float64Array(n).fill(NaN),rsi:new Float64Array(n).fill(NaN),F:new Array(n)};
+  var cs=new Float64Array(n+1);for(i=0;i<n;i++)cs[i+1]=cs[i]+C[i];
+  for(i=49;i<n;i++)P.ma50[i]=(cs[i+1]-cs[i-49])/50;
+  for(i=199;i<n;i++)P.ma200[i]=(cs[i+1]-cs[i-199])/200;
+  var ag=0,al=0;
+  for(i=1;i<n;i++){var df=C[i]-C[i-1],g=df>0?df:0,l=df<0?-df:0;
+    if(i<=14){ag+=g/14;al+=l/14;if(i===14)P.rsi[i]=al===0?100:100-100/(1+ag/al)}
+    else{ag=(ag*13+g)/14;al=(al*13+l)/14;P.rsi[i]=al===0?100:100-100/(1+ag/al)}}
+  var lr=new Float64Array(n);for(i=1;i<n;i++)lr[i]=Math.log(C[i]/C[i-1]);
+  var vix=cx[0]?alinea(T,cx[0]):null,tnx=cx[1]?alinea(T,cx[1]):null,dxy=cx[2]?alinea(T,cx[2]):null,spx=cx[3]?alinea(T,cx[3]):null;
+  var s21=0,s252=0,s252q=0;
+  var v21=new Float64Array(n).fill(NaN),v252=new Float64Array(n).fill(NaN);
+  for(i=2;i<n;i++){
+    if(i>=22){var m=0,q=0;for(j=i-20;j<=i;j++){m+=lr[j];}m/=21;for(j=i-20;j<=i;j++)q+=(lr[j]-m)*(lr[j]-m);v21[i]=Math.sqrt(q/21)}
+  }
+  for(i=253;i<n;i+=1){var m2=0,q2=0;for(j=i-251;j<=i;j++)m2+=lr[j];m2/=252;for(j=i-251;j<=i;j++)q2+=(lr[j]-m2)*(lr[j]-m2);v252[i]=Math.sqrt(q2/252)}
+  var nan=function(x){return x!==x};
+  for(i=252;i<n;i++){
+    var mx=0;for(j=i-251;j<=i;j++)if(C[j]>mx)mx=C[j];
+    var f=new Float64Array(NF);
+    f[0]=C[i]/C[i-21]-1;f[1]=C[i]/C[i-63]-1;f[2]=C[i]/C[i-126]-1;f[3]=C[i]/C[i-252]-1;
+    f[4]=C[i]/P.ma200[i]-1;f[5]=C[i]/P.ma50[i]-1;f[6]=P.rsi[i]/100-.5;
+    f[7]=(v252[i]>0&&v21[i]>0)?Math.log(v21[i]/v252[i]):NaN;f[8]=C[i]/mx-1;
+    f[9]=vix&&vix[i]>0?Math.log(vix[i]):NaN;
+    f[10]=vix&&vix[i]>0&&vix[i-21]>0?Math.log(vix[i]/vix[i-21]):NaN;
+    f[11]=tnx&&!nan(tnx[i])&&!nan(tnx[i-21])?tnx[i]-tnx[i-21]:NaN;
+    f[12]=dxy&&dxy[i]>0&&dxy[i-63]>0?dxy[i]/dxy[i-63]-1:NaN;
+    f[13]=spx&&spx[i]>0&&spx[i-63]>0?spx[i]/spx[i-63]-1:NaN;
+    P.F[i]=f;
+  }
+  return P;
+}
+/* ---------- regresión logística (IRLS con regularización) ---------- */
+function solve(A,b,m){
+  for(var i=0;i<m;i++){var p=i;for(var r=i+1;r<m;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;var t=A[i];A[i]=A[p];A[p]=t;var tb=b[i];b[i]=b[p];b[p]=tb;
+    var d=A[i][i]||1e-9;for(r=i+1;r<m;r++){var f=A[r][i]/d;if(!f)continue;for(var c=i;c<m;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i]}}
+  var x=new Float64Array(m);for(i=m-1;i>=0;i--){var s=b[i];for(var c=i+1;c<m;c++)s-=A[i][c]*x[c];x[i]=s/(A[i][i]||1e-9)}return x;
+}
+function entrena(P,h,hasta){
+  // muestras i en [252, hasta-h] cada STR sesiones (así no se ve el futuro)
+  var idx=[],i;for(i=252;i<=hasta-h;i+=STR)idx.push(i);
+  if(idx.length<120)return null;
+  var mu=new Float64Array(NF),sd=new Float64Array(NF),cn=new Float64Array(NF),j;
+  idx.forEach(function(t){var f=P.F[t];for(j=0;j<NF;j++)if(f[j]===f[j]){mu[j]+=f[j];cn[j]++}});
+  for(j=0;j<NF;j++)mu[j]=cn[j]?mu[j]/cn[j]:0;
+  idx.forEach(function(t){var f=P.F[t];for(j=0;j<NF;j++)if(f[j]===f[j])sd[j]+=(f[j]-mu[j])*(f[j]-mu[j])});
+  for(j=0;j<NF;j++)sd[j]=cn[j]>5?Math.sqrt(sd[j]/cn[j])||1:1;
+  var m=NF+1,X=idx.map(function(t){var f=P.F[t],z=new Float64Array(m);z[0]=1;for(var c=0;c<NF;c++)z[c+1]=f[c]===f[c]?(f[c]-mu[c])/sd[c]:0;return z});
+  var y=idx.map(function(t){return P.C[t+h]>P.C[t]?1:0});
+  var w=new Float64Array(m);
+  for(var it=0;it<8;it++){
+    var H=[],g=new Float64Array(m),r,c;for(r=0;r<m;r++)H.push(new Float64Array(m));
+    for(var s=0;s<X.length;s++){var z=X[s],a=0;for(c=0;c<m;c++)a+=w[c]*z[c];a=Math.max(-30,Math.min(30,a));var p=1/(1+Math.exp(-a)),wt=p*(1-p)+1e-6,e=p-y[s];
+      for(r=0;r<m;r++){g[r]+=e*z[r];var zw=wt*z[r];for(c=r;c<m;c++)H[r][c]+=zw*z[c]}}
+    for(r=0;r<m;r++){for(c=0;c<r;c++)H[r][c]=H[c][r];if(r>0){H[r][r]+=LAM;g[r]+=LAM*w[r]}}
+    var dl=solve(H,g,m),mxd=0;for(r=0;r<m;r++){w[r]-=dl[r];if(Math.abs(dl[r])>mxd)mxd=Math.abs(dl[r])}
+    if(mxd<1e-4)break;
+  }
+  return{w:w,mu:mu,sd:sd};
+}
+function predice(M,f){var a=M.w[0],z=new Float64Array(NF);for(var c=0;c<NF;c++){z[c]=f[c]===f[c]?(f[c]-M.mu[c])/M.sd[c]:0;a+=M.w[c+1]*z[c]}return{p:1/(1+Math.exp(-a)),z:z}}
+/* ---------- prueba hacia atrás y estadísticos ---------- */
+function ventaja(k,n,base){if(n<30)return false;var p=k/n,se=Math.sqrt(base*(1-base)/n);return p-base>Math.max(.03,2*se)}
+function backtest(P,h,prog,cb){
+  var n=P.n,s0=Math.max(1000,Math.floor(n*.45)),res=[],BLK=504,b=s0;
+  if(n-1-h-s0<400){cb(null);return}
+  (function bloque(){
+    if(b>=n-1-h){cb(stats(res));return}
+    var M=entrena(P,h,b);
+    if(M){for(var t=b;t<Math.min(b+BLK,n-1-h);t+=h){var f=P.F[t];if(!f)continue;res.push([predice(M,f).p,P.C[t+h]>P.C[t]?1:0])}}
+    b+=BLK;if(prog)prog((b-s0)/(n-1-h-s0));
+    setTimeout(bloque,0);
+  })();
+}
+function stats(res){
+  var n=res.length;if(n<40)return null;
+  var u=0,nu=0,hu=0,nd=0,hd=0,bm=0,i;
+  res.forEach(function(r){var p=r[0],y=r[1];u+=y;bm+=(p-y)*(p-y);if(p>.5){nu++;hu+=y}else{nd++;hd+=1-y}});
+  var bu=u/n,bb=0;res.forEach(function(r){bb+=(bu-r[1])*(bu-r[1])});
+  var E=[0,.4,.5,.6,.7,1.01],cal=[];
+  for(i=0;i<5;i++){var c=res.filter(function(r){return r[0]>=E[i]&&r[0]<E[i+1]}),s=0;c.forEach(function(r){s+=r[1]});cal.push({lo:E[i],hi:E[i+1],n:c.length,f:c.length?s/c.length:0})}
+  return{n:n,bu:bu,nu:nu,hu:hu,nd:nd,hd:hd,skill:1-bm/bb,vU:ventaja(hu,nu,bu),vD:ventaja(hd,nd,1-bu),cal:cal,hr:(hu+hd)/n};
+}
+function senal(p,B){
+  if(!B)return null;var up=p>.5,n=up?B.nu:B.nd,k=up?B.hu:B.hd,base=up?B.bu:1-B.bu;
+  var v=(up?B.vU:B.vD)&&B.skill>.003;
+  var cal=null;B.cal.forEach(function(c){if(p>=c.lo&&p<c.hi)cal=c});
+  return{up:up,n:n,acc:n?k/n:0,base:base,v:v,cal:cal};
+}
+/* ---------- tendencia ---------- */
+function tendencia(P){
+  var i=P.n-1,C=P.C,sc=0,ck=[];
+  var c1=C[i]>P.ma50[i],c2=C[i]>P.ma200[i],c3=P.ma50[i]>P.ma200[i],c4=P.ma200[i]>P.ma200[i-21],
+  // pendiente del canal de 120 sesiones
+  rg=reg(P,120),c5=rg.b>0;
+  ck=[[c1,'Precio por encima de la media de 50 días'],[c2,'Precio por encima de la media de 200 días'],[c3,'Media de 50 por encima de la de 200'],[c4,'Media de 200 días subiendo'],[c5,'Canal de los últimos 120 días inclinado hacia arriba']];
+  ck.forEach(function(x){if(x[0])sc++});
+  var tx=['🔴 Bajista fuerte','🔴 Bajista','🟠 Lateral, sesgo bajista','🟡 Lateral, sesgo alcista','🟢 Alcista','🟢 Alcista fuerte'][sc];
+  return{sc:sc,tx:tx,ck:ck,reg:rg};
+}
+function reg(P,L){
+  var n=P.n,x0=n-L,m=0,my=0,i;
+  for(i=0;i<L;i++){my+=Math.log(P.C[x0+i])}my/=L;m=(L-1)/2;
+  var sxx=0,sxy=0;for(i=0;i<L;i++){sxx+=(i-m)*(i-m);sxy+=(i-m)*(Math.log(P.C[x0+i])-my)}
+  var b=sxy/sxx,a=my-b*m,rs=0,tot=0;for(i=0;i<L;i++){var e=Math.log(P.C[x0+i])-(a+b*i);rs+=e*e;tot+=(Math.log(P.C[x0+i])-my)*(Math.log(P.C[x0+i])-my)}
+  return{a:a,b:b,sd:Math.sqrt(rs/L),r2:tot?1-rs/tot:0,x0:x0,L:L};
+}
+function puntuacion(P,t){ // misma puntuación de tendencia en un día cualquiera del pasado
+  var C=P.C,s=0;if(!(P.ma200[t-21]>0))return -1;
+  if(C[t]>P.ma50[t])s++;if(C[t]>P.ma200[t])s++;if(P.ma50[t]>P.ma200[t])s++;if(P.ma200[t]>P.ma200[t-21])s++;
+  if(t>=120){var L=120,m=(L-1)/2,my=0,i;for(i=0;i<L;i++)my+=Math.log(C[t-L+1+i]);my/=L;var sxx=0,sxy=0;for(i=0;i<L;i++){sxx+=(i-m)*(i-m);sxy+=(i-m)*(Math.log(C[t-L+1+i])-my)}if(sxy>0)s++}
+  return s;
+}
+/* ---------- gráfico de tendencia ---------- */
+function dibuja(P,TR){
+  var cv=$('cv'),cx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,r=cv.getBoundingClientRect(),w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
+  cv.width=w;cv.height=h;cx.clearRect(0,0,w,h);
+  var n=P.n,tEnd=P.T[n-1],i0=0;var ms=st.rg*30.4*864e5;while(i0<n-2&&P.T[i0]<tEnd-ms)i0++;
+  var rg=TR.reg,pl=8*dpr,pr=46*dpr,pt=8*dpr,pb=20*dpr,i;
+  var ch=function(x){return Math.exp(rg.a+rg.b*(x-rg.x0))};
+  var vmin=1e18,vmax=-1e18,up=function(v){if(v>0){if(v<vmin)vmin=v;if(v>vmax)vmax=v}};
+  for(i=i0;i<n;i++){up(P.C[i]);up(P.ma50[i]);up(P.ma200[i])}
+  for(i=rg.x0;i<n;i++){if(P.T[i]>=P.T[i0]){up(ch(i)*Math.exp(2*rg.sd));up(ch(i)*Math.exp(-2*rg.sd))}}
+  var mg=(vmax-vmin)*.05;vmin-=mg;vmax+=mg;
+  var t0=P.T[i0],X=function(t){return pl+(t-t0)/(tEnd-t0||1)*(w-pl-pr)},Y=function(v){return pt+(1-(v-vmin)/(vmax-vmin))*(h-pt-pb)};
+  var cs=getComputedStyle(document.documentElement),gv=function(k){return cs.getPropertyValue(k).trim()};
+  var dec=P.C[n-1]>=100?0:P.C[n-1]>=1?2:4;
+  cx.lineWidth=dpr;cx.strokeStyle=gv('--bd');cx.fillStyle=gv('--dim');cx.font=(11*dpr)+'px sans-serif';cx.textAlign='left';
+  for(i=0;i<=4;i++){var v=vmin+(vmax-vmin)*i/4,y=Y(v);cx.beginPath();cx.moveTo(pl,y);cx.lineTo(w-pr,y);cx.stroke();cx.fillText(fmt(v,dec),w-pr+5*dpr,y+4*dpr)}
+  cx.textAlign='center';for(i=0;i<=3;i++){var tt=t0+(tEnd-t0)*i/3;cx.fillText(new Date(tt).toLocaleDateString('es-ES',{month:'short',year:'2-digit',timeZone:'UTC'}),Math.min(w-pr-18*dpr,Math.max(pl+18*dpr,X(tt))),h-5*dpr)}
+  // canal
+  var a=Math.max(rg.x0,i0);cx.globalAlpha=.16;cx.fillStyle=gv('--ac');cx.beginPath();
+  for(i=a;i<n;i++){var xx=X(P.T[i]),yy=Y(ch(i)*Math.exp(2*rg.sd));i===a?cx.moveTo(xx,yy):cx.lineTo(xx,yy)}
+  for(i=n-1;i>=a;i--)cx.lineTo(X(P.T[i]),Y(ch(i)*Math.exp(-2*rg.sd)));cx.closePath();cx.fill();cx.globalAlpha=.7;cx.strokeStyle=gv('--ac');cx.setLineDash([4*dpr,3*dpr]);cx.beginPath();
+  for(i=a;i<n;i++){var x2=X(P.T[i]),y2=Y(ch(i));i===a?cx.moveTo(x2,y2):cx.lineTo(x2,y2)}cx.stroke();cx.setLineDash([]);cx.globalAlpha=1;
+  function lin(arr,col,lw){cx.strokeStyle=col;cx.lineWidth=lw*dpr;cx.lineJoin='round';cx.beginPath();var on=false;for(var k=i0;k<n;k++){var v=arr[k];if(!(v>0)){on=false;continue}var x=X(P.T[k]),y=Y(v);on?cx.lineTo(x,y):cx.moveTo(x,y);on=true}cx.stroke()}
+  lin(P.ma200,gv('--an'),1.8);lin(P.ma50,gv('--md'),1.5);lin(P.C,gv('--st'),2);
+}
+/* ---------- pantalla ---------- */
+function pintaSenal(){
+  var el=$('sg'),a=BY[st.k],p=st.p,B=st.bt,S=senal(p,B),hl=HZ(st.k)===30?'30 días':'1 mes';
+  var up=p>.5,ic=up?'🟢':'🔴',pr=up?p:1-p;
+  var h='<div class="sigtop"><span class="dot">'+ic+'</span><div><div class="sigt">'+a[2]+' '+a[1]+': '+fmt(p*100,0)+' % de probabilidad de subir a '+hl+'</div><div class="sigs">'+fmt((1-p)*100,0)+' % de bajar · modelo con '+NF+' datos</div></div></div>'+
+   '<div class="pbar"><i style="width:'+(p*100)+'%"></i></div>';
+  if(!B)h+=st.busy?'<div class="acc dim">Calculando cuántas veces habría acertado…</div>':'<div class="acc dim">Historia insuficiente para comprobar el acierto.</div>';
+  else{
+    h+='<div class="acc"><b>'+fmt(S.acc*100,0)+' %</b> de acierto histórico cuando el modelo dio '+(up?'subida':'bajada')+' ('+S.n+' veces). Sin modelo, este activo '+(up?'subió':'bajó')+' el '+fmt(S.base*100,0)+' % de los meses.</div>';
+    if(S.cal&&S.cal.n>=15)h+='<div class="sub" style="margin-top:6px">Cuando el modelo dio entre '+fmt(S.cal.lo*100,0)+' y '+fmt(Math.min(100,S.cal.hi*100),0)+' % de subida ('+S.cal.n+' veces), subió de verdad el <b>'+fmt(S.cal.f*100,0)+' %</b>.</div>';
+    h+=S.v?'<div class="badge ok">✅ Ventaja demostrada: acertó claramente más que sin modelo.</div>':'<div class="badge no">⚠️ Sin ventaja demostrada: no mejora lo que se acertaría sin el modelo. Úsalo como contexto, no como señal.</div>';
+  }
+  el.style.display='block';el.innerHTML=h;
+}
+function kv(a,b){return'<div class="kv"><span>'+a+'</span><span>'+b+'</span></div>'}
+function pintaResto(){
+  var P=st.P,TR=st.TR,n=P.n,C=P.C,i=n-1,hz=HZ(st.k);
+  $('ctc').style.display=$('ctr').style.display=$('cco').style.display=$('cb').style.display='block';
+  dibuja(P,TR);
+  $('cvn').textContent='Línea blanca: precio. Naranja y celeste: medias de 50 y 200 días. Franja azul: canal de tendencia de los últimos 120 días (±2 desviaciones). Si el precio sale del canal, se ha movido más de lo habitual para esa tendencia.';
+  // estado de tendencia
+  var h='<div class="sigt" style="font-size:17px">'+TR.tx+'</div><div class="ck" style="margin-top:6px">'+TR.ck.map(function(x){return(x[0]?'✅ ':'❌ ')+x[1]}).join('<br>')+'</div>';
+  var cond=[],base=[],t;
+  for(t=260;t<n-1-hz;t+=3){var s=puntuacion(P,t);if(s<0)continue;var up=C[t+hz]>C[t];base.push(up?1:0);if(s===TR.sc)cond.push(up?1:0)}
+  var sm=function(a){return a.reduce(function(x,y){return x+y},0)/(a.length||1)};
+  h+='<div style="margin-top:8px">'+kv('Subida en 1 / 3 / 6 / 12 meses',[21,63,126,252].map(function(k){var v=C[i]/C[i-k]-1;return'<b class="'+cl(v)+'">'+pc(v,1)+'</b>'}).join(' · '))+
+    kv('Distancia a su media de 200 días','<b class="'+cl(C[i]/P.ma200[i]-1)+'">'+pc(C[i]/P.ma200[i]-1)+'</b>')+
+    kv('RSI (14 días)',fmt(P.rsi[i],0)+(P.rsi[i]>70?' · sobrecompra':P.rsi[i]<30?' · sobreventa':''))+
+    kv('Caída desde el máximo de 1 año','<b class="dn">'+pc(P.F[i][8])+'</b>')+
+    kv('Inclinación del canal (por mes)',pc(Math.exp(TR.reg.b*21)-1)+' · encaje '+fmt(TR.reg.r2*100,0)+' %')+'</div>';
+  if(cond.length>=30)h+='<div class="sub" style="margin-top:8px">Las '+cond.length+' veces que este activo estuvo en el mismo estado de tendencia, subió en el mes siguiente el <b>'+fmt(sm(cond)*100,0)+' %</b> de las veces (en general: '+fmt(sm(base)*100,0)+' %).</div>';
+  $('trd').innerHTML=h;
+  // contexto y motivos
+  var f=P.F[i],cx='';
+  var cvix=f[9]===f[9]?Math.exp(f[9]):null;
+  cx+=kv('VIX (miedo en el mercado)',cvix?fmt(cvix,1)+(f[10]===f[10]?' · <b class="'+(f[10]>0?'dn':'up')+'">'+pc(Math.exp(f[10])-1,0)+' en 1 mes</b>':''):'<span class="dim">sin dato</span>');
+  cx+=kv('Rentabilidad bono EEUU 10 años (cambio 1 mes)',f[11]===f[11]?'<b class="'+(f[11]>0?'dn':'up')+'">'+(f[11]>=0?'+':'')+fmt(f[11],2)+' puntos</b>':'<span class="dim">sin dato</span>');
+  cx+=kv('Dólar (3 meses)',f[12]===f[12]?'<b class="'+(f[12]>0?'dn':'up')+'">'+pc(f[12])+'</b>':'<span class="dim">sin dato</span>');
+  cx+=kv('S&P 500 (3 meses)',f[13]===f[13]?'<b class="'+cl(f[13])+'">'+pc(f[13])+'</b>':'<span class="dim">sin dato</span>');
+  if(st.mod){var z=st.pz,w=st.mod.w,ct=[];for(var j=0;j<NF;j++)ct.push([FN[j],w[j+1]*z[j]]);ct.sort(function(a,b){return Math.abs(b[1])-Math.abs(a[1])});
+    cx+='<div class="grp" style="margin-top:12px">Lo que más pesa hoy en la probabilidad</div>'+ct.slice(0,5).map(function(c){return kv(c[0],c[1]>=0?'<b class="up">empuja al alza</b>':'<b class="dn">empuja a la baja</b>')}).join('')}
+  $('ctx').innerHTML=cx;
+  $('ctn').textContent='Rojo = suele ser mala señal para la bolsa (VIX al alza, bonos y dólar subiendo). El modelo decide cuánto pesa cada dato aprendiendo del pasado; los pesos cambian con cada activo.';
+}
+function pintaBt(){
+  var B=st.bt;if(!B){$('br').textContent='';return}
+  var h='<table><tr><td>Predicciones probadas</td><td>'+B.n+'</td></tr>'+
+   '<tr><td>Aciertos del modelo (sube/baja)</td><td><b>'+fmt(B.hr*100,1)+' %</b></td></tr>'+
+   '<tr><td>Aciertos apostando siempre lo habitual</td><td>'+fmt(Math.max(B.bu,1-B.bu)*100,1)+' %</td></tr>'+
+   '<tr><td>Mejora sobre una predicción sin datos</td><td class="'+cl(B.skill)+'">'+fmt(B.skill*100,2)+' %</td></tr></table>'+
+   '<div class="sub" style="margin:10px 0 4px">¿Coincide la probabilidad con la realidad?</div><table><tr><th>Dijo</th><th>Veces</th><th>Subió</th></tr>'+
+   B.cal.map(function(c){return'<tr><td>'+fmt(c.lo*100,0)+'–'+fmt(Math.min(100,c.hi*100),0)+' %</td><td>'+c.n+'</td><td>'+(c.n?fmt(c.f*100,0)+' %':'–')+'</td></tr>'}).join('')+'</table>'+
+   '<div class="sub" style="margin-top:8px">Si «Subió» se parece a lo que «Dijo», el modelo está bien calibrado. Mejora ≤ 0 % = no supera a no usar datos.</div>';
+  $('br').innerHTML=h;
+}
+function abre(k){
+  st.k=k;st.tok++;st.P=null;st.bt=null;try{localStorage.setItem('tp.a',k)}catch(e){}
+  var a=BY[k];$('h1').textContent='📈 Tendencia y probabilidad · '+a[1];chips();
+  ['sg','ctc','ctr','cco','cb'].forEach(function(i){$(i).style.display='none'});
+  $('est').textContent='cargando '+a[1]+'…';var tok=st.tok;
+  Promise.all([guardada(k).catch(function(){return primera(conProxy('https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(a[3])+'?range=max&interval=1d'),function(t){var j=JSON.parse(t),r=j.chart.result[0],T=[],C=[];r.timestamp.forEach(function(x,i){var c=r.indicators.quote[0].close[i];if(c>0){T.push(x*1000);C.push(c)}});if(C.length<MINC)throw 0;return{T:T,C:C}})}),ctxs()]).then(function(r){
+    var d=r[0],c={T:d.T.slice(),C:d.C.slice(),base:d.base};
+    return completa(c,a[3]).then(function(dd){return[dd,r[1]]});
+  }).then(function(r){
+    if(tok!==st.tok)return;
+    var d=r[0];if(d.C.length<700)throw new Error('corto');
+    var P=prepara(d,r[1]);st.P=P;st.TR=tendencia(P);
+    var hz=HZ(k),i=P.n-1;
+    st.mod=entrena(P,hz,i);
+    if(st.mod){var pr=predice(st.mod,P.F[i]);st.p=pr.p;st.pz=pr.z}else{st.p=.5;st.pz=new Float64Array(NF)}
+    $('est').textContent='Datos hasta '+fd(P.T[i])+' · '+fmt(P.n,0)+' sesiones desde '+new Date(P.T[0]).getUTCFullYear();
+    pintaResto();
+    if(!st.mod){st.bt=null;st.busy=false;pintaSenal();return}
+    var key=k+'|'+P.n;
+    if(st.btc[key]!==undefined){st.bt=st.btc[key];st.busy=false;pintaSenal();pintaBt();return}
+    st.busy=true;st.bt=null;pintaSenal();$('pb').style.display='block';$('pi').style.width='0';
+    backtest(P,hz,function(x){if(tok===st.tok)$('pi').style.width=(x*100)+'%'},function(B){st.btc[key]=B;if(tok!==st.tok)return;st.bt=B;st.busy=false;$('pb').style.display='none';pintaSenal();pintaBt()});
+  }).catch(function(e){if(tok!==st.tok)return;$('est').innerHTML='<span class="warn">No se pudo cargar o analizar '+a[1]+' ('+(e&&e.message||'error')+'). Prueba otro activo o recarga.</span>'});
+}
+function chips(){
+  var b=$('sel');b.textContent='';var g='',box=null;
+  AS.forEach(function(a){if(a[4]!==g){g=a[4];var t=document.createElement('div');t.className='grp';t.textContent=g;b.appendChild(t);box=document.createElement('div');box.className='chips';b.appendChild(box)}
+    var c=document.createElement('button');c.type='button';c.className='chip s'+(a[0]===st.k?' on':'');c.textContent=a[2]+' '+a[1];c.onclick=function(){if(a[0]!==st.k)abre(a[0])};box.appendChild(c)});
+}
+function rangos(){var b=$('rng');b.textContent='';[[6,'6 meses'],[12,'1 año'],[36,'3 años'],[60,'5 años']].forEach(function(x){var c=document.createElement('button');c.type='button';c.className='chip s'+(x[0]===st.rg?' on':'');c.textContent=x[1];c.onclick=function(){st.rg=x[0];try{localStorage.setItem('tp.r',String(x[0]))}catch(e){}rangos();if(st.P)dibuja(st.P,st.TR)};b.appendChild(c)})}
+/* ---------- todos ---------- */
+var sumBusy=false,sumRows=[];
+function pintaSum(){
+  var rows=sumRows.slice().sort(function(a,b){return(b.v-a.v)||(b.acc-a.acc)});
+  var h='<tr><th>Activo</th><th>Prob. sube</th><th>Acierto</th><th>Ventaja</th></tr>';
+  rows.forEach(function(r){h+='<tr class="tr" data-k="'+r.k+'"><td>'+BY[r.k][2]+' '+BY[r.k][1]+'</td><td>'+(r.p>.5?'🟢':'🔴')+' '+fmt(r.p*100,0)+' %</td><td>'+fmt(r.acc*100,0)+' % <span class="dim">(base '+fmt(r.base*100,0)+')</span></td><td>'+(r.v?'✅':'⚠️')+'</td></tr>'});
+  $('ts').innerHTML=h;Array.prototype.forEach.call($('ts').querySelectorAll('tr[data-k]'),function(tr){tr.onclick=function(){abre(tr.getAttribute('data-k'));window.scrollTo(0,0)}});
+}
+function todos(){
+  if(sumBusy)return;sumBusy=true;sumRows=[];$('bs').disabled=true;var i=0;
+  ctxs().then(function(cx){(function sig(){
+    if(i>=AS.length){sumBusy=false;$('bs').disabled=false;$('ps').textContent='Listo: '+sumRows.length+' activos (datos de la última descarga). ✅ = ventaja demostrada, ⚠️ = sin ventaja.';return}
+    var a=AS[i];$('ps').textContent='Calculando '+(i+1)+' de '+AS.length+': '+a[1]+'…';
+    guardada(a[0]).then(function(d){
+      var P=prepara({T:d.T,C:d.C},cx),hz=HZ(a[0]),M=entrena(P,hz,P.n-1);
+      if(!M){i++;setTimeout(sig,0);return}
+      var p=predice(M,P.F[P.n-1]).p,key=a[0]+'|'+P.n;
+      var fin=function(B){st.btc[key]=B;var S=senal(p,B);if(S)sumRows.push({k:a[0],p:p,acc:S.acc,base:S.base,v:S.v?1:0});pintaSum();i++;setTimeout(sig,0)};
+      if(st.btc[key]!==undefined)fin(st.btc[key]);else backtest(P,hz,null,fin);
+    },function(){i++;setTimeout(sig,0)});
+  })()});
+}
+$('bs').onclick=todos;
+window.addEventListener('resize',function(){if(st.P)dibuja(st.P,st.TR)});
+var WEB='https://dashboard482.github.io/dashboard/tendencia.html';
+function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+$('shx').onclick=function(){var a=BY[st.k],t='📈 '+a[1]+': tendencia y probabilidad';if(st.P){var S=senal(st.p,st.bt);t+='\n'+(st.p>.5?'🟢':'🔴')+' '+fmt(st.p*100,0)+' % de subir a 1 mes'+(S?(S.v?' ✅ ventaja demostrada':' (sin ventaja demostrada)'):'')+' · '+st.TR.tx}
+  abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent(t+'\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB))};
+rangos();abre(st.k);
+})();
+</script></body></html>
