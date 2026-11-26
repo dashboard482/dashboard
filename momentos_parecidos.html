@@ -55,6 +55,7 @@ td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-
  <canvas id="cv"></canvas>
  <div class="sub" id="cap" style="margin-top:6px"></div>
 </div>
+<div class="card" id="cv2c" style="display:none"><h2>🕯️ Dónde podría ir</h2><canvas id="cv2" style="height:240px"></canvas><div class="sub" id="cv2n" style="margin-top:6px"></div></div>
 <div class="card" id="cp" style="display:none"><h2 id="cph">📊 Probabilidad de movimiento</h2><div class="pr" id="prb"></div><div class="sub" id="prn" style="margin-top:8px"></div></div>
 <div class="card" id="ct" style="display:none"><h2>¿Qué pasó después?</h2><table id="tb"></table><div class="sub" id="tbn" style="margin-top:8px"></div></div>
 <div class="card" id="cl" style="display:none"><h2>Los 8 momentos más parecidos</h2><div id="ls"></div></div>
@@ -241,6 +242,36 @@ function pintaSenal(){
   }
   el.style.display='block';el.innerHTML=h;
 }
+function velas(sel){
+  var D=st.D,P=st.P,C=D.C,T=D.n-1,HM=P.hmax,cv=$('cv2'),cx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,r=cv.getBoundingClientRect(),w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
+  cv.width=w;cv.height=h;cx.clearRect(0,0,w,h);
+  var H0=Math.min(40,st.W),px=C[T],pl=8*dpr,pr=48*dpr,pt=8*dpr,pb=20*dpr;
+  var hs=[];for(var x=7;x<=HM;x+=7)hs.push(x);
+  var q=hs.map(function(hh){var f=sel.map(function(sx){return px*(1+fwd(C,sx[0],hh))});return{h:hh,p10:pct(f,.1),p25:pct(f,.25),p50:pct(f,.5),p75:pct(f,.75),p90:pct(f,.9)}});
+  var vmin=1e18,vmax=-1e18,i;
+  for(i=T-H0;i<=T;i++){if(C[i]<vmin)vmin=C[i];if(C[i]>vmax)vmax=C[i]}
+  q.forEach(function(o){if(o.p10<vmin)vmin=o.p10;if(o.p90>vmax)vmax=o.p90});
+  var mg=(vmax-vmin)*.06;vmin-=mg;vmax+=mg;
+  var X=function(k){return pl+(k+H0)/(H0+HM+4)*(w-pl-pr)},Y=function(v){return pt+(1-(v-vmin)/(vmax-vmin))*(h-pt-pb)};
+  var cs=getComputedStyle(document.documentElement),gv=function(n){return cs.getPropertyValue(n).trim()};
+  var dec=px>=100?0:px>=1?2:4;
+  cx.lineWidth=dpr;cx.strokeStyle=gv('--bd');cx.fillStyle=gv('--dim');cx.font=(11*dpr)+'px sans-serif';cx.textAlign='left';
+  for(i=0;i<=4;i++){var v=vmin+(vmax-vmin)*i/4,y=Y(v);cx.beginPath();cx.moveTo(pl,y);cx.lineTo(w-pr,y);cx.stroke();cx.fillText(fmt(v,dec),w-pr+5*dpr,y+4*dpr)}
+  cx.setLineDash([3*dpr,3*dpr]);cx.beginPath();cx.moveTo(X(0),Y(px));cx.lineTo(w-pr,Y(px));cx.stroke();cx.setLineDash([]);
+  cx.textAlign='center';cx.fillText('hoy',X(0),h-5*dpr);cx.fillText('+'+HM+' d',X(HM),h-5*dpr);
+  cx.strokeStyle=gv('--st');cx.lineWidth=2*dpr;cx.lineJoin='round';cx.beginPath();
+  for(i=-H0;i<=0;i++){var xx=X(i),yy=Y(C[T+i]);i===-H0?cx.moveTo(xx,yy):cx.lineTo(xx,yy)}cx.stroke();
+  var bw=Math.max(5*dpr,(X(7)-X(0))*.55);
+  q.forEach(function(o){
+    var up=o.p50>=px,col=up?gv('--up'):gv('--dn'),xc=X(o.h);
+    cx.strokeStyle=col;cx.lineWidth=1.5*dpr;cx.beginPath();cx.moveTo(xc,Y(o.p90));cx.lineTo(xc,Y(o.p10));cx.stroke();
+    cx.globalAlpha=.45;cx.fillStyle=col;cx.fillRect(xc-bw/2,Y(o.p75),bw,Math.max(1,Y(o.p25)-Y(o.p75)));cx.globalAlpha=1;
+    cx.strokeRect(xc-bw/2,Y(o.p75),bw,Math.max(1,Y(o.p25)-Y(o.p75)));
+    cx.lineWidth=2.5*dpr;cx.beginPath();cx.moveTo(xc-bw/2,Y(o.p50));cx.lineTo(xc+bw/2,Y(o.p50));cx.stroke();
+  });
+  var L=q[q.length-1],a=BY[st.k];
+  $('cv2n').textContent='Cada vela resume los '+sel.length+' momentos parecidos a ese día futuro: el cuerpo cubre el 50 % central de los casos, la mecha el 80 %, y la raya gruesa es el caso mediano. Verde = el caso mediano acaba por encima de hoy. A +'+HM+' días: mediana '+fmt(L.p50,dec)+' ('+pc(L.p50/px-1)+'), rango del 80 %: '+fmt(L.p10,dec)+' a '+fmt(L.p90,dec)+'. Es una zona histórica, no un objetivo de precio.';
+}
 function pintaProb(sel,all){
   var P=st.P,h=P.h,f=sel.map(function(sx){return fwd(st.D.C,sx[0],h)});
   var m=all.reduce(function(a,b){return a+b},0)/all.length,sd=Math.sqrt(all.reduce(function(a,b){return a+(b-m)*(b-m)},0)/all.length);
@@ -262,7 +293,7 @@ function analiza(){
   var D=st.D,W=st.W,P=st.P,C=D.C,T=D.n-1,a=BY[st.k];
   var H=hoy(D,W,P);st.H=H;var sel=H.sel;
   $('cg').style.display=$('ct').style.display=$('cl').style.display=$('cb').style.display='block';
-  dibuja(sel,W);
+  dibuja(sel,W);$('cv2c').style.display='block';velas(sel);
   var tb='<tr><th>Después de…</th><th>Subió</th><th>Mediana</th><th>Rango habitual</th></tr>';
   P.hs.forEach(function(hh){
     var h=hh[0],f=sel.map(function(s){return fwd(C,s[0],h)});
@@ -309,7 +340,7 @@ function abre(k){
   try{localStorage.setItem('mp.a',k)}catch(e){}
   var a=BY[k];$('h1').textContent='🔍 Momentos parecidos · '+a[1];
   chips();
-  $('cg').style.display=$('ct').style.display=$('cl').style.display=$('cb').style.display=$('sg').style.display=$('cp').style.display='none';
+  $('cg').style.display=$('ct').style.display=$('cl').style.display=$('cb').style.display=$('sg').style.display=$('cp').style.display=$('cv2c').style.display='none';
   $('est').textContent='cargando la historia de '+a[1]+'…';
   var tok=st.tok;
   carga(k).then(function(D){if(tok!==st.tok)return;st.D=D;analiza()},function(){if(tok!==st.tok)return;$('est').innerHTML='<span class="warn">No se pudo cargar la historia de '+a[1]+' ahora. Prueba otro activo o recarga en unos segundos.</span>'});
@@ -349,7 +380,7 @@ function todos(){
   })();
 }
 $('bs').onclick=todos;
-window.addEventListener('resize',function(){if(st.D)dibuja(st.H.sel,st.W)});
+window.addEventListener('resize',function(){if(st.D){dibuja(st.H.sel,st.W);velas(st.H.sel)}});
 var WEB='https://dashboard482.github.io/dashboard/momentos_parecidos.html';
 function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
 $('shx').onclick=function(){
