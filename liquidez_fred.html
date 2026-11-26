@@ -36,7 +36,7 @@ canvas{display:block;width:100%;height:300px;touch-action:pan-y}
 <div class="wrap">
 <header><a class="btn" href="index.html">← Hub</a><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
 <h1>🏦 Liquidez Fed vs BTC</h1>
-<div class="sub">Datos oficiales de la Reserva Federal (FRED), con la fecha real de cada dato, comparados con Bitcoin. Los dos empiezan en 100 para que se vean a la vez.</div>
+<div class="sub">Datos oficiales de la Reserva Federal y el Tesoro, con la fecha real de cada dato, comparados con Bitcoin. En liquidez y M2 los dos empiezan en 100 para que se vean a la vez.</div>
 <div class="row" id="serie"></div>
 <div class="row" id="rango"></div>
 <div class="row"><button class="chip" id="lead" type="button">Adelantar liquidez 10 sem.</button><button class="chip" id="rf" type="button">↻ Actualizar</button></div>
@@ -54,8 +54,11 @@ var $=function(i){return document.getElementById(i)};
 var DAY=864e5,WEEK=7*DAY;
 var SERIES=[
  {k:'net',n:'Liquidez neta Fed',q:'<b>Liquidez neta de la Fed</b> = balance de la Fed − cuenta del Tesoro (TGA) − repos inversos (RRP). Es el dinero que realmente llega al sistema financiero. Se publica cada semana (miércoles).',chg:4,unit:'semanas'},
- {k:'m2',n:'M2 EEUU',q:'<b>M2 de EEUU</b>: efectivo, cuentas corrientes, de ahorro y fondos monetarios. Es oficial y mensual, con un mes de retraso, así que se mueve poco.',chg:12,unit:'meses'}
+ {k:'m2',n:'M2 EEUU',q:'<b>M2 de EEUU</b>: efectivo, cuentas corrientes, de ahorro y fondos monetarios. Es oficial y mensual, con un mes de retraso, así que se mueve poco.',chg:12,unit:'meses'},
+ {k:'m2y',n:'M2 variación anual %',q:'<b>Variación anual del M2</b>: cuánto ha crecido (o caído) el dinero M2 respecto al mismo mes del año anterior. Es la forma habitual de compararlo con Bitcoin, que aquí también se muestra como cambio en 12 meses. Cuando el M2 acelera hay más dinero en el sistema; es una observación, no una promesa de que Bitcoin lo siga.',chg:1,unit:'meses'}
 ];
+function yoy(a){var o=[];for(var i=12;i<a.length;i++)o.push([a[i][0],(a[i][1]/a[i-12][1]-1)*100]);return o}
+function yoyBtc(b){var o=[],j=0;for(var i=0;i<b.length;i++){var t=b[i][0]-365*DAY;while(j+1<b.length&&b[j+1][0]<=t)j++;if(b[j][0]<=t&&t-b[j][0]<10*DAY)o.push([b[i][0],(b[i][1]/b[j][1]-1)*100,b[i][1]])}return o}
 var RANGOS=[['1 año',365],['3 años',1095],['5 años',1825],['Todo',99999]];
 var st={s:'net',r:1095,lead:false,D:null,btc:null,hover:null};
 try{var g=JSON.parse(localStorage.getItem('lqf.v1')||'null');if(g){if(g.s==='m2'||g.s==='net')st.s=g.s;if(g.r)st.r=g.r;st.lead=!!g.lead}}catch(e){}
@@ -145,10 +148,14 @@ function css(n){return getComputedStyle(document.documentElement).getPropertyVal
 function prepara(){
   if(!st.D||!st.D[st.s])return null;
   var liq=st.D[st.s].slice();
+  var Y=st.s==='m2y';
   var ahora=Date.now(),desde=st.r>=99999?0:ahora-st.r*DAY;
   var sh=st.lead?70*DAY:0;
   var L=liq.map(function(p){return[p[0]+sh,p[1]]}).filter(function(p){return p[0]>=desde});
   var B=(st.btc||[]).filter(function(p){return p[0]>=desde});
+  if(Y){var By=yoyBtc(st.btc||[]).filter(function(p){return p[0]>=desde});L=L.map(function(p){return[p[0],p[1],p[1]]});
+    if(L.length<2)return null;var t1=By.length>1?Math.max(L[0][0],By[0][0]):L[0][0];
+    return{L:L.filter(function(p){return p[0]>=t1}),B:By.filter(function(p){return p[0]>=t1}),sh:sh,Y:true}}
   if(L.length<2)return null;
   var t0=B.length>1?Math.max(L[0][0],B[0][0]):L[0][0];
   // base 100 en el primer punto común
@@ -172,7 +179,7 @@ function dibuja(){
   var X=function(t){return padL+(t-tmin)/(tmax-tmin||1)*(w-padL-padR)},Y=function(v){return padT+(1-(v-vmin)/(vmax-vmin))*(h-padT-padB)};
   G.X=X;G.Y=Y;G.tmin=tmin;G.tmax=tmax;G.pl=padL;G.pr=w-padR;G.dpr=dpr;
   cx.lineWidth=1*dpr;cx.strokeStyle=css('--bd');cx.fillStyle=css('--dim');cx.font=(11*dpr)+'px sans-serif';cx.textAlign='left';
-  for(var i=0;i<=4;i++){var v=vmin+(vmax-vmin)*i/4,y=Y(v);cx.beginPath();cx.moveTo(padL,y);cx.lineTo(w-padR,y);cx.stroke();cx.fillText(fmt(v,0),w-padR+6*dpr,y+4*dpr)}
+  for(var i=0;i<=4;i++){var v=vmin+(vmax-vmin)*i/4,y=Y(v);cx.beginPath();cx.moveTo(padL,y);cx.lineTo(w-padR,y);cx.stroke();cx.fillText(fmt(v,0)+(P.Y?'%':''),w-padR+6*dpr,y+4*dpr)}
   cx.textAlign='center';
   for(i=0;i<=3;i++){var t=tmin+(tmax-tmin)*i/3;cx.fillText(new Date(t).toLocaleDateString('es-ES',{month:'short',year:'2-digit',timeZone:'UTC'}),Math.min(w-padR-14*dpr,Math.max(padL+16*dpr,X(t))),h-6*dpr)}
   // línea "hoy" si la liquidez está adelantada
@@ -189,7 +196,8 @@ function mueve(ev){
   var t=G.tmin+(x-G.pl)/(G.pr-G.pl)*(G.tmax-G.tmin);
   var l=cercano(G.L,t),b=G.B.length?cercano(G.B,t):null;
   st.hover=x;dibuja();
-  var un=st.s==='net'?' billones $':' billones $';
+  if(G.Y){$('tip').innerHTML=fecha(l[0])+' · M2 <b style="color:var(--liq)">'+(l[1]>=0?'+':'')+fmt(l[1],1)+'%</b>'+(b?' · BTC <b style="color:var(--btc)">'+(b[1]>=0?'+':'')+fmt(b[1],0)+'%</b> ($'+fmt(b[2],0)+')':'');return}
+  var un=' billones $';
   $('tip').innerHTML=fecha(l[0])+' · Liquidez <b style="color:var(--liq)">'+fmt(l[2]/1e12,2)+un+'</b>'+(b?' · BTC <b style="color:var(--btc)">$'+fmt(b[2],0)+'</b>':'');
 }
 ['mousemove','touchstart','touchmove'].forEach(function(e){cv.addEventListener(e,mueve,{passive:true})});
@@ -197,7 +205,8 @@ cv.addEventListener('mouseleave',function(){st.hover=null;dibuja()});
 /* ---------- interfaz ---------- */
 function pct(a,b){return(a/b-1)*100}
 function pintar(){
-  var S=SERIES.filter(function(x){return x.k===st.s})[0];
+  if(st.D&&st.D.m2&&st.D.m2.length>13)st.D.m2y=yoy(st.D.m2);
+  var S=SERIES.filter(function(x){return x.k===st.s})[0]||SERIES[0];
   var bs=$('serie');bs.textContent='';
   SERIES.forEach(function(x){var b=document.createElement('button');b.className='chip'+(x.k===st.s?' on':'');b.textContent=x.n;b.type='button';b.onclick=function(){st.s=x.k;st.hover=null;guarda();pintar()};bs.appendChild(b)});
   var br=$('rango');br.textContent='';
@@ -209,9 +218,15 @@ function pintar(){
   if(st.D&&st.D[st.s]){
     var a=st.D[st.s],u=a[a.length-1],n=S.chg,ref=a[Math.max(0,a.length-1-n)];
     var c=pct(u[1],ref[1]);
+    if(st.s==='m2y'){
+      var pv=a[a.length-2]||u;
+      stx.appendChild(caja('Último dato · '+fecha(u[0]),(u[1]>=0?'+':'')+fmt(u[1],2)+'% anual',(u[1]>=pv[1]?'▲ ':'▼ ')+'mes anterior: '+(pv[1]>=0?'+':'')+fmt(pv[1],2)+'%',u[1]>=pv[1]?'up':'dn'));
+      var by=yoyBtc(st.btc||[]);if(by.length){var bl=by[by.length-1];stx.appendChild(caja('Bitcoin · '+fecha(bl[0]),'$'+fmt(bl[2],0),(bl[1]>=0?'▲ +':'▼ ')+fmt(Math.abs(bl[1]),1)+'% en 12 meses',bl[1]>=0?'up':'dn'))}
+    }else{
     stx.appendChild(caja('Último dato · '+fecha(u[0]),fmt(u[1]/1e12,2)+' billones $',(c>=0?'▲ +':'▼ ')+fmt(Math.abs(c),2)+'% en '+n+' '+S.unit,c>=0?'up':'dn'));
     if(st.btc){var bu=st.btc[st.btc.length-1];var ti=u[0]-n*(S.unit==='semanas'?WEEK:30*DAY),bb=cercano(st.btc,ti);var cb=pct(bu[1],bb[1]);
       stx.appendChild(caja('Bitcoin · '+fecha(bu[0]),'$'+fmt(bu[1],0),(cb>=0?'▲ +':'▼ ')+fmt(Math.abs(cb),1)+'% en el mismo periodo',cb>=0?'up':'dn'))}
+    }
   }
   var e=[];
   if(st.D&&st.D[st.s]){var d=st.D[st.s],ul=d[d.length-1][0];e.push('Último dato de la Fed: '+fecha(ul)+' ('+Math.round((Date.now()-ul)/DAY)+' días de retraso, normal en datos oficiales)')}
