@@ -78,6 +78,42 @@ jobs:
           if len(falta) > 6 or "spx" in falta:
               sys.exit(1)
           PY
+      - name: Descargar datos de la Fed
+        continue-on-error: true
+        run: |
+          mkdir -p historico
+          python3 - <<'PY'
+          import json, time, sys, calendar, urllib.request
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
+          IDS = ["WALCL", "WTREGEN", "RRPONTSYD", "M2SL", "DTWEXBGS"]
+          out = {}
+          for i in IDS:
+              for intento in range(3):
+                  try:
+                      u = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=%s&cosd=2015-01-01" % i
+                      txt = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60).read().decode("utf-8", "ignore")
+                      pts = []
+                      for f in txt.strip().splitlines()[1:]:
+                          a = f.split(",")
+                          try:
+                              t = calendar.timegm(time.strptime(a[0], "%Y-%m-%d")) * 1000
+                              pts.append([t, float(a[1])])
+                          except Exception:
+                              pass
+                      if len(pts) < 10:
+                          raise Exception("pocos datos %d" % len(pts))
+                      out[i] = pts
+                      print("fred ok", i, len(pts))
+                      break
+                  except Exception as e:
+                      print("fred fallo", i, repr(e)[:120])
+                      time.sleep(3)
+          if out:
+              json.dump(out, open("historico/fred.json", "w"), separators=(",", ":"))
+          if len(out) < 4:
+              print("FALTAN SERIES")
+              sys.exit(1)
+          PY
       - name: Guardar
         if: always()
         run: |
