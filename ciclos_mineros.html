@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Ciclos de Bitcoin y mineros · Hub Financiero</title>
+<style>
+:root{--bg:#0d1117;--pn:#131722;--p2:#1a1e29;--bd:#2a2e39;--ink:#d1d4dc;--st:#f0f3fa;--dim:#787b86;--ac:#2962ff;--liq:#22d3ee;--btc:#f7a600;--up:#00cc44;--dn:#ff3333;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--pn:#fff;--p2:#eef1f7;--bd:#dde1ea;--ink:#363a45;--st:#0e1117;--dim:#6b6f7c;--liq:#0891b2;--btc:#d98200;--up:#0aa63a;--dn:#e02b2b;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px) + var(--tgtop,0px)) 12px calc(28px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--p2);color:var(--st);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
+.btn.x{background:#000;color:#fff;border-color:#333}
+h1{font-size:17px;margin:14px 0 4px;color:var(--st)}
+.sub{font-size:12.5px;color:var(--dim);line-height:1.5}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chip{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--bd);background:var(--p2);color:var(--ink);border-radius:16px;padding:6px 13px;cursor:pointer}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.stat{background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+.stat small{display:block;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+.stat b{display:block;font-size:19px;color:var(--st);margin-top:3px}
+.stat span{font-size:12px;color:var(--dim)}
+.up{color:var(--up)!important}.dn{color:var(--dn)!important}
+.cw{position:relative;margin-top:12px;background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:8px}
+canvas{display:block;width:100%;height:300px;touch-action:pan-y}
+.leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin:2px 4px 6px}
+.leg i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+#tip{font-size:12px;color:var(--st);min-height:18px;margin:4px 4px 0}
+.estado{font-size:11.5px;color:var(--dim);margin-top:10px;line-height:1.5}
+.que{font-size:13px;line-height:1.55;margin-top:12px;background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+.que b{color:var(--st)}
+.note{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:12px}
+</style></head><body>
+<div class="wrap">
+<header><a class="btn" href="index.html">← Hub</a><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
+<h1>⛏️ Ciclos de Bitcoin y capitulación de mineros</h1>
+<div class="sub">Compara los ciclos de Bitcoin alineados por su «suelo de dificultad»: el momento de mayor caída de la dificultad de minado (mineros que apagan máquinas porque no les sale rentable). Cada línea muestra cuánto subió el precio desde ese suelo.</div>
+<div class="row" id="modo"></div>
+<div class="stats" id="stats"></div>
+<div class="cw"><div class="leg" id="leg"></div><canvas id="cv"></canvas><div id="tip">Toca el gráfico para ver los valores</div></div>
+<div class="que"><b>Cómo leerlo.</b> Eje horizontal: días desde el suelo de dificultad de cada ciclo. Eje vertical (escala logarítmica): el precio dividido entre el precio de ese día (100 % = precio del suelo). La línea gruesa es el ciclo actual; las finas son los anteriores. Si la gruesa se ve en un punto parecido al de las otras cuando estas ya habían hecho techo, es la lectura que muestra el tuit. Son solo 4 ciclos y cada uno ha subido menos que el anterior: es contexto histórico, no una predicción.</div>
+<div class="que" id="tab"></div>
+<div class="estado" id="est">cargando…</div>
+<div class="note">Fuentes: dificultad de minado y precio histórico de Blockchain.com (gráficos públicos), y el histórico de Bitcoin guardado en el Hub para los últimos años. El suelo de dificultad se calcula como la mayor caída de dificultad entre el techo de precio de cada ciclo y el siguiente halving; las fechas salen en la tabla para que las puedas revisar. Informativo, no es consejo financiero.</div>
+<script src="telegram.js" defer></script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var DAY=864e5;
+// techo de precio de cada ciclo y el halving que cierra la ventana de búsqueda
+var CICLOS=[
+ {n:'2011-2015',col:'#38bdf8',ath:'2011-06-08',fin:'2012-11-28'},
+ {n:'2015-2019',col:'#a78bfa',ath:'2013-12-04',fin:'2016-07-09'},
+ {n:'2018-2022',col:'#34d399',ath:'2017-12-17',fin:'2020-05-11'},
+ {n:'2022-hoy',col:'#f7a600',ath:'2021-11-10',fin:'2024-04-20'}
+];
+var st={log:true,hover:null,C:null};
+function fmt(v,d){return Number(v).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function fecha(t){return new Date(t).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}
+function pedir(u,ms){var c=new AbortController(),t=setTimeout(function(){c.abort()},ms);return fetch(u,{signal:c.signal,cache:'no-store'}).then(function(r){clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return r.text()},function(e){clearTimeout(t);throw e})}
+function conProxy(u){
+  var l=[function(){return pedir(u,12000)},function(){return pedir('https://corsproxy.io/?'+encodeURIComponent(u),15000)},function(){return pedir('https://api.allorigins.win/raw?url='+encodeURIComponent(u),15000)}];
+  return l.reduce(function(p,f){return p.catch(f)},Promise.reject(0));
+}
+function serie(txt){var j=JSON.parse(txt),v=j.values||j.data;if(!v||v.length<50)throw new Error('corta');return v.map(function(p){return[p.x*1000,p.y]})}
+function bc(n,extra){return conProxy('https://api.blockchain.info/charts/'+n+'?timespan=all&format=json&cors=true'+(extra||'')).then(serie)}
+function local(){return pedir('historico/btc.json?t='+Math.floor(Date.now()/36e5),15000).then(function(t){var j=JSON.parse(t),o=[];for(var i=0;i<j.t.length;i++)if(j.c[i]>0)o.push([j.t[i]*1000,j.c[i]]);if(o.length<100)throw 0;return o})}
+function cercano(a,t){var lo=0,hi=a.length-1;while(hi-lo>1){var m=(lo+hi)>>1;if(a[m][0]<t)lo=m;else hi=m}return Math.abs(a[lo][0]-t)<Math.abs(a[hi][0]-t)?a[lo]:a[hi]}
+function calcula(dif,pre){
+  var out=[];
+  CICLOS.forEach(function(c,k){
+    var a=Date.parse(c.ath+'T00:00:00Z'),f=Date.parse(c.fin+'T00:00:00Z'),mn=1,bd=null,i;
+    for(i=1;i<dif.length;i++){var t=dif[i][0];if(t<a||t>f)continue;var r=dif[i][1]/dif[i-1][1];if(r<mn){mn=r;bd=t}}
+    if(!bd)return;
+    var p0=cercano(pre,bd)[1],pts=[];
+    pre.forEach(function(p){if(p[0]>=bd&&(k===CICLOS.length-1||p[0]-bd<=1400*DAY))pts.push([(p[0]-bd)/DAY,p[1]/p0*100,p[1]])});
+    var thin=[],last=-9;pts.forEach(function(p){if(p[0]-last>=3||p===pts[pts.length-1]){thin.push(p);last=p[0]}});
+    var pk=thin.reduce(function(m,p){return p[1]>m[1]?p:m},thin[0]);
+    out.push({n:c.n,col:c.col,bd:bd,drop:(1-mn)*100,p0:p0,pts:thin,max:pk,act:k===CICLOS.length-1});
+  });
+  return out;
+}
+function dibuja(){
+  var cv=$('cv'),cx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,r=cv.getBoundingClientRect(),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
+  cv.width=w;cv.height=h;cx.clearRect(0,0,w,h);
+  var cs=getComputedStyle(document.documentElement),gv=function(n){return cs.getPropertyValue(n).trim()};
+  if(!st.C){cx.fillStyle=gv('--dim');cx.font=(14*dpr)+'px sans-serif';cx.textAlign='center';cx.fillText(st.err?'No se pudieron cargar los datos':'Cargando datos…',w/2,h/2);return}
+  var C=st.C,pl=8*dpr,pr=50*dpr,pt=10*dpr,pb=22*dpr,xmax=0,vmin=1e18,vmax=-1e18;
+  C.forEach(function(c){c.pts.forEach(function(p){if(p[0]>xmax)xmax=p[0];if(p[1]<vmin)vmin=p[1];if(p[1]>vmax)vmax=p[1]})});
+  xmax=Math.ceil(xmax/200)*200;
+  var L=function(v){return st.log?Math.log(v):v},lo=L(Math.max(vmin*.9,10)),hi=L(vmax*1.1);
+  var X=function(d){return pl+d/xmax*(w-pl-pr)},Y=function(v){return pt+(1-(L(v)-lo)/(hi-lo))*(h-pt-pb)};
+  st.G={X:X,Y:Y,pl:pl,pr:w-pr,xmax:xmax,dpr:dpr};
+  cx.lineWidth=dpr;cx.strokeStyle=gv('--bd');cx.fillStyle=gv('--dim');cx.font=(11*dpr)+'px sans-serif';cx.textAlign='left';
+  var ticks=st.log?[100,200,500,1000,2000,5000,10000,20000]:[0,500,1000,2000,3000,5000,10000,20000];
+  ticks.forEach(function(v){if(v<=0&&st.log)return;if(L(Math.max(v,1))<lo||L(v)>hi&&st.log||v>vmax*1.1)return;var y=Y(Math.max(v,1));if(y<pt||y>h-pb)return;cx.beginPath();cx.moveTo(pl,y);cx.lineTo(w-pr,y);cx.stroke();cx.fillText(fmt(v,0)+' %',w-pr+4*dpr,y+4*dpr)});
+  cx.textAlign='center';for(var d=0;d<=xmax;d+=365){var x=X(d);cx.fillText(d?(d/365)+' a':'suelo',Math.max(pl+14*dpr,Math.min(w-pr-10*dpr,x)),h-6*dpr)}
+  cx.strokeStyle=gv('--dim');cx.setLineDash([3*dpr,3*dpr]);cx.beginPath();cx.moveTo(X(0),pt);cx.lineTo(X(0),h-pb);cx.stroke();cx.setLineDash([]);
+  C.slice().sort(function(a,b){return a.act-b.act}).forEach(function(c){
+    cx.strokeStyle=c.col;cx.lineWidth=(c.act?3:1.6)*dpr;cx.lineJoin='round';cx.globalAlpha=c.act?1:.85;cx.beginPath();
+    c.pts.forEach(function(p,i){i?cx.lineTo(X(p[0]),Y(p[1])):cx.moveTo(X(p[0]),Y(p[1]))});cx.stroke();cx.globalAlpha=1;
+    var e=c.pts[c.pts.length-1];cx.fillStyle=c.col;cx.beginPath();cx.arc(X(e[0]),Y(e[1]),(c.act?4:2.5)*dpr,0,6.3);cx.fill();
+  });
+  if(st.hover!=null){cx.strokeStyle=gv('--dim');cx.lineWidth=dpr;cx.beginPath();cx.moveTo(st.hover,pt);cx.lineTo(st.hover,h-pb);cx.stroke()}
+}
+function mueve(ev){
+  if(!st.C||!st.G)return;var G=st.G,r=$('cv').getBoundingClientRect(),px=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left,x=Math.max(G.pl,Math.min(G.pr,px*G.dpr));
+  var d=(x-G.pl)/(G.pr-G.pl)*G.xmax;st.hover=x;dibuja();
+  var s='Día <b>'+fmt(d,0)+'</b> desde el suelo';
+  st.C.forEach(function(c){var p=null,b=1e9;c.pts.forEach(function(q){var e=Math.abs(q[0]-d);if(e<b){b=e;p=q}});if(p&&b<8)s+=' · <b style="color:'+c.col+'">'+c.n.split('-')[0]+': '+fmt(p[1],0)+' %</b>'});
+  $('tip').innerHTML=s;
+}
+['mousemove','touchstart','touchmove'].forEach(function(e){$('cv').addEventListener(e,mueve,{passive:true})});
+$('cv').addEventListener('mouseleave',function(){st.hover=null;dibuja()});
+function pinta(){
+  var m=$('modo');m.textContent='';
+  [['Escala logarítmica',true],['Escala lineal',false]].forEach(function(x){var b=document.createElement('button');b.className='chip'+(st.log===x[1]?' on':'');b.type='button';b.textContent=x[0];b.onclick=function(){st.log=x[1];pinta()};m.appendChild(b)});
+  var lg=$('leg');lg.textContent='';
+  if(st.C){st.C.forEach(function(c){var s=document.createElement('span');var i=document.createElement('i');i.style.background=c.col;s.appendChild(i);s.appendChild(document.createTextNode(c.n));lg.appendChild(s)});
+    var a=st.C[st.C.length-1],u=a.pts[a.pts.length-1],dias=Math.round(u[0]);
+    var s=$('stats');s.textContent='';
+    var b1=document.createElement('div');b1.className='stat';b1.innerHTML='<small>Ciclo actual · día '+fmt(dias,0)+'</small><b>'+fmt(u[1],0)+' %</b><span>del precio en su suelo ('+fecha(a.bd)+')</span>';
+    var pk=a.max;var b2=document.createElement('div');b2.className='stat';b2.innerHTML='<small>Máximo del ciclo actual</small><b>'+fmt(pk[1],0)+' %</b><span>al día '+fmt(pk[0],0)+'</span>';
+    s.append(b1,b2);
+    var h='<b>Suelos de dificultad detectados</b><br>';
+    st.C.forEach(function(c){h+='<span style="color:'+c.col+'">●</span> '+c.n+': '+fecha(c.bd)+' (dificultad −'+fmt(c.drop,1)+' %), máximo del ciclo +'+fmt(c.max[1]-100,0)+' % al día '+fmt(c.max[0],0)+'<br>'});
+    $('tab').innerHTML=h;
+  }
+  dibuja();
+}
+function carga(){
+  $('est').textContent='cargando…';
+  var pd=bc('difficulty');
+  var pp=bc('market-price','&sampled=true').then(function(a){return local().then(function(l){var t0=l[0][0];return a.filter(function(p){return p[0]<t0&&p[1]>0}).concat(l)},function(){return a.filter(function(p){return p[1]>0})})},function(){return local()});
+  return Promise.all([pd,pp]).then(function(r){
+    st.C=calcula(r[0],r[1]);st.err=!st.C.length;
+    $('est').textContent='Última actualización: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+' · '+r[1].length+' precios, '+r[0].length+' ajustes de dificultad'+(st.C.length<4?' · ⚠️ no se detectaron todos los ciclos':'');
+    pinta();
+  }).catch(function(e){st.err=true;$('est').textContent='⚠️ No se pudieron cargar los datos ('+(e&&e.message||'sin respuesta')+'). Recarga en unos segundos.';pinta()});
+}
+window.addEventListener('resize',dibuja);
+var WEB='https://dashboard482.github.io/dashboard/ciclos_mineros.html';
+function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+$('shx').onclick=function(){abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('⛏️ Ciclos de Bitcoin alineados por el suelo de dificultad de los mineros\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB))};
+pinta();carga();
+})();
+</script></body></html>
