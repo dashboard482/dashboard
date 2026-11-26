@@ -255,7 +255,7 @@ function dibuja(P,TR){
 function pintaSenal(){
   var el=$('sg'),a=BY[st.k],p=st.p,B=st.bt,S=senal(p,B),hl=HZ(st.k)===30?'30 días':'1 mes';
   var up=p>.5,ic=up?'🟢':'🔴',pr=up?p:1-p;
-  var h='<div class="sigtop"><span class="dot">'+ic+'</span><div><div class="sigt">'+a[2]+' '+a[1]+': '+fmt(p*100,0)+' % de probabilidad de subir a '+hl+'</div><div class="sigs">'+fmt((1-p)*100,0)+' % de bajar · modelo con '+NF+' datos</div></div></div>'+
+  var h='<div class="sigtop"><span class="dot">'+ic+'</span><div><div class="sigt">'+a[2]+' '+a[1]+': '+fmt(pr*100,0)+' % de probabilidad de '+(up?'subir':'bajar')+' a '+hl+'</div><div class="sigs">'+fmt((1-pr)*100,0)+' % de '+(up?'bajar':'subir')+' · modelo con '+NF+' datos</div></div></div>'+
    '<div class="pbar"><i style="width:'+(p*100)+'%"></i></div>';
   if(!B)h+=st.busy?'<div class="acc dim">Calculando cuántas veces habría acertado…</div>':'<div class="acc dim">Historia insuficiente para comprobar el acierto.</div>';
   else{
@@ -340,8 +340,8 @@ function rangos(){var b=$('rng');b.textContent='';[[6,'6 meses'],[12,'1 año'],[
 var sumBusy=false,sumRows=[];
 function pintaSum(){
   var rows=sumRows.slice().sort(function(a,b){return(b.v-a.v)||(b.acc-a.acc)});
-  var h='<tr><th>Activo</th><th>Prob. sube</th><th>Acierto</th><th>Ventaja</th></tr>';
-  rows.forEach(function(r){h+='<tr class="tr" data-k="'+r.k+'"><td>'+BY[r.k][2]+' '+BY[r.k][1]+'</td><td>'+(r.p>.5?'🟢':'🔴')+' '+fmt(r.p*100,0)+' %</td><td>'+fmt(r.acc*100,0)+' % <span class="dim">(base '+fmt(r.base*100,0)+')</span></td><td>'+(r.v?'✅':'⚠️')+'</td></tr>'});
+  var h='<tr><th>Activo</th><th>Probabilidad</th><th>Acierto</th><th>Ventaja</th></tr>';
+  rows.forEach(function(r){h+='<tr class="tr" data-k="'+r.k+'"><td>'+BY[r.k][2]+' '+BY[r.k][1]+'</td><td>'+(r.p>.5?'🟢 sube ':'🔴 baja ')+fmt((r.p>.5?r.p:1-r.p)*100,0)+' %</td><td>'+fmt(r.acc*100,0)+' % <span class="dim">(base '+fmt(r.base*100,0)+')</span></td><td>'+(r.v?'✅':'⚠️')+'</td></tr>'});
   $('ts').innerHTML=h;Array.prototype.forEach.call($('ts').querySelectorAll('tr[data-k]'),function(tr){tr.onclick=function(){abre(tr.getAttribute('data-k'));window.scrollTo(0,0)}});
 }
 function todos(){
@@ -362,7 +362,7 @@ $('bs').onclick=todos;
 window.addEventListener('resize',function(){if(st.P)dibuja(st.P,st.TR)});
 var WEB='https://dashboard482.github.io/dashboard/tendencia.html';
 function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
-$('shx').onclick=function(){var a=BY[st.k],t='📈 '+a[1]+': tendencia y probabilidad';if(st.P){var S=senal(st.p,st.bt);t+='\n'+(st.p>.5?'🟢':'🔴')+' '+fmt(st.p*100,0)+' % de subir a 1 mes'+(S?(S.v?' ✅ ventaja demostrada':' (sin ventaja demostrada)'):'')+' · '+st.TR.tx}
+$('shx').onclick=function(){var a=BY[st.k],t='📈 '+a[1]+': tendencia y probabilidad';if(st.P){var S=senal(st.p,st.bt);t+='\n'+(st.p>.5?'🟢 ':'🔴 ')+fmt((st.p>.5?st.p:1-st.p)*100,0)+' % de '+(st.p>.5?'subir':'bajar')+' a 1 mes'+(S?(S.v?' ✅ ventaja demostrada':' (sin ventaja demostrada)'):'')+' · '+st.TR.tx}
   abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent(t+'\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB))};
 rangos();abre(st.k);
 })();
