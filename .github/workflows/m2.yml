@@ -1,0 +1,75 @@
+name: M2 Fed
+on:
+  schedule:
+    - cron: "55 22 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  m2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar M2
+        run: |
+          mkdir -p historico
+          python3 - <<'PY'
+          import json, urllib.request, urllib.parse, datetime, calendar
+          B='https://api.db.nomics.world/v22/'
+          def get(u):
+              r=urllib.request.Request(u,headers={'User-Agent':'Mozilla/5.0'})
+              return json.load(urllib.request.urlopen(r,timeout=60))
+          docs=[]
+          for q in ['M2','M2 seasonally adjusted','Money stock M2']:
+              try:
+                  u=B+'series/FED/H6_H6_M2?limit=100&observations=0&q='+urllib.parse.quote(q)
+                  d=get(u)
+                  docs=d['series']['docs']
+                  if docs: break
+              except Exception as e:
+                  print('fallo',q,e)
+          if not docs:
+              try:
+                  docs=get(B+'series/FED/H6_H6_M2?limit=100&observations=0')['series']['docs']
+              except Exception as e:
+                  print('fallo lista',e)
+          print('SERIES',len(docs))
+          for x in docs[:60]:
+              print(' ',x.get('series_code'),'|',x.get('series_name'),'|',x.get('@frequency'))
+          def score(x):
+              n=(x.get('series_name') or '')+' '+(x.get('series_code') or '')
+              n=n.lower()
+              sc=0
+              if 'm2' in n: sc+=2
+              if 'seasonally adjusted' in n and 'not seasonally' not in n: sc+=3
+              if 'not seasonally' in n or 'nsa' in n.split(): sc-=3
+              if x.get('@frequency')=='monthly': sc+=2
+              if 'weekly' in n or x.get('@frequency')=='weekly': sc-=1
+              return sc
+          docs.sort(key=score,reverse=True)
+          if not docs: raise SystemExit('sin series')
+          best=docs[0]; print('ELEGIDA',best.get('series_code'),best.get('series_name'),best.get('@frequency'))
+          d=get(B+'series/FED/H6_H6_M2/'+best['series_code']+'?observations=1')
+          s=d['series']['docs'][0]
+          out=[]
+          for p,v in zip(s['period'],s['value']):
+              if v in (None,'NA') or isinstance(v,str): continue
+              try:
+                  if len(p)==7: y,m=int(p[:4]),int(p[5:7]); dt=datetime.datetime(y,m,15)
+                  else: dt=datetime.datetime.strptime(p[:10],'%Y-%m-%d')
+              except Exception: continue
+              out.append([int(dt.replace(tzinfo=datetime.timezone.utc).timestamp()*1000),float(v)])
+          print('PUNTOS',len(out),out[:1],out[-2:])
+          if len(out)<100: raise SystemExit('pocos datos')
+          if out[-1][1]>1e6: out=[[a,b/1000] for a,b in out]
+          if out[-1][1]<1000: print('AVISO unidades raras')
+          json.dump({'M2SL':out},open('historico/fed_m2.json','w'))
+          PY
+      - name: Guardar
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add historico
+          git diff --cached --quiet || git commit -m "M2 Fed"
+          for i in 1 2 3; do git pull --rebase -X theirs origin main && git push && break; sleep 5; done
