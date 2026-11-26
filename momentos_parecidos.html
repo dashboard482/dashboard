@@ -40,6 +40,7 @@ td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-
 <h1 id="h1">🔍 Momentos parecidos</h1>
 <div class="sub">Busca en la historia los momentos cuya forma de los últimos días se parece a la de hoy y enseña qué pasó después. Da una señal y, <b>junto a ella, cuántas veces habría acertado en el pasado</b>. No es una predicción segura.</div>
 <div id="sel"></div>
+<div class="row"><a class="btn" id="vt" href="tendencia.html">📈 Ver también: tendencia y probabilidad</a></div>
 <div class="row"><small>Mirar los últimos</small><span id="vent"></span></div>
 <div class="sub" id="est" style="margin-top:8px">cargando la historia…</div>
 <div class="card ex" id="ex"><details open><summary>❓ Cómo funciona y cómo leerlo</summary>
@@ -338,7 +339,7 @@ function pintaBt(){
 function abre(k){
   st.k=k;st.tok++;st.D=null;st.bt=null;st.P=(BY[k][4]==='Cripto')?PS.c:PS.a;
   try{localStorage.setItem('mp.a',k)}catch(e){}
-  var a=BY[k];$('h1').textContent='🔍 Momentos parecidos · '+a[1];
+  var a=BY[k];$('h1').textContent='🔍 Momentos parecidos · '+a[1];$('vt').href='tendencia.html?a='+k;
   chips();
   $('cg').style.display=$('ct').style.display=$('cl').style.display=$('cb').style.display=$('sg').style.display=$('cp').style.display=$('cv2c').style.display='none';
   $('est').textContent='cargando la historia de '+a[1]+'…';
