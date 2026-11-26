@@ -40,10 +40,15 @@ canvas{display:block;width:100%;height:300px;touch-action:pan-y}
 <div class="row" id="modo"></div>
 <div class="stats" id="stats"></div>
 <div class="cw"><div class="leg" id="leg"></div><canvas id="cv"></canvas><div id="tip">Toca el gráfico para ver los valores</div></div>
-<div class="que"><b>Cómo leerlo.</b> Eje horizontal: días desde el suelo de dificultad de cada ciclo. Eje vertical (escala logarítmica): el precio dividido entre el precio de ese día (100 % = precio del suelo). La línea gruesa es el ciclo actual; las finas son los anteriores. Si la gruesa se ve en un punto parecido al de las otras cuando estas ya habían hecho techo, es la lectura que muestra el tuit. Son solo 4 ciclos y cada uno ha subido menos que el anterior: es contexto histórico, no una predicción.</div>
+<div class="que"><b>Cómo leerlo.</b><br>• Todas las líneas empiezan a la izquierda en el mismo punto: el día del suelo de dificultad de ese ciclo (=100 %).<br>• Hacia la derecha pasan los años. Una línea que sube hasta 1.000 % es que el precio se multiplicó por 10.<br>• La <b>línea gruesa naranja</b> es el ciclo actual; compárala con las finas.<br>• Mira sobre todo <b>cuándo</b> hizo techo cada ciclo y cuánto tardó en volver a un suelo.</div>
 <div class="que" id="tab"></div>
+<h1 style="margin-top:22px">⚡ Coste de minar vs precio de Bitcoin</h1>
+<div class="sub">Estimación de cuánto cuesta producir 1 BTC solo en electricidad, comparada con su precio. Cuando el precio baja del coste, a los mineros les sale a pérdidas: es lo que se llama capitulación.</div>
+<div class="stats" id="st3"></div>
+<div class="cw"><div class="leg"><span><i style="background:var(--btc)"></i>Precio de Bitcoin</span><span><i style="background:#ef4444"></i>Coste estimado de minar 1 BTC</span></div><canvas id="cv3"></canvas><div id="tip3">Toca el gráfico para ver los valores</div></div>
+<div class="que" id="tab3"></div>
 <div class="estado" id="est">cargando…</div>
-<div class="note">Fuentes: dificultad de minado y precio histórico de Blockchain.com (gráficos públicos), y el histórico de Bitcoin guardado en el Hub para los últimos años. El suelo de dificultad se calcula como la mayor caída de dificultad entre el techo de precio de cada ciclo y el siguiente halving; las fechas salen en la tabla para que las puedas revisar. Informativo, no es consejo financiero.</div>
+<div class="note">Fuentes: dificultad de minado, potencia de la red (hashrate) y precio histórico de Blockchain.com (gráficos públicos), y el histórico de Bitcoin guardado en el Hub para los últimos años. El suelo de dificultad se calcula como la mayor caída de dificultad entre el techo de precio de cada ciclo y el siguiente halving; las fechas salen en la tabla para que las puedas revisar. Informativo, no es consejo financiero.</div>
 <script src="telegram.js" defer></script>
 <script>
 (function(){
@@ -57,7 +62,12 @@ var CICLOS=[
  {n:'2018-2022',col:'#34d399',ath:'2017-12-17',fin:'2020-05-11'},
  {n:'2022-hoy',col:'#f7a600',ath:'2021-11-10',fin:'2024-04-20'}
 ];
-var st={log:true,hover:null,C:null};
+var st={log:true,hover:null,C:null,K:null,hover3:null};
+var LUZ=0.07;// $/kWh
+var EFF=[[2015,600],[2016,300],[2017,150],[2018,100],[2019,75],[2020,60],[2021,48],[2022,38],[2023,32],[2024,28],[2025,25],[2026,23]];// J/TH medios de la red (estimación)
+function eff(t){var y=1970+t/(365.25*DAY),i;if(y<=EFF[0][0])return EFF[0][1];if(y>=EFF[EFF.length-1][0])return EFF[EFF.length-1][1];for(i=0;i<EFF.length-1;i++)if(y<EFF[i+1][0]){var f=(y-EFF[i][0])/(EFF[i+1][0]-EFF[i][0]);return Math.exp(Math.log(EFF[i][1])*(1-f)+Math.log(EFF[i+1][1])*f)}}
+function sub(t){return t<Date.UTC(2012,10,28)?50:t<Date.UTC(2016,6,9)?25:t<Date.UTC(2020,4,11)?12.5:t<Date.UTC(2024,3,20)?6.25:3.125}
+function cost(t,hr){return hr*eff(t)*86400/3.6e6*LUZ/(144*sub(t))}
 function fmt(v,d){return Number(v).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d})}
 function fecha(t){return new Date(t).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}
 function pedir(u,ms){var c=new AbortController(),t=setTimeout(function(){c.abort()},ms);return fetch(u,{signal:c.signal,cache:'no-store'}).then(function(r){clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return r.text()},function(e){clearTimeout(t);throw e})}
@@ -81,7 +91,55 @@ function calcula(dif,pre){
     var pk=thin.reduce(function(m,p){return p[1]>m[1]?p:m},thin[0]);
     out.push({n:c.n,col:c.col,bd:bd,drop:(1-mn)*100,p0:p0,pts:thin,max:pk,act:k===CICLOS.length-1});
   });
+  out.forEach(function(c,i){var n=out[i+1];c.next=n?n.bd:null;var pk=c.max;c.pkDay=pk[0];c.pkPrice=pk[2];c.pkX=pk[1];
+    var u=c.pts[c.pts.length-1];c.nowPrice=u[2];
+    if(n){c.dur=(n.bd-c.bd)/DAY;c.after=cercano(pre,n.bd)[1]/c.pkPrice-1}else{c.dur=null;c.after=u[2]/c.pkPrice-1}});
   return out;
+}
+function calcCoste(hr,pre){
+  var t0=Date.UTC(2015,0,1),o=[],last=0;
+  pre.forEach(function(p){if(p[0]<t0||p[0]-last<6*DAY)return;var h=cercano(hr,p[0]);if(Math.abs(h[0]-p[0])>10*DAY)return;last=p[0];o.push([p[0],p[1],cost(p[0],h[1])])});
+  var u=pre[pre.length-1],h=hr[hr.length-1];if(o.length&&u[0]>o[o.length-1][0])o.push([u[0],u[1],cost(u[0],h[1])]);
+  return o;
+}
+function dibuja3(){
+  var cv=$('cv3'),cx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,r=cv.getBoundingClientRect(),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
+  cv.width=w;cv.height=h;cx.clearRect(0,0,w,h);var cs=getComputedStyle(document.documentElement),gv=function(n){return cs.getPropertyValue(n).trim()};
+  if(!st.K){cx.fillStyle=gv('--dim');cx.font=(14*dpr)+'px sans-serif';cx.textAlign='center';cx.fillText(st.errK?'No hay datos de hashrate':'Cargando datos…',w/2,h/2);return}
+  var K=st.K,pl=8*dpr,pr=52*dpr,pt=10*dpr,pb=22*dpr,t0=K[0][0],t1=K[K.length-1][0],vmin=1e18,vmax=0;
+  K.forEach(function(p){[p[1],p[2]].forEach(function(v){if(v>0&&v<vmin)vmin=v;if(v>vmax)vmax=v})});
+  var lo=Math.log(Math.max(vmin*.8,100)),hi=Math.log(vmax*1.15),X=function(t){return pl+(t-t0)/(t1-t0)*(w-pl-pr)},Y=function(v){return pt+(1-(Math.log(Math.max(v,1))-lo)/(hi-lo))*(h-pt-pb)};
+  st.G3={X:X,pl:pl,pr:w-pr,t0:t0,t1:t1,dpr:dpr};
+  cx.lineWidth=dpr;cx.strokeStyle=gv('--bd');cx.fillStyle=gv('--dim');cx.font=(11*dpr)+'px sans-serif';cx.textAlign='left';
+  [1000,3000,10000,30000,100000].forEach(function(v){var y=Y(v);if(y<pt||y>h-pb)return;cx.beginPath();cx.moveTo(pl,y);cx.lineTo(w-pr,y);cx.stroke();cx.fillText('$'+fmt(v,0),w-pr+4*dpr,y+4*dpr)});
+  cx.textAlign='center';for(var y=2016;y<=2026;y+=2){var x=X(Date.UTC(y,0,1));cx.fillText(y,x,h-6*dpr)}
+  // sombreado: precio por debajo del coste
+  cx.fillStyle='rgba(239,68,68,.16)';for(var i=1;i<K.length;i++){if(K[i][1]<K[i][2]&&K[i-1][1]<K[i-1][2]){cx.fillRect(X(K[i-1][0]),pt,Math.max(1,X(K[i][0])-X(K[i-1][0])),h-pt-pb)}}
+  function lin(k,col,lw){cx.strokeStyle=col;cx.lineWidth=lw*dpr;cx.lineJoin='round';cx.beginPath();K.forEach(function(p,i){i?cx.lineTo(X(p[0]),Y(p[k])):cx.moveTo(X(p[0]),Y(p[k]))});cx.stroke()}
+  lin(2,'#ef4444',2);lin(1,gv('--btc'),2);
+  // suelos de dificultad
+  if(st.C)st.C.forEach(function(c){if(c.bd>=t0){var x=X(c.bd);cx.strokeStyle=gv('--dim');cx.setLineDash([3*dpr,3*dpr]);cx.lineWidth=dpr;cx.beginPath();cx.moveTo(x,pt);cx.lineTo(x,h-pb);cx.stroke();cx.setLineDash([])}});
+  if(st.hover3!=null){cx.strokeStyle=gv('--dim');cx.beginPath();cx.moveTo(st.hover3,pt);cx.lineTo(st.hover3,h-pb);cx.stroke()}
+}
+function mueve3(ev){
+  if(!st.K||!st.G3)return;var G=st.G3,r=$('cv3').getBoundingClientRect(),px=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left,x=Math.max(G.pl,Math.min(G.pr,px*G.dpr)),t=G.t0+(x-G.pl)/(G.pr-G.pl)*(G.t1-G.t0);
+  st.hover3=x;dibuja3();var p=cercano(st.K,t);
+  $('tip3').innerHTML=fecha(p[0])+' · precio <b style="color:var(--btc)">$'+fmt(p[1],0)+'</b> · coste <b style="color:#ef4444">$'+fmt(p[2],0)+'</b> · '+(p[1]>=p[2]?'<b class="up">margen '+fmt((p[1]/p[2]-1)*100,0)+' %</b>':'<b class="dn">a pérdidas ('+fmt((p[1]/p[2]-1)*100,0)+' %)</b>');
+}
+['mousemove','touchstart','touchmove'].forEach(function(e){$('cv3').addEventListener(e,mueve3,{passive:true})});
+$('cv3').addEventListener('mouseleave',function(){st.hover3=null;dibuja3()});
+function pinta3(){
+  var s=$('st3');s.textContent='';var t=$('tab3');
+  if(st.K){var u=st.K[st.K.length-1],m=u[1]/u[2]-1;
+    var a=document.createElement('div');a.className='stat';a.innerHTML='<small>Coste estimado hoy</small><b>$'+fmt(u[2],0)+'</b><span>por 1 BTC (solo luz)</span>';
+    var b=document.createElement('div');b.className='stat';b.innerHTML='<small>Precio hoy</small><b>$'+fmt(u[1],0)+'</b><span class="'+(m>=0?'up':'dn')+'">'+(m>=0?'▲ '+fmt(m*100,0)+' % por encima del coste':'▼ '+fmt(-m*100,0)+' % por debajo del coste')+'</span>';
+    s.append(a,b);
+    var h='<b>En cada suelo de dificultad</b><br>';
+    if(st.C)st.C.forEach(function(c){if(c.bd<Date.UTC(2015,0,1)){h+='<span style="color:'+c.col+'">●</span> '+fecha(c.bd)+': sin estimación fiable del coste (años de minado con GPU).<br>';return}
+      var p=cercano(st.K,c.bd),r=p[1]/p[2]-1;h+='<span style="color:'+c.col+'">●</span> '+fecha(c.bd)+': Bitcoin a <b>$'+fmt(p[1],0)+'</b>, coste ≈ <b>$'+fmt(p[2],0)+'</b> → '+(r>=0?'<b class="up">'+fmt(r*100,0)+' % por encima</b>':'<b class="dn">'+fmt(-r*100,0)+' % por debajo</b>')+' del coste.<br>'});
+    h+='<br><span class="sub"><b>Cómo se calcula:</b> potencia total de la red (hashrate) × eficiencia media de las máquinas de esa época × electricidad a '+fmt(LUZ,2)+' $/kWh, entre los BTC que se emiten al día (144 bloques × recompensa vigente). Es un cálculo orientativo: no incluye comisiones, máquinas, naves ni que cada minero paga una luz distinta. La eficiencia de cada año es una estimación (de ~600 J/TH en 2015 a ~23 J/TH hoy). Las zonas sombreadas en rojo son los periodos con el precio por debajo del coste.</span>';
+    t.innerHTML=h}
+  dibuja3();
 }
 function dibuja(){
   var cv=$('cv'),cx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,r=cv.getBoundingClientRect(),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));
@@ -125,8 +183,16 @@ function pinta(){
     var b1=document.createElement('div');b1.className='stat';b1.innerHTML='<small>Ciclo actual · día '+fmt(dias,0)+'</small><b>'+fmt(u[1],0)+' %</b><span>del precio en su suelo ('+fecha(a.bd)+')</span>';
     var pk=a.max;var b2=document.createElement('div');b2.className='stat';b2.innerHTML='<small>Máximo del ciclo actual</small><b>'+fmt(pk[1],0)+' %</b><span>al día '+fmt(pk[0],0)+'</span>';
     s.append(b1,b2);
-    var h='<b>Suelos de dificultad detectados</b><br>';
-    st.C.forEach(function(c){h+='<span style="color:'+c.col+'">●</span> '+c.n+': '+fecha(c.bd)+' (dificultad −'+fmt(c.drop,1)+' %), máximo del ciclo +'+fmt(c.max[1]-100,0)+' % al día '+fmt(c.max[0],0)+'<br>'});
+    var h='<b>Resumen en palabras sencillas</b><br>';
+    var prev=st.C.slice(0,-1),mdur=prev.filter(function(c){return c.dur}).map(function(c){return c.dur});
+    var md=mdur.length?Math.round(mdur.reduce(function(x,y){return x+y},0)/mdur.length):0;
+    h+='Hoy estamos en el <b>día '+fmt(dias,0)+'</b> desde el último suelo de dificultad ('+fecha(a.bd)+'). Entre un suelo y el siguiente pasaron de media <b>'+fmt(md,0)+' días</b>'+(md?' (unos '+fmt(md/365,1)+' años)':'')+'. '+(dias>=md*0.95?'El ciclo actual ya está en esa zona: históricamente es cuando aparece el siguiente suelo, aunque nada obliga a que se repita.':'Al ciclo actual aún le falta para llegar a esa duración media.')+'<br><br>';
+    h+='<b>Qué hizo Bitcoin en cada ciclo</b><br>';
+    st.C.forEach(function(c){
+      h+='<span style="color:'+c.col+'">●</span> <b>'+c.n+'</b>: desde su suelo subió hasta <b>×'+fmt(c.pkX/100,1)+'</b> (al día '+fmt(c.pkDay,0)+'). '+
+      (c.next?'Después cayó <b>'+fmt(Math.abs(c.after)*100,0)+' %</b> desde el techo hasta el siguiente suelo, '+fmt(c.dur,0)+' días tras el anterior.':'Desde su techo lleva <b>'+(c.after>=0?'+':'−')+fmt(Math.abs(c.after)*100,0)+' %</b>. Aún no tiene siguiente suelo.')+'<br>';
+    });
+    h+='<br><span class="sub">Suelos detectados: '+st.C.map(function(c){return fecha(c.bd)}).join(' · ')+'</span>';
     $('tab').innerHTML=h;
   }
   dibuja();
@@ -135,13 +201,15 @@ function carga(){
   $('est').textContent='cargando…';
   var pd=bc('difficulty');
   var pp=bc('market-price','&sampled=true').then(function(a){return local().then(function(l){var t0=l[0][0];return a.filter(function(p){return p[0]<t0&&p[1]>0}).concat(l)},function(){return a.filter(function(p){return p[1]>0})})},function(){return local()});
-  return Promise.all([pd,pp]).then(function(r){
+  var ph=bc('hash-rate').catch(function(){return null});
+  return Promise.all([pd,pp,ph]).then(function(r){
     st.C=calcula(r[0],r[1]);st.err=!st.C.length;
     $('est').textContent='Última actualización: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+' · '+r[1].length+' precios, '+r[0].length+' ajustes de dificultad'+(st.C.length<4?' · ⚠️ no se detectaron todos los ciclos':'');
-    pinta();
-  }).catch(function(e){st.err=true;$('est').textContent='⚠️ No se pudieron cargar los datos ('+(e&&e.message||'sin respuesta')+'). Recarga en unos segundos.';pinta()});
+    if(r[2]){st.K=calcCoste(r[2],r[1]);st.errK=!st.K.length}else st.errK=true;
+    pinta();pinta3();
+  }).catch(function(e){st.err=true;$('est').textContent='⚠️ No se pudieron cargar los datos ('+(e&&e.message||'sin respuesta')+'). Recarga en unos segundos.';pinta();pinta3()});
 }
-window.addEventListener('resize',dibuja);
+window.addEventListener('resize',function(){dibuja();dibuja3()});
 var WEB='https://dashboard482.github.io/dashboard/ciclos_mineros.html';
 function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
 $('shx').onclick=function(){abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('⛏️ Ciclos de Bitcoin alineados por el suelo de dificultad de los mineros\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB))};
