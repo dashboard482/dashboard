@@ -44,7 +44,7 @@ canvas{display:block;width:100%;height:300px;touch-action:pan-y}
 <div class="cw"><div class="leg"><span><i id="l1" style="background:var(--liq)"></i><span id="ln1">Liquidez</span></span><span><i style="background:var(--btc)"></i>Bitcoin</span></div><canvas id="cv"></canvas><div id="tip">Toca el gráfico para ver los valores</div></div>
 <div class="que" id="que"></div>
 <div class="estado" id="est">cargando…</div>
-<div class="note">Fuentes: FRED (Reserva Federal de St. Louis) para liquidez y M2, Binance para Bitcoin. «Adelantar» desplaza la liquidez 10 semanas hacia delante, la comparación habitual para ver si Bitcoin sigue a la liquidez con retraso; es una observación, no una promesa de que se repita. Informativo, no es consejo financiero.</div>
+<div class="note">Fuentes: Reserva Federal (balance H.4.1 y M2 H.6, vía DBnomics), Tesoro de EEUU (TGA), Fed de Nueva York (repos inversos), Binance/Yahoo para Bitcoin. «Adelantar» desplaza la liquidez 10 semanas hacia delante, la comparación habitual para ver si Bitcoin sigue a la liquidez con retraso; es una observación, no una promesa de que se repita. Informativo, no es consejo financiero.</div>
 </div>
 <script src="telegram.js" defer></script>
 <script>
@@ -97,7 +97,7 @@ function klines(){
 }
 function localFred(){
   var f=function(n){return pedir('historico/'+n+'.json?t='+Math.floor(Date.now()/36e5),15000).then(JSON.parse).catch(function(){return null})};
-  return Promise.all([f('fred'),f('liquidez_extra'),f('fed_balance')]).then(function(r){
+  return Promise.all([f('fred'),f('liquidez_extra'),f('fed_balance'),f('fed_m2')]).then(function(r){
     var m={};
     r.forEach(function(j){if(!j)return;['WALCL','WTREGEN','RRPONTSYD','M2SL'].forEach(function(k){if(j[k]&&j[k].length>=10)m[k]=j[k]})});
     if(!(m.WALCL&&m.WTREGEN&&m.RRPONTSYD))throw new Error('faltan datos guardados');
