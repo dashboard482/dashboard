@@ -56,7 +56,7 @@ td{padding:7px 4px;border-top:1px solid var(--bd);text-align:right;font-variant-
  <canvas id="cv"></canvas>
  <div class="sub" id="cap" style="margin-top:6px"></div>
 </div>
-<div class="card" id="cv2c" style="display:none"><h2>🕯️ Dónde podría ir</h2><canvas id="cv2" style="height:240px"></canvas><div class="sub" id="cv2n" style="margin-top:6px"></div></div>
+<div class="card" id="cv2c" style="display:none"><h2>🕯️ Dónde podría ir</h2><canvas id="cv2" style="height:340px"></canvas><div class="sub" id="cv2n" style="margin-top:6px"></div></div>
 <div class="card" id="cp" style="display:none"><h2 id="cph">📊 Probabilidad de movimiento</h2><div class="pr" id="prb"></div><div class="sub" id="prn" style="margin-top:8px"></div></div>
 <div class="card" id="ct" style="display:none"><h2>¿Qué pasó después?</h2><table id="tb"></table><div class="sub" id="tbn" style="margin-top:8px"></div></div>
 <div class="card" id="cl" style="display:none"><h2>Los 8 momentos más parecidos</h2><div id="ls"></div></div>
@@ -246,32 +246,42 @@ function pintaSenal(){
 function velas(sel){
   var D=st.D,P=st.P,C=D.C,T=D.n-1,HM=P.hmax,cv=$('cv2'),cx=cv.getContext('2d'),dpr=window.devicePixelRatio||1,r=cv.getBoundingClientRect(),w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
   cv.width=w;cv.height=h;cx.clearRect(0,0,w,h);
-  var H0=Math.min(40,st.W),px=C[T],pl=8*dpr,pr=48*dpr,pt=8*dpr,pb=20*dpr;
-  var hs=[];for(var x=7;x<=HM;x+=7)hs.push(x);
-  var q=hs.map(function(hh){var f=sel.map(function(sx){return px*(1+fwd(C,sx[0],hh))});return{h:hh,p10:pct(f,.1),p25:pct(f,.25),p50:pct(f,.5),p75:pct(f,.75),p90:pct(f,.9)}});
-  var vmin=1e18,vmax=-1e18,i;
-  for(i=T-H0;i<=T;i++){if(C[i]<vmin)vmin=C[i];if(C[i]>vmax)vmax=C[i]}
+  var g=HM>=91?7:5,NC=26,H0=Math.min(NC*g,T-g-1),px=C[T],pl=8*dpr,pr=52*dpr,pt=12*dpr,pb=20*dpr;
+  var hs=[0];for(var x=7;x<=HM;x+=7)hs.push(x);
+  if(hs[hs.length-1]!==HM)hs.push(HM);
+  var q=hs.map(function(hh){if(!hh)return{h:0,p10:px,p25:px,p50:px,p75:px,p90:px};var f=sel.map(function(sx){return px*(1+fwd(C,sx[0],hh))});return{h:hh,p10:pct(f,.1),p25:pct(f,.25),p50:pct(f,.5),p75:pct(f,.75),p90:pct(f,.9)}});
+  // velas semanales a partir de cierres diarios
+  var cd=[],i,k;
+  for(k=T;k-g>=T-H0;k-=g){var o=C[k-g],c=C[k],hi=Math.max(o,c),lo=Math.min(o,c);for(i=k-g+1;i<=k;i++){if(C[i]>hi)hi=C[i];if(C[i]<lo)lo=C[i]}cd.unshift({o:o,c:c,h:hi,l:lo,x:k-T-g/2})}
+  var vmin=1e18,vmax=-1e18;
+  cd.forEach(function(d){if(d.l<vmin)vmin=d.l;if(d.h>vmax)vmax=d.h});
   q.forEach(function(o){if(o.p10<vmin)vmin=o.p10;if(o.p90>vmax)vmax=o.p90});
   var mg=(vmax-vmin)*.06;vmin-=mg;vmax+=mg;
-  var X=function(k){return pl+(k+H0)/(H0+HM+4)*(w-pl-pr)},Y=function(v){return pt+(1-(v-vmin)/(vmax-vmin))*(h-pt-pb)};
+  var X=function(k){return pl+(k+H0)/(H0+HM)*(w-pl-pr)},Y=function(v){return pt+(1-(v-vmin)/(vmax-vmin))*(h-pt-pb)};
   var cs=getComputedStyle(document.documentElement),gv=function(n){return cs.getPropertyValue(n).trim()};
-  var dec=px>=100?0:px>=1?2:4;
+  var UP=gv('--up'),DN=gv('--dn'),AZ='#3b82f6',dec=px>=100?0:px>=1?2:4;
+  // zona de proyección
+  cx.fillStyle='rgba(128,128,128,.07)';cx.fillRect(X(0),pt,w-pr-X(0),h-pt-pb);
   cx.lineWidth=dpr;cx.strokeStyle=gv('--bd');cx.fillStyle=gv('--dim');cx.font=(11*dpr)+'px sans-serif';cx.textAlign='left';
   for(i=0;i<=4;i++){var v=vmin+(vmax-vmin)*i/4,y=Y(v);cx.beginPath();cx.moveTo(pl,y);cx.lineTo(w-pr,y);cx.stroke();cx.fillText(fmt(v,dec),w-pr+5*dpr,y+4*dpr)}
-  cx.setLineDash([3*dpr,3*dpr]);cx.beginPath();cx.moveTo(X(0),Y(px));cx.lineTo(w-pr,Y(px));cx.stroke();cx.setLineDash([]);
-  cx.textAlign='center';cx.fillText('hoy',X(0),h-5*dpr);cx.fillText('+'+HM+' d',X(HM),h-5*dpr);
-  cx.strokeStyle=gv('--st');cx.lineWidth=2*dpr;cx.lineJoin='round';cx.beginPath();
-  for(i=-H0;i<=0;i++){var xx=X(i),yy=Y(C[T+i]);i===-H0?cx.moveTo(xx,yy):cx.lineTo(xx,yy)}cx.stroke();
-  var bw=Math.max(5*dpr,(X(7)-X(0))*.55);
-  q.forEach(function(o){
-    var up=o.p50>=px,col=up?gv('--up'):gv('--dn'),xc=X(o.h);
-    cx.strokeStyle=col;cx.lineWidth=1.5*dpr;cx.beginPath();cx.moveTo(xc,Y(o.p90));cx.lineTo(xc,Y(o.p10));cx.stroke();
-    cx.globalAlpha=.45;cx.fillStyle=col;cx.fillRect(xc-bw/2,Y(o.p75),bw,Math.max(1,Y(o.p25)-Y(o.p75)));cx.globalAlpha=1;
-    cx.strokeRect(xc-bw/2,Y(o.p75),bw,Math.max(1,Y(o.p25)-Y(o.p75)));
-    cx.lineWidth=2.5*dpr;cx.beginPath();cx.moveTo(xc-bw/2,Y(o.p50));cx.lineTo(xc+bw/2,Y(o.p50));cx.stroke();
-  });
-  var L=q[q.length-1],a=BY[st.k];
-  $('cv2n').textContent='Cada vela resume los '+sel.length+' momentos parecidos a ese día futuro: el cuerpo cubre el 50 % central de los casos, la mecha el 80 %, y la raya gruesa es el caso mediano. Verde = el caso mediano acaba por encima de hoy. A +'+HM+' días: mediana '+fmt(L.p50,dec)+' ('+pc(L.p50/px-1)+'), rango del 80 %: '+fmt(L.p10,dec)+' a '+fmt(L.p90,dec)+'. Es una zona histórica, no un objetivo de precio.';
+  // abanico
+  function banda(a,b,al){cx.globalAlpha=al;cx.fillStyle=AZ;cx.beginPath();q.forEach(function(o,j){j?cx.lineTo(X(o.h),Y(o[a])):cx.moveTo(X(o.h),Y(o[a]))});for(var j=q.length-1;j>=0;j--)cx.lineTo(X(q[j].h),Y(q[j][b]));cx.closePath();cx.fill();cx.globalAlpha=1}
+  banda('p90','p10',.12);banda('p75','p25',.2);
+  // velas históricas
+  var bw=Math.max(3*dpr,(X(g)-X(0))*.62);
+  cd.forEach(function(d){var up=d.c>=d.o,col=up?UP:DN,xc=X(d.x);cx.strokeStyle=col;cx.fillStyle=col;cx.lineWidth=1.2*dpr;cx.beginPath();cx.moveTo(xc,Y(d.h));cx.lineTo(xc,Y(d.l));cx.stroke();var y1=Y(Math.max(d.o,d.c)),y2=Y(Math.min(d.o,d.c));cx.fillRect(xc-bw/2,y1,bw,Math.max(1.5*dpr,y2-y1))});
+  // línea de precio actual y "hoy"
+  cx.strokeStyle=gv('--dim');cx.lineWidth=dpr;cx.setLineDash([2*dpr,3*dpr]);cx.beginPath();cx.moveTo(pl,Y(px));cx.lineTo(w-pr,Y(px));cx.stroke();cx.beginPath();cx.moveTo(X(0),pt);cx.lineTo(X(0),h-pb);cx.stroke();cx.setLineDash([]);
+  // escenarios
+  var L=q[q.length-1];
+  function esc(key,col,dash,lw){cx.strokeStyle=col;cx.lineWidth=lw*dpr;cx.setLineDash(dash.map(function(d){return d*dpr}));cx.beginPath();q.forEach(function(o,j){j?cx.lineTo(X(o.h),Y(o[key])):cx.moveTo(X(o.h),Y(o[key]))});cx.stroke();cx.setLineDash([])}
+  esc('p90',AZ,[5,4],1.6);esc('p10','#f97316',[5,4],1.6);esc('p50',L.p50>=px?UP:DN,[2,3],2.2);
+  function etq(key,col){var o=L[key],ch=o/px-1,t=(ch>=0?'▲ +':'▼ −')+fmt(Math.abs(ch)*100,1)+' %',xe=X(L.h),ye=Y(o);cx.fillStyle=col;cx.beginPath();cx.arc(xe,ye,3.5*dpr,0,6.3);cx.fill();cx.font='bold '+(11*dpr)+'px sans-serif';cx.textAlign='right';var yy=Math.max(pt+10*dpr,Math.min(h-pb-4*dpr,ye+(key==='p10'?14*dpr:key==='p90'?-6*dpr:4*dpr)));cx.fillText(t,xe-7*dpr,yy)}
+  etq('p90',AZ);etq('p50',L.p50>=px?UP:DN);etq('p10','#f97316');
+  // etiqueta de precio actual
+  var ty=Y(px);cx.fillStyle=gv('--st');cx.fillRect(w-pr+1,ty-9*dpr,pr-2,18*dpr);cx.fillStyle='#fff';cx.font='bold '+(11*dpr)+'px sans-serif';cx.textAlign='center';cx.fillText(fmt(px,dec),w-pr/2,ty+4*dpr);
+  cx.fillStyle=gv('--dim');cx.font=(11*dpr)+'px sans-serif';cx.fillText('hoy',X(0),h-5*dpr);cx.fillText('proyección +'+HM+' d',(X(0)+w-pr)/2,h-5*dpr);
+  $('cv2n').innerHTML='Velas de la izquierda: el historial reciente (cada vela = '+g+' días, a partir de cierres). A la derecha, la zona sombreada es donde acabaron los '+sel.length+' momentos parecidos: la banda oscura cubre el 50 % central de los casos y la clara el 80 %. Líneas: <b style="color:'+AZ+'">azul</b> = caso optimista (percentil 90), <b style="color:'+(L.p50>=px?UP:DN)+'">punteada</b> = caso mediano, <b style="color:#f97316">naranja</b> = caso pesimista (percentil 10). A +'+HM+' días: mediana '+fmt(L.p50,dec)+' ('+pc(L.p50/px-1)+'), rango del 80 %: '+fmt(L.p10,dec)+' a '+fmt(L.p90,dec)+'. Es una zona histórica, no un objetivo de precio.';
 }
 function pintaProb(sel,all){
   var P=st.P,h=P.h,f=sel.map(function(sx){return fwd(st.D.C,sx[0],h)});
