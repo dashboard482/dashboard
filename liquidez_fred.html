@@ -95,6 +95,8 @@ function klines(){
   function uno(h){return pedir('https://'+h+q,10000).then(function(t){var a=JSON.parse(t);if(!Array.isArray(a)||a.length<20)throw 0;return a.map(function(k){return[k[0],parseFloat(k[4])]})})}
   return uno('data-api.binance.vision').catch(function(){return uno('api.binance.com')});
 }
+function localFred(){return pedir('historico/fred.json?t='+Math.floor(Date.now()/36e5),15000).then(function(t){var j=JSON.parse(t),m={};['WALCL','WTREGEN','RRPONTSYD','M2SL'].forEach(function(k){if(j[k]&&j[k].length>=10)m[k]=j[k]});if(!(m.WALCL&&m.WTREGEN&&m.RRPONTSYD))throw new Error('fred.json incompleto');return m})}
+function localBtc(){return pedir('historico/btc.json?t='+Math.floor(Date.now()/36e5),15000).then(function(t){var j=JSON.parse(t),d=Date.UTC(2019,11,1),o=[];for(var i=0;i<j.t.length;i++){var ms=j.t[i]*1000;if(ms>=d&&j.c[i]>0)o.push([ms,j.c[i]])}if(o.length<50)throw new Error('btc corto');return o})}
 function cargaTodo(){
   var cache=null;
   try{cache=JSON.parse(localStorage.getItem('lqf.d')||'null')}catch(e){}
@@ -103,8 +105,8 @@ function cargaTodo(){
   var ids=['WALCL','WTREGEN','RRPONTSYD','M2SL'];
   st.fail=[];
   function individuales(){return Promise.all(ids.map(function(i){return fred(i).then(function(o){return o[i]||o[Object.keys(o)[0]]},function(){return null})})).then(function(a){var m={};ids.forEach(function(k,j){if(a[j])m[k]=a[j]});if(!Object.keys(m).length)throw new Error('ninguna');return m})}
-  var pf=fred(ids.join(',')).catch(function(){return individuales()}).then(function(m){return m},function(){st.fail.push('FRED (datos de la Fed)');return{}});
-  var pb=klines().then(function(d){return d},function(){st.fail.push('Binance (precio de Bitcoin)');return null});
+  var pf=localFred().catch(function(){return fred(ids.join(',')).catch(function(){return individuales()})}).then(function(m){return m},function(){st.fail.push('FRED (datos de la Fed)');return{}});
+  var pb=localBtc().catch(function(){return klines()}).then(function(d){return d},function(){st.fail.push('Binance (precio de Bitcoin)');return null});
   return Promise.all([pf,pb]).then(function(r){
     var m=r[0],D=st.D||{},nuevo=false;
     if(m.WALCL&&m.WTREGEN&&m.RRPONTSYD){D.net=netLiq(m.WALCL,m.WTREGEN,m.RRPONTSYD);nuevo=true}
