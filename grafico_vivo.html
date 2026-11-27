@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Gráfico en vivo · Hub Financiero</title>
+<style>
+:root{--bg:#0d1117;--pn:#131722;--p2:#1a1e29;--bd:#2a2e39;--ink:#d1d4dc;--st:#f0f3fa;--dim:#787b86;--ac:#2962ff;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--pn:#fff;--p2:#eef1f7;--bd:#dde1ea;--ink:#363a45;--st:#0e1117;--dim:#6b6f7c;color-scheme:light}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px) + var(--tgtop,0px)) 12px calc(28px + env(safe-area-inset-bottom,0px))}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--p2);color:var(--st);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
+.btn.x{background:#000;color:#fff;border-color:#333}
+h1{font-size:17px;margin:14px 0 4px;color:var(--st)}
+.sub{font-size:12.5px;color:var(--dim);line-height:1.5}
+.fila{display:flex;gap:6px;overflow-x:auto;margin:10px 0 0;padding-bottom:2px;align-items:center}
+.lab{flex:none;font-size:11px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-right:2px}
+.tab{flex:none;font:inherit;font-size:13px;font-weight:600;border:1px solid var(--bd);background:var(--p2);color:var(--ink);border-radius:16px;padding:6px 12px;cursor:pointer}
+.tab.on{background:var(--ac);border-color:var(--ac);color:#fff}
+#box{height:min(76vh,640px);min-height:420px;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--pn);margin-top:12px}
+#box .tradingview-widget-container,#box .tradingview-widget-container__widget{height:100%;width:100%}
+.que{font-size:13px;color:var(--ink);line-height:1.55;margin-top:12px;background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+.que b{color:var(--st)}
+.note{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:12px}
+.note a{color:#8ab4ff}
+</style></head><body>
+<div class="wrap">
+<header><a class="btn" href="index.html">← Hub</a><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
+<h1>📈 Gráfico en vivo</h1>
+<div class="sub">Gráfico profesional de TradingView con MACD, RSI y medias. Elige un activo, el periodo y los indicadores que quieras. Puedes buscar cualquier otro activo con la lupa del propio gráfico y dibujar líneas con las herramientas de la izquierda.</div>
+<div class="fila" id="activos"><span class="lab">Activo</span></div>
+<div class="fila" id="tf"><span class="lab">Vela</span></div>
+<div class="fila" id="ind"><span class="lab">Indicadores</span></div>
+<div id="box"></div>
+<div class="que"><b>Cómo leerlo:</b> el <b>RSI</b> mide si el precio ha subido o bajado demasiado rápido (por encima de 70 se dice «sobrecomprado», por debajo de 30 «sobrevendido»). El <b>MACD</b> compara dos medias y cruza su línea de señal cuando el impulso cambia. La <b>EMA 200</b> es la media de largo plazo: por encima, tendencia alcista; por debajo, bajista. ¿No sabes qué es algo? Míralo en la <a href="escuela.html" style="color:#8ab4ff">Escuela del Hub</a>.</div>
+<div class="note">Gráficos de <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>. Criptomonedas, divisas y muchos índices van en directo; algunas acciones pueden ir con retraso según el mercado. Gratis, sin registrarte. Informativo, no es consejo financiero.</div>
+</div>
+<script src="telegram.js" defer></script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var ACT=[['Bitcoin','BITSTAMP:BTCUSD'],['Ethereum','BITSTAMP:ETHUSD'],['Solana','BINANCE:SOLUSDT'],['S&P 500','SP:SPX'],['Nasdaq 100','NASDAQ:NDX'],['Oro','OANDA:XAUUSD'],['Plata','OANDA:XAGUSD'],['Petróleo','TVC:USOIL'],['Dólar (DXY)','TVC:DXY'],['EUR/USD','FX:EURUSD'],['Nvidia','NASDAQ:NVDA'],['Tesla','NASDAQ:TSLA'],['Apple','NASDAQ:AAPL'],['Strategy','NASDAQ:MSTR'],['Santander','BME:SAN'],['Inditex','BME:ITX'],['VIX','TVC:VIX']];
+var TF=[['15 min','15'],['1 hora','60'],['4 horas','240'],['Diario','D'],['Semanal','W']];
+var IND=[['MACD','MACD@tv-basicstudies'],['RSI','RSI@tv-basicstudies'],['EMA 200','MAExp@tv-basicstudies'],['Bollinger','BB@tv-basicstudies'],['Volumen','Volume@tv-basicstudies']];
+var st={a:0,t:3,i:{0:1,1:1}};
+try{var g=JSON.parse(localStorage.getItem('gv.st')||'null');if(g&&ACT[g.a]&&TF[g.t]&&g.i)st=g}catch(e){}
+function tema(){return (window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'}
+function guarda(){try{localStorage.setItem('gv.st',JSON.stringify(st))}catch(e){}}
+function chips(id,arr,on,fn){
+  var f=$(id);Array.prototype.slice.call(f.querySelectorAll('.tab')).forEach(function(x){f.removeChild(x)});
+  arr.forEach(function(x,i){var b=document.createElement('button');b.type='button';b.className='tab'+(on(i)?' on':'');b.textContent=x[0];b.onclick=function(){fn(i)};f.appendChild(b)});
+}
+function pinta(){
+  chips('activos',ACT,function(i){return i===st.a},function(i){st.a=i;guarda();pinta()});
+  chips('tf',TF,function(i){return i===st.t},function(i){st.t=i;guarda();pinta()});
+  chips('ind',IND,function(i){return !!st.i[i]},function(i){if(st.i[i])delete st.i[i];else st.i[i]=1;guarda();pinta()});
+  var box=$('box');box.textContent='';
+  var c=document.createElement('div');c.className='tradingview-widget-container';
+  var w=document.createElement('div');w.className='tradingview-widget-container__widget';c.appendChild(w);
+  var s=document.createElement('script');
+  s.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';s.async=true;
+  var est=[];IND.forEach(function(x,i){if(st.i[i])est.push(x[1])});
+  s.text=JSON.stringify({autosize:true,symbol:ACT[st.a][1],interval:TF[st.t][1],timezone:'Europe/Madrid',theme:tema(),style:'1',locale:'es',allow_symbol_change:true,hide_side_toolbar:false,save_image:false,withdateranges:true,studies:est,studies_overrides:{'moving average exponential.length':200},support_host:'https://www.tradingview.com'});
+  c.appendChild(s);box.appendChild(c);
+}
+var WEB='https://dashboard482.github.io/dashboard/grafico_vivo.html';
+function abrir(u){try{if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.openLink)return Telegram.WebApp.openLink(u)}catch(e){}window.open(u,'_blank')}
+$('shx').onclick=function(){abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('📈 Gráfico en vivo con MACD, RSI y medias para cualquier activo\n🆓 Gratis, sin registrarte en nada: solo ganas de enseñar\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB))};
+pinta();
+})();
+</script></body></html>
