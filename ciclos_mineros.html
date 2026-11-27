@@ -121,10 +121,11 @@ function dibuja3(){
   if(st.C)st.C.forEach(function(c){if(c.bd>=t0){var x=X(c.bd);cx.strokeStyle=gv('--dim');cx.setLineDash([3*dpr,3*dpr]);cx.lineWidth=dpr;cx.beginPath();cx.moveTo(x,pt);cx.lineTo(x,h-pb);cx.stroke();cx.setLineDash([])}});
   if(st.hover3!=null){cx.strokeStyle=gv('--dim');cx.beginPath();cx.moveTo(st.hover3,pt);cx.lineTo(st.hover3,h-pb);cx.stroke()}
 }
+function q1(x){return Math.abs(x)<10?fmt(x,1):fmt(x,0)}
 function mueve3(ev){
   if(!st.K||!st.G3)return;var G=st.G3,r=$('cv3').getBoundingClientRect(),px=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left,x=Math.max(G.pl,Math.min(G.pr,px*G.dpr)),t=G.t0+(x-G.pl)/(G.pr-G.pl)*(G.t1-G.t0);
   st.hover3=x;dibuja3();var p=cercano(st.K,t);
-  $('tip3').innerHTML=fecha(p[0])+' · precio <b style="color:var(--btc)">$'+fmt(p[1],0)+'</b> · coste <b style="color:#ef4444">$'+fmt(p[2],0)+'</b> · '+(p[1]>=p[2]?'<b class="up">margen '+fmt((p[1]/p[2]-1)*100,0)+' %</b>':'<b class="dn">a pérdidas ('+fmt((p[1]/p[2]-1)*100,0)+' %)</b>');
+  $('tip3').innerHTML=fecha(p[0])+' · precio <b style="color:var(--btc)">$'+fmt(p[1],0)+'</b> · coste <b style="color:#ef4444">$'+fmt(p[2],0)+'</b> · '+(p[1]>=p[2]?'<b class="up">margen '+q1((p[1]/p[2]-1)*100)+' %</b>':'<b class="dn">a pérdidas ('+q1((p[1]/p[2]-1)*100)+' %)</b>');
 }
 ['mousemove','touchstart','touchmove'].forEach(function(e){$('cv3').addEventListener(e,mueve3,{passive:true})});
 $('cv3').addEventListener('mouseleave',function(){st.hover3=null;dibuja3()});
