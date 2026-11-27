@@ -28,12 +28,12 @@ h1{font-size:17px;margin:14px 0 4px;color:var(--st)}
 <div class="wrap">
 <header><a class="btn" href="index.html">← Hub</a><button class="btn x" id="shx" type="button">𝕏 Compartir</button></header>
 <h1>📈 Gráfico en vivo</h1>
-<div class="sub">Gráfico profesional de TradingView con MACD, RSI y medias. Elige un activo, el periodo y los indicadores que quieras. Puedes buscar cualquier otro activo con la lupa del propio gráfico y dibujar líneas con las herramientas de la izquierda.</div>
+<div class="sub">Gráfico profesional de TradingView con MACD, RSI y medias. Elige un activo, el periodo y los indicadores que quieras. Con el botón «Indicadores» de la barra superior del gráfico puedes añadir muchos más (más de cien) y con las herramientas de la izquierda dibujar líneas.</div>
 <div class="fila" id="activos"><span class="lab">Activo</span></div>
 <div class="fila" id="tf"><span class="lab">Vela</span></div>
 <div class="fila" id="ind"><span class="lab">Indicadores</span></div>
 <div id="box"></div>
-<div class="que"><b>Cómo leerlo:</b> el <b>RSI</b> mide si el precio ha subido o bajado demasiado rápido (por encima de 70 se dice «sobrecomprado», por debajo de 30 «sobrevendido»). El <b>MACD</b> compara dos medias y cruza su línea de señal cuando el impulso cambia. La <b>EMA 200</b> es la media de largo plazo: por encima, tendencia alcista; por debajo, bajista. ¿No sabes qué es algo? Míralo en la <a href="escuela.html" style="color:#8ab4ff">Escuela del Hub</a>.</div>
+<div class="que"><b>Cómo leerlo:</b> el <b>RSI</b> mide si el precio ha subido o bajado demasiado rápido (por encima de 70 se dice «sobrecomprado», por debajo de 30 «sobrevendido»). El <b>MACD</b> compara dos medias y cruza su línea de señal cuando el impulso cambia. Las <b>medias EMA</b> suavizan el precio: por encima de la media larga, tendencia alcista; por debajo, bajista. ¿No sabes qué es algo? Míralo en la <a href="escuela.html" style="color:#8ab4ff">Escuela del Hub</a>.</div>
 <div class="note">Gráficos de <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a>. Criptomonedas, divisas y muchos índices van en directo; algunas acciones pueden ir con retraso según el mercado. Gratis, sin registrarte. Informativo, no es consejo financiero.</div>
 </div>
 <script src="telegram.js" defer></script>
@@ -43,9 +43,9 @@ h1{font-size:17px;margin:14px 0 4px;color:var(--st)}
 var $=function(i){return document.getElementById(i)};
 var ACT=[['Bitcoin','BITSTAMP:BTCUSD'],['Ethereum','BITSTAMP:ETHUSD'],['Solana','BINANCE:SOLUSDT'],['S&P 500','SP:SPX'],['Nasdaq 100','NASDAQ:NDX'],['Oro','OANDA:XAUUSD'],['Plata','OANDA:XAGUSD'],['Petróleo','TVC:USOIL'],['Dólar (DXY)','TVC:DXY'],['EUR/USD','FX:EURUSD'],['Nvidia','NASDAQ:NVDA'],['Tesla','NASDAQ:TSLA'],['Apple','NASDAQ:AAPL'],['Strategy','NASDAQ:MSTR'],['Santander','BME:SAN'],['Inditex','BME:ITX'],['VIX','TVC:VIX']];
 var TF=[['15 min','15'],['1 hora','60'],['4 horas','240'],['Diario','D'],['Semanal','W']];
-var IND=[['MACD','MACD@tv-basicstudies'],['RSI','RSI@tv-basicstudies'],['EMA 200','MAExp@tv-basicstudies'],['Bollinger','BB@tv-basicstudies'],['Volumen','Volume@tv-basicstudies']];
-var st={a:0,t:3,i:{0:1,1:1}};
-try{var g=JSON.parse(localStorage.getItem('gv.st')||'null');if(g&&ACT[g.a]&&TF[g.t]&&g.i)st=g}catch(e){}
+var IND=[['MACD','STD;MACD'],['RSI','STD;RSI'],['Medias EMA','STD;EMA'],['Bollinger','STD;Bollinger_Bands'],['Ichimoku','STD;Ichimoku_Cloud'],['Estocástico','STD;Stochastic'],['SAR parabólico','STD;PSAR'],['ATR','STD;ATR'],['VWAP','STD;VWAP'],['Volumen','STD;Volume']];
+var st={a:0,t:3,i:{0:1,1:1},v:2};
+try{var g=JSON.parse(localStorage.getItem('gv.st')||'null');if(g&&g.v===2&&ACT[g.a]&&TF[g.t]&&g.i)st=g}catch(e){}
 function tema(){return (window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'}
 function guarda(){try{localStorage.setItem('gv.st',JSON.stringify(st))}catch(e){}}
 function chips(id,arr,on,fn){
@@ -62,7 +62,7 @@ function pinta(){
   var s=document.createElement('script');
   s.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';s.async=true;
   var est=[];IND.forEach(function(x,i){if(st.i[i])est.push(x[1])});
-  s.text=JSON.stringify({autosize:true,symbol:ACT[st.a][1],interval:TF[st.t][1],timezone:'Europe/Madrid',theme:tema(),style:'1',locale:'es',allow_symbol_change:true,hide_side_toolbar:false,save_image:false,withdateranges:true,studies:est,studies_overrides:{'moving average exponential.length':200},support_host:'https://www.tradingview.com'});
+  s.text=JSON.stringify({autosize:true,symbol:ACT[st.a][1],interval:TF[st.t][1],timezone:'Europe/Madrid',theme:tema(),style:'1',locale:'es',allow_symbol_change:true,hide_side_toolbar:false,save_image:false,withdateranges:true,studies:est,hide_top_toolbar:false,hide_legend:false,support_host:'https://www.tradingview.com'});
   c.appendChild(s);box.appendChild(c);
 }
 var WEB='https://dashboard482.github.io/dashboard/grafico_vivo.html';
