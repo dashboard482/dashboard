@@ -125,30 +125,46 @@ function primera(cands,parse){
 function conProxy(u){var e=encodeURIComponent(u);return[u,'https://corsproxy.io/?'+e,'https://api.allorigins.win/raw?url='+e,'https://api.codetabs.com/v1/proxy?quest='+e]}
 var dia=function(ms){return Math.floor(ms/864e5)};
 function mk(d){var n=d.C.length,L=new Float64Array(n);for(var i=0;i<n;i++)L[i]=Math.log(d.C[i]);return{T:d.T,C:d.C,L:L,n:n,base:d.base,viejo:d.viejo}}
-function completa(d,ys){
-  var yh='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ys)+'?range=3mo&interval=1d';
-  return primera(conProxy(yh),function(txt){
-    var j=JSON.parse(txt),r=j.chart.result[0],ts=r.timestamp,cl=r.indicators.quote[0].close,n=0;
-    if(!ts||ts.length<5)throw new Error('vacío');
-    var ult=dia(d.T[d.T.length-1]);
-    for(var i=0;i<ts.length;i++){if(!(cl[i]>0))continue;var t=ts[i]*1000,dd=dia(t);
-      if(dd===ult&&n===0){d.C[d.C.length-1]=cl[i];n++}
-      else if(dd>ult){d.T.push(t);d.C.push(cl[i]);ult=dd;n++}}
-    return d;
-  }).catch(function(){return d});
+var TOPK='top1.';
+function topCache(ys){try{return JSON.parse(localStorage.getItem(TOPK+ys)||'null')}catch(e){return null}}
+function aplicaTop(d,ts,cl){
+  var n=0,ult=dia(d.T[d.T.length-1]);
+  for(var i=0;i<ts.length;i++){if(!(cl[i]>0))continue;var t=ts[i]*1000,dd=dia(t);
+    if(dd===ult&&n===0){d.C[d.C.length-1]=cl[i];n++}
+    else if(dd>ult){d.T.push(t);d.C.push(cl[i]);ult=dd;n++}}
+  return d;
+}
+/* Rápido: pinta ya con el histórico guardado (+ lo último que recordó el móvil) y actualiza en segundo plano */
+function completa(d,ys,onNew){
+  var base={T:d.T.slice(),C:d.C.slice()},c=topCache(ys);
+  if(c&&c.ts)aplicaTop(d,c.ts,c.cl);
+  if(!c||Date.now()-c.t>600000){
+    var yh='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ys)+'?range=3mo&interval=1d';
+    primera(conProxy(yh),function(txt){
+      var j=JSON.parse(txt),r=j.chart.result[0];
+      if(!r.timestamp||r.timestamp.length<5)throw new Error('vacío');
+      return{ts:r.timestamp,cl:r.indicators.quote[0].close};
+    }).then(function(r){
+      try{localStorage.setItem(TOPK+ys,JSON.stringify({t:Date.now(),ts:r.ts,cl:r.cl}))}catch(e){}
+      var p={T:base.T.slice(),C:base.C.slice()};aplicaTop(p,r.ts,r.cl);
+      var n=d.C.length,m=p.C.length;
+      if(m!==n||p.C[m-1]!==d.C[n-1]){if(onNew)onNew(p)}
+    }).catch(function(){});
+  }
+  return Promise.resolve(d);
 }
 function guardada(k){
   if(st.raw[k])return Promise.resolve(st.raw[k]);
   return pedir('historico/'+k+'.json?t='+Math.floor(Date.now()/36e5),20000).then(parseJson).then(function(d){d.base=d.T[d.T.length-1];st.raw[k]=d;return d});
 }
-function carga(k){
+function carga(k,bg){
   var a=BY[k];
   return guardada(k).catch(function(){
     var yh='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(a[3])+'?range=max&interval=1d';
     return primera(conProxy(yh),parseYahoo);
   }).then(function(d){
     var c={T:d.T.slice(),C:d.C.slice(),base:d.base};
-    return completa(c,a[3]);
+    return completa(c,a[3],function(p){if(bg){p.base=d.base;bg(mk(p))}});
   }).then(mk);
 }
 /* ---------- algoritmo ---------- */
@@ -354,7 +370,7 @@ function abre(k){
   $('cg').style.display=$('ct').style.display=$('cl').style.display=$('cb').style.display=$('sg').style.display=$('cp').style.display=$('cv2c').style.display='none';
   $('est').textContent='cargando la historia de '+a[1]+'…';
   var tok=st.tok;
-  carga(k).then(function(D){if(tok!==st.tok)return;st.D=D;analiza()},function(){if(tok!==st.tok)return;$('est').innerHTML='<span class="warn">No se pudo cargar la historia de '+a[1]+' ahora. Prueba otro activo o recarga en unos segundos.</span>'});
+  carga(k,function(D2){if(tok!==st.tok)return;var o=st.D;if(o&&D2.n===o.n&&D2.C[D2.n-1]===o.C[o.n-1])return;st.D=D2;analiza()}).then(function(D){if(tok!==st.tok)return;st.D=D;analiza()},function(){if(tok!==st.tok)return;$('est').innerHTML='<span class="warn">No se pudo cargar la historia de '+a[1]+' ahora. Prueba otro activo o recarga en unos segundos.</span>'});
 }
 function chips(){
   var b=$('sel');b.textContent='';var g='';var box=null;
