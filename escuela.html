@@ -196,7 +196,7 @@ function tarjeta(x){
   var a=el('div','acts');
   if(x.l){var lk=el('a','btn','👀 '+x.l[0]);lk.href=x.l[1];a.appendChild(lk)}
   var mk=el('button','btn mk',hecho(x.i)?'↩︎ Marcar como no leída':'✔ Marcar como leída');mk.type='button';mk.onclick=function(){marca(x.i,!hecho(x.i))};a.appendChild(mk);
-  var sh=el('button','btn','𝕏 Compartir lección');sh.type='button';sh.onclick=function(){abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('🎓 '+x.n+' — explicado sin jerga en la Escuela del Hub Financiero 👉 ')+'&url='+encodeURIComponent(url(x.i)))};a.appendChild(sh);
+  var sh=el('button','btn','𝕏 Compartir lección');sh.type='button';sh.onclick=function(){abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('🎓 '+x.n+' — explicado sin jerga en la Escuela del Hub Financiero.\n🆓 Gratis, sin registrarte en nada: solo ganas de enseñar 👉 ')+'&url='+encodeURIComponent(url(x.i)))};a.appendChild(sh);
   b.appendChild(a);c.append(h,b);
   h.onclick=function(){var ab=c.classList.contains('open');document.querySelectorAll('.les.open').forEach(function(o){o.classList.remove('open')});if(!ab){c.classList.add('open');st.open=x.i;setTimeout(function(){c.scrollIntoView({behavior:'smooth',block:'start'})},60)}else st.open=-1};
   return c}
@@ -221,7 +221,7 @@ var d=new Date(),dia=Math.floor((d.getTime()-d.getTimezoneOffset()*6e4)/864e5),H
 $('hoyE').textContent=H.e;$('hoyT').textContent=H.n;$('hoyG').textContent=H.g;
 $('hoy').onclick=function(){st.tema='todas';st.q='';$('bus').value='';st.open=H.i;chips();pinta();var c=document.querySelector('[data-i="'+H.i+'"]');if(c)c.scrollIntoView({behavior:'smooth',block:'start'})};
 var WEB='https://dashboard482.github.io/dashboard/escuela.html';
-$('shx').onclick=function(){abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('🎓 Escuela del Hub Financiero: '+L.length+' lecciones de inversión explicadas sin jerga\nHub Financiero 👉 ')+'&url='+encodeURIComponent(WEB))};
+$('shx').onclick=function(){abrir('https://twitter.com/intent/tweet?text='+encodeURIComponent('🎓 Escuela del Hub Financiero: '+L.length+' lecciones de inversión explicadas sin jerga.\n🆓 Gratis, sin registrarte en nada: solo ganas de enseñar 👉 ')+'&url='+encodeURIComponent(WEB))};
 var m=/[?&]l=(\d+)/.exec(location.search);if(m){var k=parseInt(m[1],10)-1;if(L[k])st.open=k}
 chips();pinta();progreso();
 if(st.open>=0){var c0=document.querySelector('[data-i="'+st.open+'"]');if(c0)setTimeout(function(){c0.scrollIntoView({block:'start'})},100)}
