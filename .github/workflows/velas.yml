@@ -1,0 +1,63 @@
+name: Velas semanales
+on:
+  schedule:
+    - cron: "20 22 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  velas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar velas semanales
+        run: |
+          mkdir -p historico
+          python3 - <<'PY'
+          import json, re, time, urllib.request
+          SYMS = ["ANT", "NVDA", "AVGO", "PLTR", "AMD", "TSM", "ARM", "SMCI", "CRWV", "MU", "QCOM", "INTC", "ASML", "AMAT", "LRCX", "MRVL", "DELL", "SNOW", "ORCL", "CRM", "NOW", "ADBE", "PANW", "CRWD", "DDOG", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "NFLX", "CSCO", "IBM", "SPCX", "RKLB", "IONQ", "MP", "RBLX", "RDDT", "SHOP", "SPOT", "ABNB", "UBER", "COIN", "MSTR", "MARA", "CRCL", "HOOD", "PURR", "IBIT", "BTC-USD", "ETH-USD", "SOL-USD", "BNB-USD", "XRP-USD", "ADA-USD", "AVAX-USD", "LINK-USD", "DOGE-USD", "DOT-USD", "LTC-USD", "NEAR-USD", "SUI20947-USD", "HYPE32196-USD", "GC=F", "SI=F", "HG=F", "PL=F", "CL=F", "BZ=F", "NG=F", "KC=F", "ZW=F", "URA", "EURUSD=X", "DX-Y.NYB", "^GSPC", "^IXIC", "^NDX", "^DJI", "^RUT", "^IBEX", "^GDAXI", "^STOXX50E", "^FTSE", "^FCHI", "^N225", "^VIX", "^TNX", "SAN.MC", "BBVA.MC", "ITX.MC", "IBE.MC", "TEF.MC", "REP.MC", "CABK.MC", "ELE.MC", "AMS.MC", "NTGY.MC", "BKT.MC", "SAB.MC", "ACS.MC", "FER.MC", "GRF.MC", "MAP.MC", "CLNX.MC", "IAG.MC", "ANA.MC", "ENG.MC", "RED.MC", "AENA.MC", "ROVI.MC", "IDR.MC", "ACX.MC", "COL.MC", "SAP", "SIE.DE", "ALV.DE", "MBG.DE", "BMW.DE", "MC.PA", "TTE.PA", "AIR.PA", "NESN.SW", "NOVN.SW", "NVO", "SHEL", "AZN", "JPM", "V", "MA", "PYPL", "BRK-B", "BAC", "GS", "MS", "C", "WFC", "WMT", "COST", "KO", "PEP", "SBUX", "NKE", "DIS", "PG", "HD", "BKNG", "JNJ", "LLY", "UNH", "PFE", "MRK", "ABBV", "XOM", "CVX", "BA", "LMT", "RTX", "CAT", "GE", "DE", "F", "BABA", "SPY", "QQQ", "DIA", "IWM", "SMH", "XLK", "XLF", "XLE", "GLD", "SLV", "TLT", "ARKK", "EEM"]
+          def get(u):
+              r = urllib.request.Request(u, headers={'User-Agent': 'Mozilla/5.0'})
+              return json.load(urllib.request.urlopen(r, timeout=30))
+          ok = 0
+          fail = []
+          for s in SYMS:
+              res = None
+              for t in range(3):
+                  host = 'query1' if t != 1 else 'query2'
+                  try:
+                      d = get('https://%s.finance.yahoo.com/v8/finance/chart/%s?range=5y&interval=1wk' % (host, urllib.request.quote(s)))
+                      res = d['chart']['result'][0]
+                      break
+                  except Exception as e:
+                      time.sleep(1.5)
+              if not res:
+                  fail.append(s)
+                  continue
+              q = res['indicators']['quote'][0]
+              bars = []
+              for i, ts in enumerate(res['timestamp']):
+                  o, h, l, c = q['open'][i], q['high'][i], q['low'][i], q['close'][i]
+                  if None in (o, h, l, c):
+                      continue
+                  bars.append([ts, round(o, 6), round(h, 6), round(l, 6), round(c, 6)])
+              if len(bars) < 3:
+                  fail.append(s)
+                  continue
+              name = re.sub(r'[^A-Za-z0-9]+', '_', s)
+              json.dump({'s': s, 'u': int(time.time()), 'p': (res.get('meta') or {}).get('regularMarketPrice'), 'b': bars}, open('historico/w_%s.json' % name, 'w'), separators=(',', ':'))
+              ok += 1
+              time.sleep(0.3)
+          print('OK', ok, 'de', len(SYMS))
+          print('SIN DATOS', fail)
+          if ok < len(SYMS) * 0.5:
+              raise SystemExit('demasiados fallos')
+          PY
+      - name: Guardar
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add historico
+          git diff --cached --quiet || git commit -m "Velas semanales"
+          for i in 1 2 3; do git pull --rebase -X theirs origin main && git push && break; sleep 5; done
