@@ -546,15 +546,21 @@
     // picos con importes (columna derecha)
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     const fP = L.small ? 9 : 10, fI = L.small ? 8 : 8.5, lx = plotR + 3;
+    const MINSEP = fP + fI + 8, usados = [];
     function pico(pk, color) {
       if (pk.precio < ylo || pk.precio > yhi) return;
       const ly = y(pk.precio);
       if (Math.abs(ly - py) < 12) return;
+      for (let q = 0; q < usados.length; q++) if (Math.abs(usados[q] - ly) < MINSEP) return; // evita que se pisen: gana el más grande
+      usados.push(ly);
       ctx.fillStyle = color; ctx.font = 'bold ' + fP + 'px ' + mono; ctx.fillText(fmtAxisNum(pk.precio), lx, ly - 1);
       ctx.font = fI + 'px ' + mono; ctx.fillText(fmtUsd(pk.total), lx, ly + fI + 2);
     }
-    for (const pk of res.picosCortos) pico(pk, '#FF8888');
-    for (const pk of res.picosLargos) pico(pk, '#77DD99');
+    const todos = [];
+    for (const pk of res.picosCortos) todos.push([pk, '#FF8888']);
+    for (const pk of res.picosLargos) todos.push([pk, '#77DD99']);
+    todos.sort(function (a, b) { return b[0].total - a[0].total; });
+    for (const t of todos) pico(t[0], t[1]);
 
     // eje de tiempo
     const every = Math.max(1, Math.ceil((L.small ? 56 : 66) / colW));
